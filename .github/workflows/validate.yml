@@ -14,9 +14,6 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
-      with:
-        # GitHelper unit test requires full clone, not the shallow default of GitHub Actions
-        fetch-depth: 0
 
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
