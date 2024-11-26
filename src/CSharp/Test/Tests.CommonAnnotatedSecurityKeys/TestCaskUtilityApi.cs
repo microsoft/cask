@@ -10,7 +10,7 @@ namespace Tests.CommonAnnotatedSecurityKeys
     internal class TestCaskUtilityApi : CaskUtilityApi
     {
         public Func<DateTimeOffset>? GetCurrentDateTimeUtcFunc;
-        public Action<byte[], byte[]>? ComputeCrc32HashAction = null; // not currently assigned anywhere else, redundant null assignment to silence compiler warning.
+        public Action<byte[], byte[]>? ComputeCrc32HashAction = null; // Not currently assigned anywhere else, redundant null assignment to silence compiler warning.
 
         public override DateTimeOffset GetCurrentDateTimeUtc()
         {
