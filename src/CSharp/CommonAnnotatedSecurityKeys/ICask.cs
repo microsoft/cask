@@ -26,5 +26,3 @@ namespace CommonAnnotatedSecurityKeys
                          int secretEntropyInBytes = 32);
     }
 }
-
-

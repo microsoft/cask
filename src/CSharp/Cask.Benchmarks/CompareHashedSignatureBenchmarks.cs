@@ -11,7 +11,7 @@ namespace CommonAnnotatedSecurityKeys.Benchmarks
     {
         private const int iterations = 10000;
         private const string TestProviderSignature = "TEST";
-        private static readonly byte [] TestProviderSignatureBytes = Convert.FromBase64String(TestProviderSignature);
+        private static readonly byte[] TestProviderSignatureBytes = Convert.FromBase64String(TestProviderSignature);
 
         [Benchmark]
         public void UseCompareHash()

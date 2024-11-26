@@ -69,7 +69,7 @@ namespace CommonAnnotatedSecurityKeys
                                   string? reserved = null,
                                   int secretEntropyInBytes = 32)
         {
-            byte[] reservedBytes = reserved == null 
+            byte[] reservedBytes = reserved == null
                 ? Array.Empty<byte>()
                 : Convert.FromBase64String(reserved.FromUrlSafe());
 
@@ -187,7 +187,7 @@ namespace CommonAnnotatedSecurityKeys
         }
 
         internal byte[] GenerateHashedSignatureBytes(byte[] derivationInput, byte[] secret, int secretEntropyInBytes)
-        {            
+        {
             byte[] allocatorAndTimeStampBytes = new byte[3];
 
             secretEntropyInBytes = secretEntropyInBytes.RoundUpToMultipleOf(3);
@@ -232,7 +232,7 @@ namespace CommonAnnotatedSecurityKeys
 
             byte[] crc32Bytes = new byte[4];
             Utilities.ComputeCrc32Hash(toChecksum, crc32Bytes);
-            
+
             int crc32HashOffset = providerSignatureBytesOffset + 3;
             Array.Copy(crc32Bytes, 0, hashedSignature, crc32HashOffset, 3);
 

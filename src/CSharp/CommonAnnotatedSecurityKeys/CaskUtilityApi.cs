@@ -41,7 +41,7 @@ namespace CommonAnnotatedSecurityKeys
 
         public static ICaskUtilityApi Instance
         {
-            get 
+            get
             {
                 if (caskConstants.Value == null)
                 {
@@ -49,7 +49,7 @@ namespace CommonAnnotatedSecurityKeys
                 }
                 return caskConstants.Value;
             }
-            set { caskConstants = new (() => value); }
+            set { caskConstants = new(() => value); }
         }
 
         public static Crc32 Crc32
@@ -77,7 +77,7 @@ namespace CommonAnnotatedSecurityKeys
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_' };
 
-        public static ReadOnlySpan<char> OrderedUrlSafeBase64Characters  => orderedUrlSafeBase64Characters;
+        public static ReadOnlySpan<char> OrderedUrlSafeBase64Characters => orderedUrlSafeBase64Characters;
 
         public static readonly ISet<char> UrlSafeBase64Characters = orderedUrlSafeBase64Characters.ToImmutableHashSet();
 

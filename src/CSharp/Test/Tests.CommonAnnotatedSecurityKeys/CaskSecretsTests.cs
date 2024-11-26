@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-
 using CommonAnnotatedSecurityKeys;
+
+using System;
 
 using Xunit;
 
@@ -33,16 +33,16 @@ namespace Tests.CommonAnnotatedSecurityKeys
         public void CaskSecrets_GenerateKey_Basic(int secretEntropyInBytes)
         {
 
-                string key = Cask.GenerateKey(providerSignature: "TEST",
-                                              allocatorCode: "88",
-                                              reserved: "ABCD",
-                                              secretEntropyInBytes);
+            string key = Cask.GenerateKey(providerSignature: "TEST",
+                                          allocatorCode: "88",
+                                          reserved: "ABCD",
+                                          secretEntropyInBytes);
 
-                byte[] keyBytes = Convert.FromBase64String(key.FromUrlSafe());
-                Assert.True(keyBytes.Length % 3 == 0, "'GenerateKey' output wasn't aligned on a 3-byte boundary.");
+            byte[] keyBytes = Convert.FromBase64String(key.FromUrlSafe());
+            Assert.True(keyBytes.Length % 3 == 0, "'GenerateKey' output wasn't aligned on a 3-byte boundary.");
 
-                IsCaskValidate(Cask, key);
-            
+            IsCaskValidate(Cask, key);
+
         }
 
         [Theory]

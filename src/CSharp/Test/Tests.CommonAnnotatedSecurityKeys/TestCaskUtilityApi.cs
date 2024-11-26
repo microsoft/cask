@@ -26,7 +26,7 @@ namespace Tests.CommonAnnotatedSecurityKeys
                 ComputeCrc32HashAction(toChecksum.ToArray(), destination.ToArray());
                 return;
             }
-            
+
             base.ComputeCrc32Hash(toChecksum, destination);
         }
     }

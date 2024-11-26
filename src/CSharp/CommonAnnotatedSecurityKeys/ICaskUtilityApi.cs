@@ -10,5 +10,3 @@ namespace CommonAnnotatedSecurityKeys
         void ComputeCrc32Hash(ReadOnlySpan<byte> toChecksum, Span<byte> destination);
     }
 }
-
-
