@@ -7,17 +7,27 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cask.Cli", "Cask.Cli\Cask.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonAnnotatedSecurityKeys", "CommonAnnotatedSecurityKeys\CommonAnnotatedSecurityKeys.csproj", "{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E2B7E2CF-D7AE-42EE-B231-B7619069F210}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-		.ruleset = .ruleset
-		Directory.Build.props = Directory.Build.props
-		Directory.Packages.props = Directory.Packages.props
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cask.Benchmarks", "Cask.Benchmarks\Cask.Benchmarks.csproj", "{7E800B9F-BE5A-4649-9C2D-4EE91313B4D3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.CommonAnnotatedSecurityKeys", "Test\Tests.CommonAnnotatedSecurityKeys\Tests.CommonAnnotatedSecurityKeys.csproj", "{212D646E-B6B0-4946-AE12-9948602842E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{AA9664D7-21A5-4941-BE8A-D62765F58CE6}"
+	ProjectSection(SolutionItems) = preProject
+		Test\Directory.Build.props = Test\Directory.Build.props
+		Test\Directory.Packages.props = Test\Directory.Packages.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{0C3A2105-9369-461A-92AB-3D39CA120B83}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.rsp = Directory.Build.rsp
+		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+		Directory.Solution.props = Directory.Solution.props
+		Directory.WarningsAsErrors.props = Directory.WarningsAsErrors.props
+		nuget.config = nuget.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +54,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AA9664D7-21A5-4941-BE8A-D62765F58CE6} = {0C3A2105-9369-461A-92AB-3D39CA120B83}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3C6E0D82-3180-4C2D-91AE-EBC2A066168E}

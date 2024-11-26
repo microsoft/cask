@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  
-  <Import Project="$(MsBuildThisFileDirectory)..\Test.Build.props" />
-  
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\CommonAnnotatedSecurityKeys\CommonAnnotatedSecurityKeys.csproj" />
   </ItemGroup>
-
 </Project>

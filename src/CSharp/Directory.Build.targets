@@ -1,0 +1,11 @@
+<Project>
+  <!-- For .NETFramework/.NETStandard allow nullable annotations, but don't enable analysis.-->
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
+    <Nullable>annotations</Nullable>
+  </PropertyGroup>
+
+  <!-- Generate packages on build for packable projects in release configuration -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true' and '$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+</Project>

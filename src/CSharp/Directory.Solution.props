@@ -1,3 +1,3 @@
 <Project>
-  <Import Project="targets\build.warnings_as_errors.props" />
+  <Import Project="Directory.WarningsAsErrors.props" />
 </Project>

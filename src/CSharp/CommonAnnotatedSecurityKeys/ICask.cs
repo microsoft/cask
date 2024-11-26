@@ -13,7 +13,7 @@ namespace CommonAnnotatedSecurityKeys
 
         string GenerateKey(string providerSignature,
                            string allocatorCode,
-                           string reserved = null,
+                           string? reserved = null,
                            int secretEntropyInBytes = 32);
 
         string GenerateHash(byte[] derivationInput,

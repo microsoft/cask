@@ -3,7 +3,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-and-test:
@@ -18,14 +18,16 @@ jobs:
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: |
-          8.0.x
+        dotnet-version: 8.0.x
 
     - name: Show dotnet info
       run: dotnet --info
 
+    - name: Restore
+      run: dotnet restore src/CSharp/Cask.sln
+
     - name: Build
-      run: dotnet build ./src/CSharp/Cask.sln
+      run: dotnet build -c Release --no-restore src/CSharp/Cask.sln
 
     - name: Test
-      run: dotnet test ./src/CSharp/Cask.sln
+      run: dotnet test -c Release --no-build src/CSharp/Cask.sln

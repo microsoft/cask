@@ -110,7 +110,7 @@ namespace Tests.CommonAnnotatedSecurityKeys
             }
             finally
             {
-                CaskUtilityApi.Instance = null;
+                CaskUtilityApi.Instance = null!;
             }
         }
 

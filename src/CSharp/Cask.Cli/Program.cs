@@ -2,6 +2,8 @@
 
 using CommandLine;
 
+using System;
+
 namespace CommonAnnotatedSecurityKeys.Cli
 {
     internal class Program

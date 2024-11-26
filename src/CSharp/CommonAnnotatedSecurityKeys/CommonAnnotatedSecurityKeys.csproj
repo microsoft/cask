@@ -1,38 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="$(MsBuildThisFileDirectory)..\Build.props" />
-
   <PropertyGroup>
+    <TargetFrameworks>net8.0;net472</TargetFrameworks>
     <IsPackable>true</IsPackable>
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup Label="Package">
-    <Title>$(RootNamespace)</Title>
-    <PackageId>$(RootNamespace)</PackageId>
-  </PropertyGroup>
-  
   <ItemGroup>
-    <None Include="../../../docs/CSharp_ReleaseHistory.md" Pack="true" PackagePath="ReleaseHistory.md">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="../../../docs/CSharp_ReleaseHistory.md" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.SourceLink.GitHub">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="Nerdbank.GitVersioning">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.IO.Hashing" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
+    <PackageReference Include="System.Collections.Immutable" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
 </Project>

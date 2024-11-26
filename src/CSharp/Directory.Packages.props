@@ -14,10 +14,5 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.133" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
-  <!-- Put test dependencies here to help code reviewers to see when product dependencies are changing or not. -->
-  <ItemGroup Label="Test-Only Dependencies" Condition="$(MSBuildProjectName.StartsWith('Test'))">
-    <PackageVersion Include="xunit" Version="2.9.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-  </ItemGroup>
+  <!-- Put test-only dependencies in Test/Directory.Packages.props -->
 </Project>

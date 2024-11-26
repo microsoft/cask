@@ -67,7 +67,7 @@ namespace CommonAnnotatedSecurityKeys
 
         public string GenerateKey(string providerSignature,
                                   string allocatorCode,
-                                  string reserved = null,
+                                  string? reserved = null,
                                   int secretEntropyInBytes = 32)
         {
             byte[] reservedBytes = reserved == null 
@@ -86,7 +86,7 @@ namespace CommonAnnotatedSecurityKeys
 
         public byte[] GenerateKeyBytes(byte[] providerSignature,
                                        string allocatorCode,
-                                       byte[] reserved = null,
+                                       byte[]? reserved = null,
                                        int secretEntropyInBytes = 32,
                                        char testChar = default)
         {
