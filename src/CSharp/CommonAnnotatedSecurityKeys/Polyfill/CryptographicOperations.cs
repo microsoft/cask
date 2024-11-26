@@ -54,7 +54,6 @@ namespace System.Security.Cryptography
 
             return accum == 0;
         }
-
     }
 }
 #endif
