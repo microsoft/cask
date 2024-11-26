@@ -41,7 +41,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <ItemGroup Label="Common Packages">
+  <ItemGroup Label="Common Build-Relevant Packages">
     <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
