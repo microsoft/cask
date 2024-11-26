@@ -242,26 +242,7 @@ namespace CommonAnnotatedSecurityKeys
         public bool CompareHash(byte[] candidateHash, byte[] derivationInput, byte[] secret, int secretEntropyInBytes)
         {
             byte[] computedHash = GenerateHashedSignatureBytes(derivationInput, secret, secretEntropyInBytes);
-
-            if (computedHash.Length != candidateHash.Length)
-            {
-                return false;
-            }
-
-            bool matched = true;
-            for (int i = 0; i < computedHash.Length; i++)
-            {
-                // We will complete a full comparison of all the data
-                // so that timing differences do not leak information
-                // to an upstream caller (i.e., how much of the hash
-                // matched before we observed a discrepancy).
-                if (computedHash[i] != candidateHash[i])
-                {
-                    matched = false;
-                }
-            }
-
-            return matched;
+            return CryptographicOperations.FixedTimeEquals(computedHash, candidateHash);
         }
     }
 }
