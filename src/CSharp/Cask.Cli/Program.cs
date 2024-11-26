@@ -2,29 +2,28 @@
 
 using CommandLine;
 
-namespace CommonAnnotatedSecurityKeys.Cli
+namespace CommonAnnotatedSecurityKeys.Cli;
+
+internal class Program
 {
-    internal class Program
+    [STAThread]
+    public static int Main(string[] args)
     {
-        [STAThread]
-        public static int Main(string[] args)
+        try
         {
-            try
-            {
-                return Parser.Default.ParseArguments<
-                    GenerateOptions,
-                    ValidateOptions
-                    >(args)
-                  .MapResult(
-                    (GenerateOptions options) => new GenerateCommand().Run(options),
-                    (ValidateOptions options) => new ValidateCommand().Run(options),
-                    _ => 1);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return 1;
-            }
+            return Parser.Default.ParseArguments<
+                GenerateOptions,
+                ValidateOptions
+                >(args)
+              .MapResult(
+                (GenerateOptions options) => new GenerateCommand().Run(options),
+                (ValidateOptions options) => new ValidateCommand().Run(options),
+                _ => 1);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return 1;
         }
     }
 }

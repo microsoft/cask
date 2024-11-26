@@ -5,29 +5,28 @@ using CommonAnnotatedSecurityKeys;
 
 using System;
 
-namespace Tests.CommonAnnotatedSecurityKeys
+namespace Tests.CommonAnnotatedSecurityKeys;
+
+internal class TestCaskUtilityApi : CaskUtilityApi
 {
-    internal class TestCaskUtilityApi : CaskUtilityApi
+    public Func<DateTimeOffset>? GetCurrentDateTimeUtcFunc;
+    public Action<byte[], byte[]>? ComputeCrc32HashAction = null; // Not currently assigned anywhere else, redundant null assignment to silence compiler warning.
+
+    public override DateTimeOffset GetCurrentDateTimeUtc()
     {
-        public Func<DateTimeOffset>? GetCurrentDateTimeUtcFunc;
-        public Action<byte[], byte[]>? ComputeCrc32HashAction = null; // Not currently assigned anywhere else, redundant null assignment to silence compiler warning.
+        return GetCurrentDateTimeUtcFunc == null
+            ? base.GetCurrentDateTimeUtc()
+            : GetCurrentDateTimeUtcFunc();
+    }
 
-        public override DateTimeOffset GetCurrentDateTimeUtc()
+    public override void ComputeCrc32Hash(ReadOnlySpan<byte> toChecksum, Span<byte> destination)
+    {
+        if (ComputeCrc32HashAction != null)
         {
-            return GetCurrentDateTimeUtcFunc == null
-                ? base.GetCurrentDateTimeUtc()
-                : GetCurrentDateTimeUtcFunc();
+            ComputeCrc32HashAction(toChecksum.ToArray(), destination.ToArray());
+            return;
         }
 
-        public override void ComputeCrc32Hash(ReadOnlySpan<byte> toChecksum, Span<byte> destination)
-        {
-            if (ComputeCrc32HashAction != null)
-            {
-                ComputeCrc32HashAction(toChecksum.ToArray(), destination.ToArray());
-                return;
-            }
-
-            base.ComputeCrc32Hash(toChecksum, destination);
-        }
+        base.ComputeCrc32Hash(toChecksum, destination);
     }
 }

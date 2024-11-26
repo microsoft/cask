@@ -1,11 +1,10 @@
-﻿namespace Cask.Cli
+﻿namespace Cask.Cli;
+
+public enum CloudInstance
 {
-    public enum CloudInstance
-    {
-        None,
-        NoCloudSpecified = None,
-        Other,
-        Public,
-        Preproduction,
-    }
+    None,
+    NoCloudSpecified = None,
+    Other,
+    Public,
+    Preproduction,
 }

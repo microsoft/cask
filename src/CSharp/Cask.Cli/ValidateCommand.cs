@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-namespace CommonAnnotatedSecurityKeys.Cli
+namespace CommonAnnotatedSecurityKeys.Cli;
+
+public class ValidateCommand
 {
-    public class ValidateCommand
+    internal int Run(ValidateOptions _)
     {
-        internal int Run(ValidateOptions _)
-        {
-            return 0;
-        }
+        return 0;
     }
 }

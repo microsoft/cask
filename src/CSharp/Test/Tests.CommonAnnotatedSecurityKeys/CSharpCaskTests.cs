@@ -2,12 +2,11 @@
 using CommonAnnotatedSecurityKeys;
 
 
-namespace Tests.CommonAnnotatedSecurityKeys
+namespace Tests.CommonAnnotatedSecurityKeys;
+
+public class CSharpCaskTests : CaskTestsBase
 {
-    public class CSharpCaskTests : CaskTestsBase
+    public CSharpCaskTests() : base(new Cask())
     {
-        public CSharpCaskTests() : base(new Cask())
-        {
-        }
     }
 }
