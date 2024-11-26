@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Cask.Cli
+﻿namespace Cask.Cli
 {
     public enum CloudInstance
     {
