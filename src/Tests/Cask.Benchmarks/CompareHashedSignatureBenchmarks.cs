@@ -1,29 +1,29 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using BenchmarkDotNet.Attributes;
-
+using System.Buffers.Text;
 using System.Security.Cryptography;
+
+using BenchmarkDotNet.Attributes;
 
 namespace CommonAnnotatedSecurityKeys.Benchmarks;
 
+[MemoryDiagnoser]
 public class CompareHashedSignatureBenchmarks
 {
-    private const int iterations = 10000;
+    private const int Iterations = 10000;
     private const string TestProviderSignature = "TEST";
-    private static readonly byte[] TestProviderSignatureBytes = Convert.FromBase64String(TestProviderSignature);
+    private static readonly byte[] s_testProviderSignatureBytes = Convert.FromBase64String(TestProviderSignature);
 
     [Benchmark]
     public void UseCompareHash()
     {
-        string key = Cask.Instance.GenerateKey(TestProviderSignature, "99");
-        byte[] keyBytes = Convert.FromBase64String(key.FromUrlSafe());
-        string hash = Cask.Instance.GenerateHash(keyBytes, keyBytes, 32);
-        byte[] hashBytes = Convert.FromBase64String(hash.FromUrlSafe());
+        CaskKey key = Cask.GenerateKey(TestProviderSignature, "99");
+        CaskKey hash = Cask.GenerateHash(s_testProviderSignatureBytes, key, 32);
 
-        for (int i = 0; i < iterations; i++)
+        for (int i = 0; i < Iterations; i++)
         {
-            if (!Cask.Instance.CompareHash(hashBytes, keyBytes, keyBytes))
+            if (!Cask.CompareHash(hash, s_testProviderSignatureBytes, key, 32))
             {
                 throw new InvalidOperationException();
             }
@@ -33,33 +33,18 @@ public class CompareHashedSignatureBenchmarks
     [Benchmark]
     public void UseHmacSha256()
     {
-        string key = Cask.Instance.GenerateKey(TestProviderSignature, "99");
-        byte[] keyBytes = Convert.FromBase64String(key.FromUrlSafe());
-        string hash = Cask.Instance.GenerateHash(TestProviderSignatureBytes, keyBytes, 32);
-        var hmac = new HMACSHA256(keyBytes);
-        byte[] hashBytes = hmac.ComputeHash(TestProviderSignatureBytes);
+        CaskKey key = Cask.GenerateKey(TestProviderSignature, "99");
+        byte[] keyBytes = Base64Url.DecodeFromChars(key.ToString().AsSpan());
+        byte[] hashBytes = new byte[HMACSHA256.HashSizeInBytes];
+        HMACSHA256.HashData(keyBytes, s_testProviderSignatureBytes, hashBytes);
+        Span<byte> computedHashBytes = stackalloc byte[32];
 
-        for (int i = 0; i < iterations; i++)
+        for (int i = 0; i < Iterations; i++)
         {
-            hmac = new HMACSHA256(keyBytes);
-            byte[] computedHashBytes = hmac.ComputeHash(TestProviderSignatureBytes);
-
-            for (int j = 0; j < hashBytes.Length; j++)
+            HMACSHA256.HashData(keyBytes, s_testProviderSignatureBytes, computedHashBytes);
+            if (!CryptographicOperations.FixedTimeEquals(hashBytes, computedHashBytes))
             {
-                if (hashBytes[j] != computedHashBytes[j])
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-
-            computedHashBytes = hmac.ComputeHash(TestProviderSignatureBytes);
-
-            for (int j = 0; j < hashBytes.Length; j++)
-            {
-                if (hashBytes[j] != computedHashBytes[j])
-                {
-                    throw new InvalidOperationException();
-                }
+                throw new InvalidOperationException();
             }
         }
     }

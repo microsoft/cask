@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace CommonAnnotatedSecurityKeys.Cli;
 
-public class ValidateCommand
+internal static class ValidateCommand
 {
-    internal int Run(ValidateOptions _)
+    internal static int Run(ValidateOptions _)
     {
         return 0;
     }

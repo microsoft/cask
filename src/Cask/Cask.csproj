@@ -2,21 +2,30 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net472</TargetFrameworks>
     <IsPackable>true</IsPackable>
+    <DefineConstants>$(DefineConstants);CASK</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../docs/CSharp_ReleaseHistory.md" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="true" />
+    <None Include="../../docs/CSharp_ReleaseHistory.md" Visible="false" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="true" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
-    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="Microsoft.Bcl.Memory" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <InternalsVisibleTo Include="Cask.Tests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Compile Remove="Polyfill.cs" />
+    <None Include="Polyfill.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Using Include="System.ArgumentException" Static="True" />
+    <Using Include="System.ArgumentNullException" Static="true" />
+    <Using Include="System.ArgumentOutOfRangeException" Static="true" />
   </ItemGroup>
 </Project>
