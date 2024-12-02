@@ -1,18 +1,25 @@
 <Project>
   <PropertyGroup Label="Build">
     <LangVersion>latest</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>all</AnalysisMode>
     <Deterministic>true</Deterministic>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <DebugType>portable</DebugType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <ArtifactsPath>$(MSBuildThisFileDirectory)..\..\bld</ArtifactsPath>
-    <RootNamespace>$(MSBuildProjectName.Replace('Cask', 'CommonAnnotatedSecurityKeys'))</RootNamespace>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)..\bld</ArtifactsPath>
   </PropertyGroup>
 
-  <PropertyGroup Label="AssemblyAttributes">
+  <PropertyGroup Label="Debug" Condition="'$(Configuration)' == 'Debug'">
+    <!-- Check for arithmetic overflow. Code must use `unchecked` when overflow is intended. -->
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Assembly Attributes">
     <Company>Microsoft</Company>
     <Product>Common Annotated Security Keys</Product>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
@@ -22,10 +29,12 @@
     <SignAssembly>true</SignAssembly>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>$(MsBuildThisFileDirectory)Key.snk</AssemblyOriginatorKeyFile>
+    <PublicKey>0024000004800000940000000602000000240000525341310004000001000100433fbf156abe9718142bdbd48a440e779a1b708fd21486ee0ae536f4c548edf8a7185c1e3ac89ceef76c15b8cc2497906798779a59402f9b9e27281fb15e7111566cdc9a9f8326301d45320623c5222089cf4d0013f365ae729fb0a9c9d15138042825cd511a0f3d4887a7b92f4c2749f81b410813d297b73244cf64995effb1</PublicKey>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
     <Authors>Microsoft</Authors>
+    <RootNamespace>$(MSBuildProjectName.Replace('Cask', 'CommonAnnotatedSecurityKeys'))</RootNamespace>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/microsoft/cask</PackageProjectUrl>
@@ -41,9 +50,9 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <ItemGroup Label="Common Build-Relevant Packages">
-    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  <!-- Share .NET Framework polyfilss with other projects -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildProjectName)' != 'Cask'">
+    <Compile Include="$(MSBuildThisFileDirectory)Cask\Polyfill.cs" Visible="false" />
   </ItemGroup>
 
   <Import Project="Directory.WarningsAsErrors.props" />

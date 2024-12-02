@@ -1,45 +1,41 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Buffers.Text;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CommonAnnotatedSecurityKeys.Cli;
 
-public class GenerateCommand
+internal static class GenerateCommand
 {
-    private readonly string MicrosoftTenantId = new Guid("782ef2bb-3056-4438-946d-395022a4a19f").ToString();
+    private static readonly string s_microsoftTenantId = new Guid("782ef2bb-3056-4438-946d-395022a4a19f").ToString();
 
-    internal int Run(GenerateOptions options)
+    internal static int Run(GenerateOptions options)
     {
-        var cask = new Cask();
         byte[] derivationInput = Encoding.UTF8.GetBytes(nameof(derivationInput));
 
         string cloudText = "AC";
         string region = EncodeForIdentifiableKey("westus");
-        string tenant = EncodeForIdentifiableKey(MicrosoftTenantId);
+        string tenant = EncodeForIdentifiableKey(s_microsoftTenantId);
         string providerReserved = "AAAA";
-        byte[] reserved = Convert.FromBase64String($"{cloudText}{region}{tenant}{providerReserved}");
+        string providerData = $"{cloudText}{region}{tenant}{providerReserved}";
 
-        byte[] providerSignature = Convert.FromBase64String(options.FixedSignature.ToUrlSafe());
+        string providerSignature = options.FixedSignature;
 
         for (int i = 0; i < options.Count; i++)
         {
-
-            byte[] keyBytes = cask.GenerateKeyBytes(providerSignature,
-                                                   "99",
-                                                   reserved,
-                                                   secretEntropyInBytes: options.SecretEntropyInBytes,
-                                                   testChar: default);
+            CaskKey key = Cask.GenerateKey(providerSignature,
+                                           "99",
+                                           providerData,
+                                           secretEntropyInBytes: options.SecretEntropyInBytes);
 
 
-            string key = Convert.ToBase64String(keyBytes).ToUrlSafe();
-
-            string validity = cask.IsCask(key) ? "Valid Key   " : "INVALID KEY ";
+            string validity = Cask.IsCask(key.ToString()) ? "Valid Key   " : "INVALID KEY ";
             Console.WriteLine($"{validity}: {key}");
 
-            keyBytes = Convert.FromBase64String(key.FromUrlSafe());
-            string hash = cask.GenerateHash(derivationInput, keyBytes, options.SecretEntropyInBytes);
-
-            validity = cask.IsCask(hash) ? "Valid Hash  " : "INVALID HASH";
+            CaskKey hash = Cask.GenerateHash(derivationInput, key, options.SecretEntropyInBytes);
+            validity = Cask.IsCask(hash.ToString()) ? "Valid Hash  " : "INVALID HASH";
             Console.WriteLine($"{validity}: {hash}");
         }
 
@@ -53,7 +49,7 @@ public class GenerateCommand
             return "AAAAA";
         }
 
-        byte[] hashed = CaskUtilityApi.Sha256.ComputeHash(Encoding.UTF8.GetBytes(text));
-        return Convert.ToBase64String(hashed).ToUrlSafe().Substring(0, 5);
+        byte[] hashed = SHA256.HashData(Encoding.UTF8.GetBytes(text));
+        return Base64Url.EncodeToString(hashed)[..5];
     }
 }

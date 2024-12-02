@@ -18,7 +18,7 @@ jobs:
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 9.0.x
 
     - name: Show dotnet info
       run: dotnet --info
@@ -26,8 +26,17 @@ jobs:
     - name: Restore
       run: dotnet restore src
 
-    - name: Build
+    - name: Build (Debug)
+      run: dotnet build src -c Debug --no-restore
+
+    - name: Test (Debug)
+      run: dotnet test src -c Debug --no-build
+
+    - name: Build (Release)
       run: dotnet build src -c Release --no-restore
 
-    - name: Test
+    - name: Test (Release)
       run: dotnet test src -c Release --no-build
+
+    - name: Check Formatting
+      run: dotnet format --verify-no-changes src

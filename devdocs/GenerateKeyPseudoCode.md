@@ -7,7 +7,7 @@
     - Count of bytes of entropy (16 - 32) + 
     - 12 bytes (for fixed signatures + timestamp)
     - [0 - N] bytes for provider reserved data
-    - 3 bytes (for partial HMACSHA256 hash of key)
+    - 3 bytes (for partial CRC32 hash of key)
 1. Generate at least 128 bits of random data (256 recommended and required for MS)
 1. Copy random bytes to start of key
 1. Copy provider reserved bytes to key
