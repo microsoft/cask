@@ -9,6 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CommonAnnotatedSecurityKeys\CommonAnnotatedSecurityKeys.csproj" />
+    <ProjectReference Include="..\Cask\Cask.csproj" />
   </ItemGroup>
 </Project>

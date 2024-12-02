@@ -1,8 +1,7 @@
 ﻿
 using CommonAnnotatedSecurityKeys;
 
-
-namespace Tests.CommonAnnotatedSecurityKeys;
+namespace CommonAnnotatedSecurityKeys.Tests;
 
 public class CSharpCaskTests : CaskTestsBase
 {

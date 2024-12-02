@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../../docs/CSharp_ReleaseHistory.md" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="true" />
+    <None Include="../../docs/CSharp_ReleaseHistory.md" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="true" />
   </ItemGroup>
 
   <ItemGroup>

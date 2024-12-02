@@ -9,6 +9,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <ArtifactsPath>$(MSBuildThisFileDirectory)..\..\bld</ArtifactsPath>
+    <RootNamespace>$(MSBuildProjectName.Replace('Cask', 'CommonAnnotatedSecurityKeys'))</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Label="AssemblyAttributes">
@@ -25,7 +26,6 @@
 
   <PropertyGroup Label="Package">
     <Authors>Microsoft</Authors>
-    <RootNamespace>CommonAnnotatedSecurityKeys</RootNamespace>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/microsoft/cask</PackageProjectUrl>
