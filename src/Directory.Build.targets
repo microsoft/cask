@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <!-- For .NETFramework/.NETStandard allow nullable annotations, but don't enable analysis.-->
+    <!-- For .NETFramework, allow nullable annotations, but don't enable analysis.-->
     <Nullable>annotations</Nullable>
     <!-- False positives due to polyfill technique for 'IDE0005:Remove Unecessary Usings'. -->
     <NoWarn>$(NoWarn);IDE0005</NoWarn>

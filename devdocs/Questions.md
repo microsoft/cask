@@ -1,6 +1,6 @@
 # Questions
 1. MD5 vs. CRC32 (or something else)?
-   - CRC32 is a good choice, we're using it for it's intended purpose.
+   - CRC32 is a good choice, we're using it for its intended purpose.
    - Can we make room for all four bytes? There isn't a lot of prior art for truncating CRC-32 like SHAs.
    - Reserving a byte or two for future use by us might be a good idea anyway?
    - Possible uses:
@@ -15,7 +15,7 @@
 1. Should we use a new timestamp in GenerateHash and mask it out in CompareHash?
    - The first draft created a new timestamp, but didn't mask so it would fail if the month rolled over between GenerateHash and CompareHash.
    - The second draft copies the timestamp from the secret when generating a hash.
-   - It feels wrong for something called "GenerateHash" to not be deterministic so I think copying is better.
+   - It feels wrong for something called "GenerateHash" to not be deterministic.
 
 1. Are the limits on entropy and provider data length reasonable? 
    - Review Limits.cs.

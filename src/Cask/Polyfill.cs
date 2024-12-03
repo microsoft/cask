@@ -6,7 +6,7 @@
  *
  * "In software development, a polyfill is code that implements a new standard
  * feature of a deployment environment within an old version of that environment
- * that does not natively support the feature. 
+ * that does not natively support the feature."
  *
  * This file is only compiled when targeting legacy .NET Framework and fills in
  * BCL gaps there.
@@ -34,7 +34,7 @@
  *    that support .NET Framework before attempting to write it yourself.
  *
  *  - Use the Polyfill namespace when types exist on .NET Framework, but are
- *    missing functionality.Use extension methods to add instance methods, and
+ *    missing functionality. Use extension methods to add instance methods, and
  *    only resort to shadowing types to add static methods.
  *
  *  - Use the real BCL namespace to backport types that don't exist at all on

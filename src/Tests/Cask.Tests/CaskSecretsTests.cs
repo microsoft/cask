@@ -47,7 +47,7 @@ public abstract class CaskTestsBase
         // after modifiying a key, but it needs to be easier to reuse in more
         // specific tests. It's hard because the IsValid check has a lot of
         // redunancy (not a bad thing!). For example, if you change the length
-        // it will can fail alignment, not just checksum. This test and similar
+        // it can fail alignment, not just checksum. This test and similar
         // trivial tests below were stepped through to check code coverage of
         // current implementation, but they are susceptible to starting to pass
         // for the wrong reason if/when implementation changes.
@@ -105,7 +105,7 @@ public abstract class CaskTestsBase
     [InlineData(null)]
     [InlineData("")]
     [InlineData("A")]   // Too short
-    [InlineData("ABC")] // Too lng
+    [InlineData("ABC")] // Too long
     [InlineData("??")]  // Invalid base64
     public void CaskSecrets_GenerateKey_InvalidAllocatorCode(string? allocatorCode)
     {

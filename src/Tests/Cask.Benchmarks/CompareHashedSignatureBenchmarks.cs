@@ -37,7 +37,7 @@ public class CompareHashedSignatureBenchmarks
         byte[] keyBytes = Base64Url.DecodeFromChars(key.ToString().AsSpan());
         byte[] hashBytes = new byte[HMACSHA256.HashSizeInBytes];
         HMACSHA256.HashData(keyBytes, s_testProviderSignatureBytes, hashBytes);
-        Span<byte> computedHashBytes = stackalloc byte[32];
+        Span<byte> computedHashBytes = stackalloc byte[HMACSHA256.HashSizeInBytes];
 
         for (int i = 0; i < Iterations; i++)
         {

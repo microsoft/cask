@@ -14,7 +14,7 @@ namespace CommonAnnotatedSecurityKeys;
 public readonly partial record struct CaskKey
 {
     // PERF: Do not add more fields. The layout here is intentionally identical
-    // to that of a string reference.This means that this type provides type
+    // to that of a string reference. This means that this type provides type
     // safety without any runtime overhead after creation.
     private readonly string _key;
 
