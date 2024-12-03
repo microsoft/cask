@@ -64,7 +64,7 @@ public class CSharpCaskTests : CaskTestsBase
 
         Mock ICask.MockUtcNow(UtcNowFunc getUtcNow)
         {
-            return CSharpCask.MockUtcNow(getUtcNow: getUtcNow);
+            return CSharpCask.MockUtcNow(getUtcNow);
         }
     }
 }
