@@ -28,3 +28,4 @@
 1. Code coverage reporting in CI
 1. Unit tests for generate/compare hash
 1. Test against base64 input with whitespace and padding, which we must disallow.
+1. Name regex captures and add more regex test coverage.
