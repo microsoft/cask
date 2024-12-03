@@ -160,8 +160,10 @@ indent_size = 4
 tab_width = 4
 
 # New line preferences
-# VS and dotnet format conspire to require us to pick one so we let 2/3 supported OSes win.
-# .gitattributes is configured to make this work on Windows too
+#
+# VS and dotnet format conspire to require us to pick one so we let two thirds
+# of supported OSes win. .gitattributes is configured to make this work on
+# Windows too, irrespective of .gitconfig
 end_of_line = lf
 insert_final_newline = false
 
