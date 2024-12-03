@@ -25,7 +25,9 @@
 # TODOs
 1. Add hard-coded keys for testing.
 1. Stress, concurrency, performance, fuzzing, RNG behavior testing.
-1. Code coverage reporting in CI
+1. Code coverage reporting in PR validation.
 1. Unit tests for generate/compare hash
 1. Test against base64 input with whitespace and padding, which we must disallow.
 1. Name regex captures and add more regex test coverage.
+1. Move magic numbers/chars to constants.
+1. Use named arguments or better variables with good names for all string arguments in tests.
