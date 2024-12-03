@@ -14,11 +14,11 @@
 
 1. Should we use a new timestamp in GenerateHash and mask it out in CompareHash?
    - The first draft created a new timestamp, but didn't mask so it would fail if the month rolled over between GenerateHash and CompareHash.
-   - The second draft copies the timestamp from the secret when generating a hash. 
+   - The second draft copies the timestamp from the secret when generating a hash.
    - It feels wrong for something called "GenerateHash" to not be deterministic so I think copying is better.
 
 1. Are the limits on entropy and provider data length reasonable? 
-   - Review Limits.cs. 
+   - Review Limits.cs.
    - Keeping them small allows unconditional stackalloc.
    - These can be increased later.
 
@@ -27,4 +27,4 @@
 1. Stress, concurrency, performance, fuzzing, RNG behavior testing.
 1. Code coverage reporting in CI
 1. Unit tests for generate/compare hash
-1. Harden against whitespace and padding in base64 input.
+1. Test against base64 input with whitespace and padding, which we must disallow.

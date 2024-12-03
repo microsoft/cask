@@ -41,9 +41,9 @@ public static class Cask
             return false;
         }
 
-        int maxLength = Base64Url.GetMaxDecodedLength(key.Length);
-        Debug.Assert(maxLength < MaxKeyLengthInBytes);
-        Span<byte> keyBytes = stackalloc byte[maxLength];
+        int lengthInBytes = Base64CharsToBytes(key.Length);
+        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
+        Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
         OperationStatus status = Base64Url.DecodeFromChars(
             key,
@@ -55,12 +55,13 @@ public static class Cask
         Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == key.Length);
         Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
 
-        if (status != OperationStatus.Done)
+        // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
+        //       input has padding or whitespace, which we don't allow.
+        if (status != OperationStatus.Done || bytesWritten != lengthInBytes)
         {
             return false;
         }
 
-        keyBytes = keyBytes[..bytesWritten];
         return IsCaskBytes(keyBytes);
     }
 
@@ -69,7 +70,8 @@ public static class Cask
     /// </summary>
     public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUTF8)
     {
-        // NOTE: Since all valid Cask keys are ASCII-safe, we use the same UTF-16 char limits as byte limits..
+        // NOTE: Since all valid Cask keys are ASCII-safe, we use the we can
+        //       safely apply `char` limits as `byte` limits.
         if (keyUTF8.Length < MinKeyLengthInChars || keyUTF8.Length > MaxKeyLengthInChars || !Is4CharAligned(keyUTF8.Length))
         {
             return false;
@@ -81,9 +83,9 @@ public static class Cask
             return false;
         }
 
-        int maxLength = Base64Url.GetMaxDecodedLength(keyUTF8.Length);
-        Debug.Assert(maxLength < MaxKeyLengthInBytes);
-        Span<byte> keyBytes = stackalloc byte[maxLength];
+        int lengthInBytes = Base64CharsToBytes(keyUTF8.Length);
+        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
+        Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
         OperationStatus status = Base64Url.DecodeFromUtf8(
             keyUTF8,
@@ -95,12 +97,13 @@ public static class Cask
         Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == keyUTF8.Length);
         Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
 
-        if (status != OperationStatus.Done)
+        // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
+        //       input has padding or whitespace, which we don't allow.
+        if (status != OperationStatus.Done || bytesWritten != lengthInBytes)
         {
             return false;
         }
 
-        keyBytes = keyBytes[..bytesWritten];
         return IsCaskBytes(keyBytes);
     }
 

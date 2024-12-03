@@ -69,6 +69,16 @@ public abstract class CaskTestsBase
     }
 
     [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_Whitespace()
+    {
+        // Replace first 4 characters of secret with whitespace. Whitespace is
+        // allowed by `Base64Url` API but is invalid in a Cask key.
+        string key = $"    {Cask.GenerateKey("TEST", "88")[4..]}";
+        bool valid = Cask.IsCask(key);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
+    }
+
+    [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey("TEST", "88");
@@ -151,7 +161,6 @@ public abstract class CaskTestsBase
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
-
 
     [Fact]
     public void CaskSecrets_GenerateKey_DeterministicUsingMocks()
