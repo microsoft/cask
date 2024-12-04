@@ -212,7 +212,7 @@ public abstract class CaskTestsBase
                                           allocatorCode: "88",
                                           providerData: "ABCD");
 
-            IsCaskValidate(key.ToString());
+            IsCaskValidate(key);
         }
     }
 

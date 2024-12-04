@@ -40,7 +40,9 @@
  *  - Use the real BCL namespace to backport types that don't exist at all on
  *    .NET Framework.
  *
- * - Only resort to #if if you have exhausted all other options.
+ *  - Keep everything in this file `internal`.
+ *
+ *  - Only resort to #if if you have exhausted all other options.
  */
 
 #if NET

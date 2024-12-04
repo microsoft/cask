@@ -32,9 +32,9 @@ public interface ICask
                         string secret,
                         int secretEntropyInBytes = 32);
 
-    bool CompareHash(byte[] candidateHash,
+    bool CompareHash(string candidateHash,
                      byte[] derivationInput,
-                     byte[] secret,
+                     string secret,
                      int secretEntropyInBytes = 32);
 
     internal Mock MockUtcNow(UtcNowFunc getUtcNow);

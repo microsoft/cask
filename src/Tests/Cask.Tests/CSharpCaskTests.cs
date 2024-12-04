@@ -15,21 +15,20 @@ public class CSharpCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public bool CompareHash(byte[] candidateHash,
+        public bool CompareHash(string candidateHash,
                                 byte[] derivationInput,
-                                byte[] secret,
+                                string secret,
                                 int secretEntropyInBytes = 32)
         {
-            //return CSharpCask.CompareHash(candidateHash, derivationInput, secret, secretEntropyInBytes);
-            throw new NotImplementedException();
+            return CSharpCask.CompareHash(CaskKey.Parse(candidateHash), derivationInput, CaskKey.Parse(secret), secretEntropyInBytes);
         }
 
         public string GenerateHash(byte[] derivationInput,
-                                   string key,
+                                   string secret,
                                    int secretEntropyInBytes = 32)
         {
-            //return CSharpCask.GenerateHash(derivationInput, secret, secretEntropyInBytes);
-            throw new NotImplementedException();
+            CaskKey hash = CSharpCask.GenerateHash(derivationInput, CaskKey.Parse(secret), secretEntropyInBytes);
+            return hash.ToString();
         }
 
         public string GenerateKey(string providerSignature,

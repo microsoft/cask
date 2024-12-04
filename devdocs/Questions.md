@@ -22,6 +22,9 @@
    - Keeping them small allows unconditional stackalloc.
    - These can be increased later.
 
+1. We need to think about not overriding ToString() on CaskKey.
+   - Consider something like .SensitiveValue as the only way to get the string so people don't print it without thinking or try to use the default-initialed ToString() which musn't throw as a key.
+
 # TODOs
 1. Add hard-coded keys for testing.
 1. Stress, concurrency, performance, fuzzing, RNG behavior testing.
