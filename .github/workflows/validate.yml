@@ -10,6 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
+        configuration: [debug, release]
     runs-on: ${{matrix.os}}
     steps:
     - name: Check out code
@@ -29,14 +30,8 @@ jobs:
     - name: Check Formatting
       run: dotnet format --verify-no-changes src
 
-    - name: Build (Debug)
-      run: dotnet build src -c Debug --no-restore
+    - name: Build
+      run: dotnet build src -c ${{matrix.configuration}} --no-restore
 
-    - name: Test (Debug)
-      run: dotnet test src -c Debug --no-build
-
-    - name: Build (Release)
-      run: dotnet build src -c Release --no-restore
-
-    - name: Test (Release)
-      run: dotnet test src -c Release --no-build
+    - name: Test
+      run: dotnet test src -c ${{matrix.configuration}} --no-build

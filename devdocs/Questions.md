@@ -34,7 +34,6 @@
 1. Name regex captures and add more regex test coverage.
 1. Move magic numbers/chars to constants.
 1. Use named arguments or better variables with good names for all string arguments in tests.
-1. Use matrix to split debug/release tests onto different runs
 1. Reduce repetition between UTF-8 and UTF-16 code paths if performant. If not performant, comment why there is a bit of repetition. Also consider risk of misleading to use UTF-8 API on base64-decoded bytes before changing this.
 1. Run benchmarks somewhere on regular basis.
 1. Make tests for invalid keys more resilient to implementation changes.
