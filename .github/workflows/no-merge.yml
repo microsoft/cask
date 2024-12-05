@@ -6,6 +6,8 @@ on:
       - main
     types:
       - opened
+      - reopened
+      - edited
       - labeled
       - unlabeled
 
