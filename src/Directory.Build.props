@@ -50,7 +50,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <!-- Share .NET Framework polyfilss with other projects -->
+  <!-- Share .NET Framework polyfills with other projects -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildProjectName)' != 'Cask'">
     <Compile Include="$(MSBuildThisFileDirectory)Cask\Polyfill.cs" Visible="false" />
   </ItemGroup>

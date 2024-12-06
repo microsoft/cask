@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Cask.Cli",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/Cask.Cli/Cask.cli.csproj",
+    },
+    {
+      "name": "Debug Cask.Benchmarks",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/Tests/Cask.Benchmarks/Cask.Benchmarks.csproj",
+    },
+  ]
+}

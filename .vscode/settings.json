@@ -1,4 +1,20 @@
 {
+  "dotnet.automaticallyCreateSolutionInWorkspace": false,
+  "dotnet.defaultSolution": "src/Cask.sln",
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  "files.encoding": "utf8",
   "files.eol": "\n",
   "files.insertFinalNewline": true,
+  "files.exclude": {
+    "bld/**": true,
+    "src/.vs/**": true,
+    "src/Key.snk": true
+  },
+  "[csharp]": {
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.tabSize": 4,
+  },
 }

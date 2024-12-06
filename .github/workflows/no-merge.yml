@@ -1,5 +1,4 @@
 name: Check no-merge label
-
 on:
   pull_request:
     branches:

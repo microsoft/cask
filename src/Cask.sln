@@ -15,7 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{AA9664D7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{0C3A2105-9369-461A-92AB-3D39CA120B83}"
 	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
+		..\.editorconfig = ..\.editorconfig
+		Cask.lutconfig = Cask.lutconfig
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.rsp = Directory.Build.rsp
 		Directory.Build.targets = Directory.Build.targets
@@ -32,6 +33,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BD909936-A204-4B21-8356-EAAEE1958945}"
 	ProjectSection(SolutionItems) = preProject
 		..\docs\CSharp_ReleaseHistory.md = ..\docs\CSharp_ReleaseHistory.md
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevDocs", "DevDocs", "{51A4B75A-58BC-4241-8A5C-50297D857233}"
@@ -42,6 +44,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevDocs", "DevDocs", "{51A4
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cask.Benchmarks", "Tests\Cask.Benchmarks\Cask.Benchmarks.csproj", "{FB74046B-2FF6-4316-85B1-39A28D945A18}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{2103FEC5-A66C-48B1-9262-D0CE19CC1E7A}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\no-merge.yml = ..\.github\workflows\no-merge.yml
+		..\.github\workflows\validate.yml = ..\.github\workflows\validate.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +81,7 @@ Global
 		{AA9664D7-21A5-4941-BE8A-D62765F58CE6} = {0C3A2105-9369-461A-92AB-3D39CA120B83}
 		{7935CC28-E862-416C-B417-A043703C1A4F} = {3BB9E62C-7DB6-4800-9D97-69E544F5BB52}
 		{FB74046B-2FF6-4316-85B1-39A28D945A18} = {3BB9E62C-7DB6-4800-9D97-69E544F5BB52}
+		{2103FEC5-A66C-48B1-9262-D0CE19CC1E7A} = {0C3A2105-9369-461A-92AB-3D39CA120B83}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3C6E0D82-3180-4C2D-91AE-EBC2A066168E}

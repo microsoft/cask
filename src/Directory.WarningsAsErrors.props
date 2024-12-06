@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <!--
     NOTE: We only turn on warnings-as-errors in Release because it hurts
     iteration time in the IDE to error out while the code is still
