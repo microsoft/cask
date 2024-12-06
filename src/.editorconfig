@@ -4,6 +4,10 @@ root = true
 [*]
 indent_style = space
 
+# .gitattributes is configured to make this work on Windows too, irrespective of git config
+end_of_line = lf
+insert_final_newline = true
+
 # Xml files
 [*.xml]
 indent_size = 2
@@ -158,14 +162,6 @@ dotnet_diagnostic.CS1591.severity = silent
 # Indentation and spacing
 indent_size = 4
 tab_width = 4
-
-# New line preferences
-#
-# VS and dotnet format conspire to require us to pick one so we let two thirds
-# of supported OSes win. .gitattributes is configured to make this work on
-# Windows too, irrespective of .gitconfig
-end_of_line = lf
-insert_final_newline = false
 
 # Organize usings
 dotnet_separate_import_directive_groups = true
