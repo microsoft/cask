@@ -5,31 +5,24 @@ using System.Buffers.Text;
 
 using BenchmarkDotNet.Attributes;
 
+using static CommonAnnotatedSecurityKeys.Benchmarks.BenchmarkTestData;
+
 namespace CommonAnnotatedSecurityKeys.Benchmarks;
 
 [MemoryDiagnoser]
 public class IsCaskBenchmarks
 {
-    private const int Iterations = 100000;
-    private const string TestProviderSignature = "TEST";
-    private static readonly string s_key = Cask.GenerateKey(TestProviderSignature, "99").ToString();
-    private static readonly byte[] s_keyBytes = Base64Url.DecodeFromChars(s_key.AsSpan());
+    private static readonly byte[] s_testCaskKeyBytes = Base64Url.DecodeFromChars(TestCaskSecret.AsSpan());
 
     [Benchmark]
-    public void UseIsCaskString()
+    public bool IsCaskString()
     {
-        for (int i = 0; i < Iterations; i++)
-        {
-            Cask.IsCask(s_key);
-        }
+        return Cask.IsCask(TestCaskSecret);
     }
 
     [Benchmark]
-    public void UseIsCaskBytes()
+    public bool IsCaskBytes()
     {
-        for (int i = 0; i < Iterations; i++)
-        {
-            Cask.IsCaskBytes(s_keyBytes);
-        }
+        return Cask.IsCaskBytes(s_testCaskKeyBytes);
     }
 }

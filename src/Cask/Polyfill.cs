@@ -52,31 +52,44 @@
 // out of the sea of gray. If you see this error, fix the .cproj.
 #error This file should be excluded from compilation when targeting modern .NET.
 #endif
-
-global using Polyfill;
-
-global using static Polyfill.ArgumentValidation;
-
-global using HMACSHA256 = Polyfill.HMACSHA256;
-global using RandomNumberGenerator = Polyfill.RandomNumberGenerator;
-
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using BclHMACSHA256 = System.Security.Cryptography.HMACSHA256;
-using BclRandomNumberGenerator = System.Security.Cryptography.RandomNumberGenerator;
+using Bcl_HMACSHA256 = System.Security.Cryptography.HMACSHA256;
+using Bcl_SHA256 = System.Security.Cryptography.SHA256;
 
 namespace Polyfill
 {
     internal static class Extensions
     {
-        public static string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
+        public static unsafe string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
         {
-            return encoding.GetString(bytes.ToArray());
+            fixed (byte* ptr = bytes)
+            {
+                return encoding.GetString(ptr, bytes.Length);
+            }
+        }
+
+        public static unsafe int GetByteCount(this Encoding encoding, ReadOnlySpan<char> chars)
+        {
+            fixed (char* ptr = chars)
+            {
+                return encoding.GetByteCount(ptr, chars.Length);
+            }
+        }
+
+        public static unsafe int GetBytes(this Encoding encoding, ReadOnlySpan<char> chars, Span<byte> bytes)
+        {
+            fixed (char* charPtr = chars)
+            fixed (byte* bytePtr = bytes)
+            {
+                return encoding.GetBytes(charPtr, chars.Length, bytePtr, bytes.Length);
+            }
         }
     }
 
@@ -107,7 +120,7 @@ namespace Polyfill
         }
 
         [DoesNotReturn]
-        internal static void ThrowArgumentNull(string? paramName)
+        private static void ThrowArgumentNull(string? paramName)
         {
             throw new ArgumentNullException(paramName);
         }
@@ -125,18 +138,74 @@ namespace Polyfill
         }
     }
 
+    internal static class ByteArrayPool
+    {
+        private static readonly ArrayPool<byte> s_pool = ArrayPool<byte>.Create(
+            maxArrayLength: CommonAnnotatedSecurityKeys.Limits.MaxStackAlloc,
+            maxArraysPerBucket: Environment.ProcessorCount
+        );
+
+        public static byte[] Rent(int length)
+        {
+            return s_pool.Rent(length);
+        }
+
+        public static void Return(byte[] array)
+        {
+            s_pool.Return(array);
+        }
+    }
+
     internal static class RandomNumberGenerator
     {
+        // RNGCryptoServiceProvider is documented to be thread-safe so we can
+        // use a single shared instance. Note, however, that
+        // `RandomNumberGenerator.Create()` is not required to return a
+        // thread-safe implementation so we must not use it here.
+        //
+        // https://github.com/dotnet/dotnet-api-docs/issues/3741#issuecomment-718989978
+        // https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=netframework-4.7.2#thread-safety
+        private static readonly RNGCryptoServiceProvider s_rng = new();
+
+
         public static void Fill(Span<byte> buffer)
         {
-            byte[] bytes = new byte[buffer.Length];
+            byte[] array = ByteArrayPool.Rent(buffer.Length);
+            s_rng.GetBytes(array, 0, buffer.Length);
+            array.AsSpan()[..buffer.Length].CopyTo(buffer);
+            ByteArrayPool.Return(array);
+        }
+    }
 
-            using (var rng = BclRandomNumberGenerator.Create())
+    internal static class Hash
+    {
+        private const int StreamBufferSizeInBytes = 4096;
+
+        public static void Compute(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
+        {
+            if (data.Length > StreamBufferSizeInBytes)
             {
-                rng.GetBytes(bytes);
+                ComputeWithStream(algorithm, data, destination);
+                return;
             }
 
-            bytes.CopyTo(buffer);
+            byte[] dataArray = ByteArrayPool.Rent(data.Length);
+            data.CopyTo(dataArray);
+            byte[] hash = algorithm.ComputeHash(dataArray, 0, data.Length);
+            ByteArrayPool.Return(dataArray);
+            hash.CopyTo(destination);
+        }
+
+        private static unsafe int ComputeWithStream(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
+        {
+            byte[] hash;
+            fixed (byte* dataPtr = data)
+            {
+                using var stream = new UnmanagedMemoryStream(dataPtr, data.Length);
+                hash = algorithm.ComputeHash(stream);
+            }
+            hash.CopyTo(destination);
+            return hash.Length;
         }
     }
 
@@ -144,28 +213,58 @@ namespace Polyfill
     {
         public const int HashSizeInBits = 256;
         public const int HashSizeInBytes = HashSizeInBits / 8;
+        private const int BlockSize = 64;
+
+#pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955
+        [ThreadStatic] private static Bcl_HMACSHA256 t_hmac;
+#pragma warning restore IDE1006
 
         public static int HashData(ReadOnlySpan<byte> key, ReadOnlySpan<byte> source, Span<byte> destination)
         {
-            if (destination.Length < HashSizeInBytes)
+            ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
+            t_hmac ??= new Bcl_HMACSHA256(key: []);
+            t_hmac.Key = GetKeyArray(key);
+            Hash.Compute(t_hmac, source, destination);
+            return HashSizeInBytes;
+        }
+
+        private static byte[] GetKeyArray(ReadOnlySpan<byte> key)
+        {
+            // HMACSHA256 requires that we give it a key array with the exact
+            // key length, so we can't pool the key array.
+            if (key.Length < BlockSize)
             {
-                throw new ArgumentException("Destination buffer is too small.", nameof(destination));
+                return key.ToArray();
             }
 
-            byte[] hash;
-            using (var hmac = new BclHMACSHA256(key.ToArray()))
-            {
-                hash = hmac.ComputeHash(source.ToArray());
-            }
+            // Keys larger than the block size are hashed. We do this ourselves
+            // to reduce allocations and copying while marshaling from span to
+            // byte[].
+            byte[] keyArray = new byte[SHA256.HashSizeInBytes];
+            SHA256.HashData(key, keyArray);
+            return keyArray;
+        }
+    }
 
-            Debug.Assert(hash.Length == HashSizeInBytes);
-            hash.CopyTo(destination);
+    internal static class SHA256
+    {
+        public const int HashSizeInBits = 256;
+        public const int HashSizeInBytes = HashSizeInBits / 8;
+
+#pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955
+        [ThreadStatic] private static Bcl_SHA256 t_sha;
+#pragma warning restore IDE1006
+
+        public static int HashData(ReadOnlySpan<byte> source, Span<byte> destination)
+        {
+            ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
+            t_sha ??= Bcl_SHA256.Create();
+            Hash.Compute(t_sha, source, destination);
             return HashSizeInBytes;
         }
     }
 }
 
-#if CASK
 namespace CommonAnnotatedSecurityKeys
 {
     public partial record struct CaskKey
@@ -179,7 +278,6 @@ namespace CommonAnnotatedSecurityKeys
         }
     }
 }
-#endif
 
 namespace System.Security.Cryptography
 {
@@ -225,42 +323,54 @@ namespace System.Security.Cryptography
 
 namespace System.Runtime.CompilerServices
 {
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
     internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute { }
 }
 
 namespace System.Diagnostics.CodeAnalysis
 {
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Property, Inherited = false)]
     internal sealed class AllowNullAttribute : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Property, Inherited = false)]
     internal sealed class DisallowNullAttribute : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.ReturnValue, Inherited = false)]
     internal sealed class MaybeNullAttribute : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.ReturnValue, Inherited = false)]
     internal sealed class NotNullAttribute : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
     internal sealed class MaybeNullWhenAttribute(bool returnValue) : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
     internal sealed class NotNullWhenAttribute(bool returnValue) : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.ReturnValue, AllowMultiple = true, Inherited = false)]
     internal sealed class NotNullIfNotNullAttribute(string parameterName) : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     internal sealed class DoesNotReturnAttribute : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
     internal sealed class DoesNotReturnIfAttribute(bool parameterValue) : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
     internal sealed class MemberNotNullAttribute(params string[] members) : Attribute { }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
     internal sealed class MemberNotNullWhenAttribute(bool returnValue, params string[] members) : Attribute { }
 }
@@ -268,8 +378,9 @@ namespace System.Diagnostics.CodeAnalysis
 namespace System.Text.RegularExpressions
 {
     [Conditional("NET")]
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public sealed class GeneratedRegexAttribute(string pattern, RegexOptions options = RegexOptions.None) : Attribute { }
+    internal sealed class GeneratedRegexAttribute(string pattern, RegexOptions options = RegexOptions.None) : Attribute { }
 }
 
 #pragma warning restore IDE0060 // Remove unused parameter

@@ -3,6 +3,7 @@
 
 using System.Buffers.Text;
 using System.IO.Hashing;
+using System.Text;
 
 using Xunit;
 
@@ -266,5 +267,39 @@ public abstract class CaskTestsBase
             result = Cask.IsCaskBytes(keyBytes);
             Assert.False(result, $"'IsCask(byte[])' unexpectedly succeeded after invalidating checksum: {modifiedKey}. Original key was: {key}");
         }
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_DeterministicAndNotTimestampSensitive()
+    {
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88");
+        string hash = Cask.GenerateHash(derivationInput, secret);
+        using Mock mock = Cask.MockUtcNow(() => DateTimeOffset.UtcNow.AddMonths(13));
+        bool result = Cask.CompareHash(hash, derivationInput, secret);
+        Assert.True(result, $"'CompareHash' failed when mock time advanced.");
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_UnequalLength()
+    {
+        using Mock mock = Cask.MockFillRandom(_ => { /* Leave zeros */ });
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret1 = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88");
+        string secret2 = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", providerData: "OPTIONAL");
+        string hash = Cask.GenerateHash(derivationInput, secret1);
+        bool result = Cask.CompareHash(hash, derivationInput, secret2);
+        Assert.False(result, $"'CompareHash' should not have succeeded. Two different secrets were used.");
+    }
+
+    [Fact]
+    public void CaskSecrets_GenerateHash_DerivationInputTooLong()
+    {
+        byte[] derivationInput = new byte[MaxDerivationInputLengthInBytes + 1];
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88");
+
+        Assert.Throws<ArgumentException>(
+            nameof(derivationInput),
+            () => Cask.GenerateHash(derivationInput, secret));
     }
 }

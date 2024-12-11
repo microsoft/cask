@@ -11,6 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ArtifactsPath>$(MSBuildThisFileDirectory)..\bld</ArtifactsPath>
   </PropertyGroup>
 
@@ -49,11 +50,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-
-  <!-- Share .NET Framework polyfills with other projects -->
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildProjectName)' != 'Cask'">
-    <Compile Include="$(MSBuildThisFileDirectory)Cask\Polyfill.cs" Visible="false" />
-  </ItemGroup>
 
   <Import Project="Directory.WarningsAsErrors.props" />
 </Project>
