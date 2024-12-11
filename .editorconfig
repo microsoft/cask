@@ -137,8 +137,19 @@ csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimenta
 #### Analyzers ####
 # Keep this last among C# settings so the IDE will add new configuration here.
 
-# Treat everything as warning by default. They will be treated as errors in Release builds.
-dotnet_analyzer_diagnostic.severity = warning
+# Treat everything but style as warning by default. They will be treated as errors in Release builds.
+# Don't set anything for category-Style as that will override any `:silent` configuration for style preferences above.
+dotnet_analyzer_diagnostic.category-Design.severity = warning
+dotnet_analyzer_diagnostic.category-Documentation.severity = warning
+dotnet_analyzer_diagnostic.category-Globalization.severity = warning
+dotnet_analyzer_diagnostic.category-Interoperability.severity = warning
+dotnet_analyzer_diagnostic.category-Maintainability.severity = warning
+dotnet_analyzer_diagnostic.category-Naming.severity = warning
+dotnet_analyzer_diagnostic.category-Performance.severity = warning
+dotnet_analyzer_diagnostic.category-SingleFile.severity = warning
+dotnet_analyzer_diagnostic.category-Reliability.severity = warning
+dotnet_analyzer_diagnostic.category-Security.severity = warning
+dotnet_analyzer_diagnostic.category-Usage.severity = warning
 
 # IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = silent
