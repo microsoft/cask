@@ -52,6 +52,7 @@ public sealed class TestFilter : XunitTestFramework
 
         return true;
     }
+
     private static bool BuiltWithCppSupport()
     {
         foreach (AssemblyMetadataAttribute attribute in Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>())
