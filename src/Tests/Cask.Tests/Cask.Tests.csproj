@@ -21,7 +21,7 @@
     <AssemblyMetadata Include="BuiltWithCppSupport" Value="true" />
   </ItemGroup>
 
-  <Target Name="BuildCppProjectReference" BeforeTargets="DispatchToInnerBuilds">
+  <Target Name="BuildCppProjectReference" BeforeTargets="DispatchToInnerBuilds" Condition="'$(InnerTargets)' == 'Build'">
     <MSBuild Projects="@(CppProjectReference)" />
   </Target>
 
