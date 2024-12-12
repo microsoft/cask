@@ -1,9 +1,5 @@
-# Use unix line endings always, even on Windows
-*                            text=auto eol=lf
-
-# Exceptions to above for files that VS saves with CRLF always
-*.sln                        eol=crlf
-*.lutconfig                  eol=crlf
+# Normalize line endings to LF in repo, checkout CRLF on Windows
+*                            text=auto
 
 # Allow comments in JSON in GitHub rendering
 *.json                       linguist-language=JSON-with-Comments
