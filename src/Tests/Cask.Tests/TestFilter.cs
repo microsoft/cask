@@ -14,6 +14,8 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 
 public sealed class TestFilter : XunitTestFramework
 {
+    private static readonly bool s_builtWithCppSupport = IsBuiltWithCppSupport();
+
     public TestFilter(IMessageSink messageSink) : base(messageSink) { }
 
     protected override ITestFrameworkDiscoverer CreateDiscoverer(IAssemblyInfo assemblyInfo)
@@ -37,7 +39,7 @@ public sealed class TestFilter : XunitTestFramework
                 return false;
             }
 
-            if (!BuiltWithCppSupport())
+            if (!s_builtWithCppSupport)
             {
                 Console.WriteLine("INFO: Skipping C++ tests because the test assembly was not built with C++ support.");
                 Console.WriteLine("      Use Visual Studio or `msbuild` to build with C++ support.");
@@ -53,7 +55,7 @@ public sealed class TestFilter : XunitTestFramework
         return true;
     }
 
-    private static bool BuiltWithCppSupport()
+    private static bool IsBuiltWithCppSupport()
     {
         foreach (AssemblyMetadataAttribute attribute in Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>())
         {
