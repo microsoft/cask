@@ -1,22 +1,14 @@
 <Project>
   <Import Project="..\Directory.Build.props" />
 
-  <PropertyGroup>
-    <!--
-      Disable some rules for tests due to false positives:
-       * CA1515: Consider making public types internal
-       * CA1707: Identifiers should not contain underscores.
-       * CA1822: Mark members as static
-     
-     Disable this because internals visible to can conflict with shared internal source
-       * CS0436: The type 'X' in 'Y' conflicts with the imported type 'X' in 'Z'. Using the type defined in 'Y'.
-     -->
-    <NoWarn>$(NoWarn);CA1515;CA1707;CA1822;CS0436</NoWarn>
-  </PropertyGroup>
-
   <ItemGroup Label="Common Test-Only Dependencies" Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <PackageReference Include="Microsoft.NET.Test.Sdk" PrivateAssets="all" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
     <PackageReference Include="xunit" />
+  </ItemGroup>
+
+  <!-- Share .NET Framework polyfill global usings with other projects -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildProjectName)' != 'Cask'">
+    <Compile Include="$(MSBuildThisFileDirectory)..\Cask\Polyfill.GlobalUsings.cs" Visible="false" />
   </ItemGroup>
 </Project>

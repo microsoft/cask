@@ -3,22 +3,39 @@
 
 using System.Reflection;
 
+using BenchmarkDotNet.Attributes;
+
 namespace CommonAnnotatedSecurityKeys.Benchmarks;
 
 internal static class DebugBenchmarkRunner
 {
-    public static void Run(Type[] types)
+    private const int Iterations = 10;
+
+    public static void Run()
     {
-        Console.WriteLine("WARNING: Running in debug build. Each benchmark will be run once without measuring anything.");
-        foreach (Type type in types)
+        Console.WriteLine("WARNING: Running in debug build or with debugger attached.");
+        Console.WriteLine("Each benchmark will be run a few times without measuring anything.");
+        Console.WriteLine();
+
+        foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
         {
+            if (type.IsAbstract || type.IsGenericType || type.Namespace != typeof(DebugBenchmarkRunner).Namespace)
+            {
+                continue;
+            }
+
             object instance = Activator.CreateInstance(type)!;
             foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (method.GetCustomAttributesData().Any(a => a.AttributeType.Name == "BenchmarkAttribute"))
+                if (method.IsDefined(typeof(BenchmarkAttribute)))
                 {
-                    Console.WriteLine($"Running {type.Name}.{method.Name}...");
-                    method.Invoke(instance, null);
+                    Console.Write($"{type.Name}.{method.Name}");
+                    for (int i = 0; i < Iterations; i++)
+                    {
+                        method.Invoke(instance, null);
+                        Console.Write(".");
+                    }
+                    Console.WriteLine();
                 }
             }
         }
