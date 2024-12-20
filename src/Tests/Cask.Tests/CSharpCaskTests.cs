@@ -20,15 +20,55 @@ public class CSharpCaskTests : CaskTestsBase
                                 string secret,
                                 int secretEntropyInBytes = 32)
         {
-            return CSharpCask.CompareHash(CaskKey.Parse(candidateHash), derivationInput, CaskKey.Parse(secret), secretEntropyInBytes);
+            var candidateHashKey = CaskKey.Create(candidateHash);
+            var secretKey = CaskKey.Create(secret);
+            bool result = CSharpCask.CompareHash(candidateHashKey, derivationInput, secretKey, secretEntropyInBytes);
+
+            string derivationInputString = Encoding.UTF8.GetString(derivationInput);
+            (string name, bool value)[] checks = [
+                ("ReadOnlySpan<byte>)", result),
+                ("string", CSharpCask.CompareHash(candidateHashKey, derivationInputString, secretKey, secretEntropyInBytes)),
+                ("ReadOnlySpan<char>)", CSharpCask.CompareHash(candidateHashKey, derivationInputString.AsSpan(), secretKey, secretEntropyInBytes)),
+            ];
+
+            if (!checks.All(c => c.value == result))
+            {
+                Assert.Fail(
+                    "Got different results from CompareHash with different forms of derivationInput"
+                    + Environment.NewLine
+                    + $"derivationInput: {derivationInputString}"
+                    + Environment.NewLine
+                    + string.Join(Environment.NewLine, checks.Select(c => $"  {c.name} -> {c.value}")));
+            }
+
+            return result;
         }
 
         public string GenerateHash(byte[] derivationInput,
                                    string secret,
                                    int secretEntropyInBytes = 32)
         {
-            CaskKey hash = CSharpCask.GenerateHash(derivationInput, CaskKey.Parse(secret), secretEntropyInBytes);
-            return hash.ToString();
+            var secretKey = CaskKey.Create(secret);
+            string result = CSharpCask.GenerateHash(derivationInput, secretKey, secretEntropyInBytes).ToString();
+
+            string derivationInputString = Encoding.UTF8.GetString(derivationInput);
+            (string name, string value)[] checks = [
+                ("ReadOnlySpan<byte>)", result),
+                ("string", CSharpCask.GenerateHash(derivationInputString, secretKey, secretEntropyInBytes).ToString()),
+                ("ReadOnlySpan<char>)", CSharpCask.GenerateHash(derivationInputString.AsSpan(), secretKey, secretEntropyInBytes).ToString()),
+            ];
+
+            if (!checks.All(c => c.value == result))
+            {
+                Assert.Fail(
+                    "Got different results from GenerateHash with different forms of derivationInput"
+                    + Environment.NewLine
+                    + $"derivationInput: {derivationInputString}"
+                    + Environment.NewLine
+                    + string.Join(Environment.NewLine, checks.Select(c => $"  {c.name} -> {c.value}")));
+            }
+
+            return result;
         }
 
         public string GenerateKey(string providerSignature,
@@ -40,15 +80,30 @@ public class CSharpCaskTests : CaskTestsBase
             return key.ToString();
         }
 
-        public bool IsCask(string keyOrHash)
+        public bool IsCask(string key)
         {
-            // Test all the C# variants without forcing other languages to have them.
-            bool isCaskString = CSharpCask.IsCask(keyOrHash);
-            bool isCaskSpan = CSharpCask.IsCask(keyOrHash.AsSpan());
-            bool isCaskUtf8 = CSharpCask.IsCaskUtf8(Encoding.UTF8.GetBytes(keyOrHash));
-            Assert.True(isCaskSpan == isCaskString, $"IsCask(ReadOnlySpan<char>) -> {isCaskSpan} behaved differently from IsCask(string) -> {isCaskString}");
-            Assert.True(isCaskUtf8 == isCaskString, $"IsCaskUtf8(ReadOnlySpan<byte>) -> {isCaskUtf8} behaved differently from IsCask(string) -> {isCaskString}");
-            return isCaskString;
+            bool result = CSharpCask.IsCask(key);
+
+            (string name, bool value)[] checks = [
+                ("Cask.IsCask(string)", result),
+                ("Cask.IsCask(ReadOnlySpan<char>)", CSharpCask.IsCask(key.AsSpan())),
+                ("Cask.IsCaskUtf8(ReadOnlySpan<byte>)", CSharpCask.IsCaskUtf8(Encoding.UTF8.GetBytes(key))),
+                ("CaskKey.TryCreate(string)", CaskKey.TryCreate(key, out _)),
+                ("CaskKey.TryCreate(ReadOnlySpan<char>)", CaskKey.TryCreate(key.AsSpan(), out _)),
+                ("CaskKey.TryCreateUtf8(ReadOnlySpan<byte>)", CaskKey.TryCreateUtf8(Encoding.UTF8.GetBytes(key), out _)),
+            ];
+
+            if (!checks.All(c => c.value == result))
+            {
+                Assert.Fail(
+                   "Got different answers from different ways to check if key is valid Cask:"
+                    + Environment.NewLine
+                    + $"key: {key}"
+                    + Environment.NewLine
+                    + string.Join(Environment.NewLine, checks.Select(c => $"  {c.name} -> {c.value}")));
+            }
+
+            return result;
         }
 
         public bool IsCaskBytes(byte[] bytes)

@@ -1,20 +1,51 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+/*
+ * To run these benchmarks, navigate to the benchmark source directory and use
+ * one of the following commands, depending on which target framework you want
+ * to benchmark:
+ *
+ *   dotnet run -c Release -f net8.0 dotnet run -c Release -f net472
+ *
+ * This will prompt you on which benchmarks to run.
+ *
+ * You can also specify a glob filter to select without prompts:
+ *
+ *   dotnet run -c Release -f net8.0 --filter *Hash*
+ *
+ * Or pass other options to BenchmarkDotNet. For help:
+ *
+ *   dotnet run -c Release -f net8.0 -- --help
+ *
+ * NOTE: '--' delimiter ensures --help goes to BenchmarkDotNet, not dotnet.
+ *
+ * To debug these benchmarks, you can set this project as the startup project in
+ * Each benchmark will be run a few times without measuring anything.git 
+ */
+
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
+
 using CommonAnnotatedSecurityKeys.Benchmarks;
 
-#if RELEASE
-using Runner = BenchmarkDotNet.Running.BenchmarkRunner;
+bool debug = false;
+#if DEBUG 
+debug = true;
 #else
-using Runner = CommonAnnotatedSecurityKeys.Benchmarks.DebugBenchmarkRunner;
+debug = System.Diagnostics.Debugger.IsAttached;
 #endif
 
-/* To run this benchmark, navigate to the benchmark source directory
- * and use the following command:
- * 
- * dotnet run -c Release --framework net8.0 Cask.Benchmarks.csproj
- */
-Runner.Run([
-    typeof(IsCaskBenchmarks),
-    typeof(CompareHashedSignatureBenchmarks),
- ]);
+if (debug)
+{
+    DebugBenchmarkRunner.Run();
+    return;
+}
+
+// Turn off changing the power plan to High Performance. It can get stuck there when process dies
+// prematurely. See https://benchmarkdotnet.org/articles/configs/powerplans.html
+IConfig config = DefaultConfig.Instance.AddJob(Job.Default.WithPowerPlan(PowerPlan.UserPowerPlan));
+
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);

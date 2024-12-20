@@ -55,4 +55,14 @@ public static class Limits
     /// The maximum length of a Cask key in characters.
     /// </summary>
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
+
+    /// <summary>
+    /// The maximum amount of bytes that the implementation will stackalloc.
+    /// </summary>
+    /// <remarks>
+    /// Internal and constant because it is an implementation detail. All byte
+    /// limits must be less than or equal to this so that the implementation can
+    /// stackalloc unconditionally.
+    /// </remarks>
+    internal const int MaxStackAlloc = 256;
 }

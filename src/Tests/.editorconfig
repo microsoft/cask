@@ -1,0 +1,17 @@
+root = false
+
+[*.cs]
+
+## Disable warnings that are not applicable to test projects
+
+# CA2007: Do not directly await a Task, conflicts with xUnit1030: Test methods should not call ConfigureAwait(false)
+dotnet_diagnostic.CA2007.severity = silent
+
+# CA1515: Consider making public types internal
+dotnet_diagnostic.CA1515.severity = silent
+
+# CA1707: Identifiers should not contain underscores.
+dotnet_diagnostic.CA1707.severity = silent
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = silent

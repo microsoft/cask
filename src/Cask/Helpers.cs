@@ -103,9 +103,24 @@ internal static class Helpers
         }
     }
 
+    public static void ThrowIfDestinationTooSmall<T>(Span<T> destination, int requiredSize, [CallerArgumentExpression(nameof(destination))] string? paramName = null)
+    {
+        if (destination.Length < requiredSize)
+        {
+            ThrowDestinationTooSmall(paramName);
+        }
+    }
+
     [DoesNotReturn]
     private static void ThrowDefault(string? paramName)
     {
         throw new ArgumentException("Value cannot be the default uninitialized value.", paramName);
     }
+
+    [DoesNotReturn]
+    private static void ThrowDestinationTooSmall(string? paramName)
+    {
+        throw new ArgumentException("Destination buffer is too small.", paramName);
+    }
+
 }

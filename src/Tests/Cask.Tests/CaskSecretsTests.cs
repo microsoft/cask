@@ -3,6 +3,7 @@
 
 using System.Buffers.Text;
 using System.IO.Hashing;
+using System.Text;
 
 using Xunit;
 
@@ -266,5 +267,65 @@ public abstract class CaskTestsBase
             result = Cask.IsCaskBytes(keyBytes);
             Assert.False(result, $"'IsCask(byte[])' unexpectedly succeeded after invalidating checksum: {modifiedKey}. Original key was: {key}");
         }
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_DeterministicAndNotTimestampSensitive()
+    {
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string hash = Cask.GenerateHash(derivationInput, secret, secretEntropyInBytes: 32);
+        using Mock mock = Cask.MockUtcNow(() => DateTimeOffset.UtcNow.AddMonths(13));
+        bool result = Cask.CompareHash(hash, derivationInput, secret, secretEntropyInBytes: 32);
+        Assert.True(result, $"'CompareHash' failed when mock time advanced.");
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_TwoDifferentSecrets()
+    {
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret1 = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string secret2 = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string hash = Cask.GenerateHash(derivationInput, secret1, secretEntropyInBytes: 32);
+        bool result = Cask.CompareHash(hash, derivationInput, secret2, secretEntropyInBytes: 32);
+        Assert.False(result, $"'CompareHash' should not have succeeded. Two different secrets were used.");
+    }
+
+    [Fact]
+    public void CaskSecrets_GenerateHash_SmallDerivationInput()
+    {
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string hash = Cask.GenerateHash(derivationInput, secret, secretEntropyInBytes: 32);
+        IsCaskValidate(hash);
+    }
+
+    [Fact]
+    public void CaskSecrets_GenerateHash_LargeDerivationInput()
+    {
+        byte[] derivationInput = new byte[4242];
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88");
+        string hash = Cask.GenerateHash(derivationInput, secret, secretEntropyInBytes: 32);
+        IsCaskValidate(hash);
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_SmallDerivationInput()
+    {
+        byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string hash = Cask.GenerateHash(derivationInput, secret, secretEntropyInBytes: 32);
+        bool result = Cask.CompareHash(hash, derivationInput, secret, secretEntropyInBytes: 32);
+        Assert.True(result, $"'CompareHash' failed with same secret and same derivation input.");
+    }
+
+    [Fact]
+    public void CaskSecrets_CompareHash_LargeDerivationInput()
+    {
+        byte[] derivationInput = new byte[500];
+        string secret = Cask.GenerateKey(providerSignature: "TEST", allocatorCode: "88", secretEntropyInBytes: 32);
+        string hash = Cask.GenerateHash(derivationInput, secret, secretEntropyInBytes: 32);
+        bool result = Cask.CompareHash(hash, derivationInput, secret, secretEntropyInBytes: 32);
+        Assert.True(result, $"'CompareHash' failed with same secret and same derivation input.");
     }
 }

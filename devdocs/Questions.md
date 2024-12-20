@@ -12,11 +12,6 @@
   - Best name for combined? Or better names (plural) if they should remain separate?
   - Related: can we avoid repeating Cask like Cask.IsCask -> Cask.IsValid.
 
-1. Should we use a new timestamp in GenerateHash and mask it out in CompareHash?
-   - The first draft created a new timestamp, but didn't mask so it would fail if the month rolled over between GenerateHash and CompareHash.
-   - The second draft copies the timestamp from the secret when generating a hash.
-   - It feels wrong for something called "GenerateHash" to not be deterministic.
-
 1. Are the limits on entropy and provider data length reasonable? 
    - Review Limits.cs.
    - Keeping them small allows unconditional stackalloc.

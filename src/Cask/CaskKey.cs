@@ -25,13 +25,22 @@ public readonly partial record struct CaskKey
         _key = key;
     }
 
-    public static bool TryParse(string text, out CaskKey key)
+    public static bool TryCreate(string text, out CaskKey key)
     {
-        ThrowIfNull(text);
-        return TryParse(text.AsSpan(), out key);
+        // PERF: This doesn't forward to TryCreate with ReadOnlySpan<char>
+        // because that would allocate a new string. We can use the existing
+        // string to back the new CaskKey instance when the caller has one.
+        if (!Cask.IsCask(text))
+        {
+            key = default;
+            return false;
+        }
+
+        key = new CaskKey(text);
+        return true;
     }
 
-    public static bool TryParse(ReadOnlySpan<char> text, out CaskKey key)
+    public static bool TryCreate(ReadOnlySpan<char> text, out CaskKey key)
     {
         if (!Cask.IsCask(text))
         {
@@ -43,7 +52,7 @@ public readonly partial record struct CaskKey
         return true;
     }
 
-    public static bool TryParseUtf8(ReadOnlySpan<byte> textUtf8, out CaskKey key)
+    public static bool TryCreateUtf8(ReadOnlySpan<byte> textUtf8, out CaskKey key)
     {
         if (!Cask.IsCaskUtf8(textUtf8))
         {
@@ -67,30 +76,33 @@ public readonly partial record struct CaskKey
         return true;
     }
 
-    public static CaskKey Parse(string text)
+    public static CaskKey Create(string text)
     {
-        if (!TryParse(text, out CaskKey key))
+        if (!TryCreate(text, out CaskKey key))
         {
             ThrowFormat();
         }
+
         return key;
     }
 
-    public static CaskKey Parse(ReadOnlySpan<char> text)
+    public static CaskKey Create(ReadOnlySpan<char> text)
     {
-        if (!TryParse(text, out CaskKey key))
+        if (!TryCreate(text, out CaskKey key))
         {
             ThrowFormat();
         }
+
         return key;
     }
 
-    public static CaskKey ParseUtf8(ReadOnlySpan<byte> text)
+    public static CaskKey CreateUtf8(ReadOnlySpan<byte> text)
     {
-        if (!TryParseUtf8(text, out CaskKey key))
+        if (!TryCreateUtf8(text, out CaskKey key))
         {
             ThrowFormat();
         }
+
         return key;
     }
 
@@ -100,6 +112,7 @@ public readonly partial record struct CaskKey
         {
             ThrowFormat();
         }
+
         return key;
     }
 
