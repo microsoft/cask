@@ -232,7 +232,7 @@ namespace Polyfill
         {
             // HMACSHA256 requires that we give it a key array with the exact
             // key length, so we can't pool the key array.
-            if (key.Length < BlockSize)
+            if (key.Length <= BlockSize)
             {
                 return key.ToArray();
             }

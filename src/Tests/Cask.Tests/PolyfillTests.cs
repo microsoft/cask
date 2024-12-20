@@ -130,6 +130,33 @@ public class PolyfillTests
     }
 
     [Fact]
+    public void HmacSha256_KeySmallerThanBlockSize()
+    {
+        ReadOnlySpan<byte> key = RepeatByte(0x0b, 63);
+        ReadOnlySpan<byte> data = "Test data"u8;
+        string hash = HmacSha256(key, data);
+        Assert.Equal("b015fe206b739aca91dcb0ee5013ac1a55c529df6aa0b589d3a8007f9f006806", hash);
+    }
+
+    [Fact]
+    public void HmacSha256_KeySizeEqualToBlockSize()
+    {
+        ReadOnlySpan<byte> key = RepeatByte(0x0b, 64);
+        ReadOnlySpan<byte> data = "Test data"u8;
+        string hash = HmacSha256(key, data);
+        Assert.Equal("63d630b64a86e060a712afc0ac6bf56331d18c0f938c8ac163e328db98ea4597", hash);
+    }
+
+    [Fact]
+    public void HmacSha256_KeyLargerThanBlockSize()
+    {
+        ReadOnlySpan<byte> key = RepeatByte(0x0b, 65);
+        ReadOnlySpan<byte> data = "Test data"u8;
+        string hash = HmacSha256(key, data);
+        Assert.Equal("27fb9498207f8e92081154cc60ab759bd46d8dae6a062cb0291f847d12fc4232", hash);
+    }
+
+    [Fact]
     public void HmacSha256_Rfc4231_1()
     {
         ReadOnlySpan<byte> key = RepeatByte(0x0b, 20);
