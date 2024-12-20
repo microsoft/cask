@@ -207,19 +207,9 @@ public static class Cask
     public static CaskKey GenerateHash(ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        if (byteCount <= MaxStackAlloc)
-        {
-            Span<byte> derivationInputStackBytes = stackalloc byte[byteCount];
-            Encoding.UTF8.GetBytes(derivationInput, derivationInputStackBytes);
-            return GenerateHash(derivationInputStackBytes, secret, secretEntropyInBytes);
-        }
-
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
-        Span<byte> derivationInputBytes = buffer.AsSpan()[..byteCount];
+        Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
         Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        CaskKey hash = GenerateHash(derivationInputBytes, secret, secretEntropyInBytes);
-        ArrayPool<byte>.Shared.Return(buffer);
-        return hash;
+        return GenerateHash(derivationInputBytes, secret, secretEntropyInBytes);
     }
 
     public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)
@@ -293,19 +283,9 @@ public static class Cask
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        if (byteCount <= MaxStackAlloc)
-        {
-            Span<byte> derivationInputStackBytes = stackalloc byte[byteCount];
-            Encoding.UTF8.GetBytes(derivationInput, derivationInputStackBytes);
-            return CompareHash(candidateHash, derivationInputStackBytes, secret, secretEntropyInBytes);
-        }
-
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
-        Span<byte> derivationInputBytes = buffer.AsSpan()[..byteCount];
+        Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
         Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        bool result = CompareHash(candidateHash, derivationInputBytes, secret, secretEntropyInBytes);
-        ArrayPool<byte>.Shared.Return(buffer);
-        return result;
+        return CompareHash(candidateHash, derivationInputBytes, secret, secretEntropyInBytes);
     }
 
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)

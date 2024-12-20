@@ -138,24 +138,6 @@ namespace Polyfill
         }
     }
 
-    internal static class ByteArrayPool
-    {
-        private static readonly ArrayPool<byte> s_pool = ArrayPool<byte>.Create(
-            maxArrayLength: CommonAnnotatedSecurityKeys.Limits.MaxStackAlloc,
-            maxArraysPerBucket: Environment.ProcessorCount
-        );
-
-        public static byte[] Rent(int length)
-        {
-            return s_pool.Rent(length);
-        }
-
-        public static void Return(byte[] array)
-        {
-            s_pool.Return(array);
-        }
-    }
-
     internal static class RandomNumberGenerator
     {
         // RNGCryptoServiceProvider is documented to be thread-safe so we can
@@ -167,13 +149,11 @@ namespace Polyfill
         // https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=netframework-4.7.2#thread-safety
         private static readonly RNGCryptoServiceProvider s_rng = new();
 
-
         public static void Fill(Span<byte> buffer)
         {
-            byte[] array = ByteArrayPool.Rent(buffer.Length);
-            s_rng.GetBytes(array, 0, buffer.Length);
-            array.AsSpan()[..buffer.Length].CopyTo(buffer);
-            ByteArrayPool.Return(array);
+            byte[] bytes = new byte[buffer.Length];
+            s_rng.GetBytes(bytes);
+            bytes.CopyTo(buffer);
         }
     }
 
@@ -189,23 +169,21 @@ namespace Polyfill
                 return;
             }
 
-            byte[] dataArray = ByteArrayPool.Rent(data.Length);
-            data.CopyTo(dataArray);
-            byte[] hash = algorithm.ComputeHash(dataArray, 0, data.Length);
-            ByteArrayPool.Return(dataArray);
+            byte[] hash = algorithm.ComputeHash(data.ToArray(), 0, data.Length);
             hash.CopyTo(destination);
         }
 
-        private static unsafe int ComputeWithStream(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
+        private static unsafe void ComputeWithStream(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
         {
             byte[] hash;
+
             fixed (byte* dataPtr = data)
             {
                 using var stream = new UnmanagedMemoryStream(dataPtr, data.Length);
                 hash = algorithm.ComputeHash(stream);
             }
+
             hash.CopyTo(destination);
-            return hash.Length;
         }
     }
 
@@ -213,36 +191,13 @@ namespace Polyfill
     {
         public const int HashSizeInBits = 256;
         public const int HashSizeInBytes = HashSizeInBits / 8;
-        private const int BlockSize = 64;
-
-#pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955
-        [ThreadStatic] private static Bcl_HMACSHA256 t_hmac;
-#pragma warning restore IDE1006
 
         public static int HashData(ReadOnlySpan<byte> key, ReadOnlySpan<byte> source, Span<byte> destination)
         {
             ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
-            t_hmac ??= new Bcl_HMACSHA256(key: []);
-            t_hmac.Key = GetKeyArray(key);
-            Hash.Compute(t_hmac, source, destination);
+            using var hmac = new Bcl_HMACSHA256(key.ToArray());
+            Hash.Compute(hmac, source, destination);
             return HashSizeInBytes;
-        }
-
-        private static byte[] GetKeyArray(ReadOnlySpan<byte> key)
-        {
-            // HMACSHA256 requires that we give it a key array with the exact
-            // key length, so we can't pool the key array.
-            if (key.Length <= BlockSize)
-            {
-                return key.ToArray();
-            }
-
-            // Keys larger than the block size are hashed. We do this ourselves
-            // to reduce allocations and copying while marshaling from span to
-            // byte[].
-            byte[] keyArray = new byte[SHA256.HashSizeInBytes];
-            SHA256.HashData(key, keyArray);
-            return keyArray;
         }
     }
 
@@ -251,15 +206,11 @@ namespace Polyfill
         public const int HashSizeInBits = 256;
         public const int HashSizeInBytes = HashSizeInBits / 8;
 
-#pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955
-        [ThreadStatic] private static Bcl_SHA256 t_sha;
-#pragma warning restore IDE1006
-
         public static int HashData(ReadOnlySpan<byte> source, Span<byte> destination)
         {
             ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
-            t_sha ??= Bcl_SHA256.Create();
-            Hash.Compute(t_sha, source, destination);
+            using var sha = Bcl_SHA256.Create();
+            Hash.Compute(sha, source, destination);
             return HashSizeInBytes;
         }
     }
