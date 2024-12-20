@@ -57,12 +57,6 @@ public static class Limits
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
 
     /// <summary>
-    /// The maximum length of derivation input in bytes.
-    /// This refers to the length when UTF8-encoded for derivation input supplied as text.
-    /// </summary>
-    public static int MaxDerivationInputLengthInBytes { get; } = MaxStackAlloc;
-
-    /// <summary>
     /// The maximum amount of bytes that the implementation will stackalloc.
     /// </summary>
     /// <remarks>

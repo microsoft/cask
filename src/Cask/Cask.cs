@@ -43,7 +43,7 @@ public static class Cask
         }
 
         int lengthInBytes = Base64CharsToBytes(key.Length);
-        Debug.Assert(lengthInBytes <= MaxStackAlloc);
+        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
         OperationStatus status = Base64Url.DecodeFromChars(
@@ -85,7 +85,7 @@ public static class Cask
         }
 
         int lengthInBytes = Base64CharsToBytes(keyUTF8.Length);
-        Debug.Assert(lengthInBytes <= MaxStackAlloc);
+        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
         OperationStatus status = Base64Url.DecodeFromUtf8(
@@ -154,10 +154,9 @@ public static class Cask
         // Calculate the length of the key
         int providerDataLengthInBytes = Base64CharsToBytes(providerData.Length);
         int keyLengthInBytes = GetKeyLengthInBytes(secretEntropyInBytes, providerDataLengthInBytes);
-        Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
 
         // Allocate a buffer on the stack to hold the key bytes
-        Debug.Assert(keyLengthInBytes <= MaxStackAlloc);
+        Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[keyLengthInBytes];
 
         // Use another span like a pointer, moving it forward as we write data.
@@ -208,18 +207,25 @@ public static class Cask
     public static CaskKey GenerateHash(ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        ThrowIfDerivationInputTooLong(derivationInput, byteCount);
-        Debug.Assert(byteCount <= MaxStackAlloc);
-        Span<byte> span = stackalloc byte[byteCount];
-        Encoding.UTF8.GetBytes(derivationInput, span);
-        return GenerateHash(span, secret, secretEntropyInBytes);
+        if (byteCount <= MaxStackAlloc)
+        {
+            Span<byte> derivationInputStackBytes = stackalloc byte[byteCount];
+            Encoding.UTF8.GetBytes(derivationInput, derivationInputStackBytes);
+            return GenerateHash(derivationInputStackBytes, secret, secretEntropyInBytes);
+        }
+
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+        Span<byte> derivationInputBytes = buffer.AsSpan()[..byteCount];
+        Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
+        CaskKey hash = GenerateHash(derivationInputBytes, secret, secretEntropyInBytes);
+        ArrayPool<byte>.Shared.Return(buffer);
+        return hash;
     }
 
     public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
-        ThrowIfDerivationInputTooLong(derivationInput);
         int hashLengthInBytes = GetHashLengthInBytes(secret, ref secretEntropyInBytes, out int providerDataLengthInBytes);
-        Debug.Assert(hashLengthInBytes <= MaxStackAlloc);
+        Debug.Assert(hashLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> hash = stackalloc byte[hashLengthInBytes];
         GenerateHashBytes(derivationInput, secret, secretEntropyInBytes, providerDataLengthInBytes, hash);
         return CaskKey.Encode(hash);
@@ -244,7 +250,7 @@ public static class Cask
         Span<byte> hash)
     {
         int keyLengthInBytes = Base64CharsToBytes(secret.ToString().Length);
-        Debug.Assert(keyLengthInBytes <= MaxStackAlloc);
+        Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> secretBytes = stackalloc byte[keyLengthInBytes];
         Base64Url.DecodeFromChars(secret.ToString().AsSpan(), secretBytes);
 
@@ -287,22 +293,26 @@ public static class Cask
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        ThrowIfDerivationInputTooLong(derivationInput, byteCount);
+        if (byteCount <= MaxStackAlloc)
+        {
+            Span<byte> derivationInputStackBytes = stackalloc byte[byteCount];
+            Encoding.UTF8.GetBytes(derivationInput, derivationInputStackBytes);
+            return CompareHash(candidateHash, derivationInputStackBytes, secret, secretEntropyInBytes);
+        }
 
-        Debug.Assert(byteCount <= MaxStackAlloc);
-        Span<byte> span = stackalloc byte[byteCount];
-
-        Encoding.UTF8.GetBytes(derivationInput, span);
-        return CompareHash(candidateHash, span, secret, secretEntropyInBytes);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+        Span<byte> derivationInputBytes = buffer.AsSpan()[..byteCount];
+        Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
+        bool result = CompareHash(candidateHash, derivationInputBytes, secret, secretEntropyInBytes);
+        ArrayPool<byte>.Shared.Return(buffer);
+        return result;
     }
 
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)
     {
-        ThrowIfDerivationInputTooLong(derivationInput);
-
         // Compute hash
         int length = GetHashLengthInBytes(secret, ref secretEntropyInBytes, out int providerDataLengthInBytes);
-        Debug.Assert(length <= MaxStackAlloc);
+        Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> computedBytes = stackalloc byte[length];
         GenerateHashBytes(derivationInput, secret, secretEntropyInBytes, providerDataLengthInBytes, computedBytes);
 
@@ -312,7 +322,8 @@ public static class Cask
         {
             return false;
         }
-        Debug.Assert(length <= MaxStackAlloc);
+
+        Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> candidateBytes = stackalloc byte[length];
         Base64Url.DecodeFromChars(candidateHash.ToString().AsSpan(), candidateBytes);
 
@@ -403,22 +414,6 @@ public static class Cask
         }
     }
 
-    private static void ThrowIfDerivationInputTooLong(ReadOnlySpan<char> value, int lengthInBytes, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (lengthInBytes > MaxDerivationInputLengthInBytes)
-        {
-            ThrowDerivationInputTooLong(value, paramName);
-        }
-    }
-
-    private static void ThrowIfDerivationInputTooLong(ReadOnlySpan<byte> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (value.Length > MaxDerivationInputLengthInBytes)
-        {
-            ThrowDerivationInputTooLong(value, paramName);
-        }
-    }
-
     [DoesNotReturn]
     private static void ThrowProviderDataUnaligned(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
@@ -447,12 +442,6 @@ public static class Cask
     private static void ThrowInvalidYear()
     {
         throw new InvalidOperationException("CASK requires the current year to be between 2024 and 2087.");
-    }
-
-    [DoesNotReturn]
-    private static void ThrowDerivationInputTooLong<T>(ReadOnlySpan<T> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        throw new ArgumentException($"Derivation input must be smaller than {MaxDerivationInputLengthInBytes} bytes.", paramName);
     }
 
     internal static Mock MockUtcNow(UtcNowFunc getUtcNow)

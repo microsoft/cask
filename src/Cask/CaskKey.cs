@@ -82,6 +82,7 @@ public readonly partial record struct CaskKey
         {
             ThrowFormat();
         }
+
         return key;
     }
 
@@ -91,6 +92,7 @@ public readonly partial record struct CaskKey
         {
             ThrowFormat();
         }
+
         return key;
     }
 
@@ -100,6 +102,7 @@ public readonly partial record struct CaskKey
         {
             ThrowFormat();
         }
+
         return key;
     }
 
@@ -109,6 +112,7 @@ public readonly partial record struct CaskKey
         {
             ThrowFormat();
         }
+
         return key;
     }
 

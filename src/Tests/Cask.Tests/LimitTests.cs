@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 using Xunit;
 
@@ -19,7 +14,6 @@ public class LimitTests
         AssertStackAllocSafe(MaxSecretEntropyInBytes);
         AssertStackAllocSafe(MaxProviderDataLengthInBytes);
         AssertStackAllocSafe(MaxKeyLengthInBytes);
-        AssertStackAllocSafe(MaxDerivationInputLengthInBytes);
     }
 
     [Fact]

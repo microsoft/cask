@@ -30,12 +30,12 @@ public interface ICask
 
     string GenerateHash(byte[] derivationInput,
                         string secret,
-                        int secretEntropyInBytes = 32);
+                        int secretEntropyInBytes);
 
     bool CompareHash(string candidateHash,
                      byte[] derivationInput,
                      string secret,
-                     int secretEntropyInBytes = 32);
+                     int secretEntropyInBytes);
 
     internal Mock MockUtcNow(UtcNowFunc getUtcNow);
 
