@@ -7,12 +7,14 @@
 
 #include "cask_dependencies.h"
 
-std::string Cask::Base64UrlEncode(const std::span<uint8_t>& bytes)
+using namespace std;
+
+string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
 {
     return "";
 }
 
-int32_t Cask::ComputeCrc32(const std::span<uint8_t>& bytes)
+int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
 {
     return 0;
 }
