@@ -10,9 +10,11 @@
 #include <string>
 #include <span>
 
+using namespace std;
+
 namespace Cask {
 
-std::string Base64UrlEncode(const std::span<uint8_t>& bytes);
-int32_t ComputeCrc32(const std::span<uint8_t>& bytes);
+string Base64UrlEncode(const span<uint8_t>& bytes);
+int32_t ComputeCrc32(const span<uint8_t>& bytes);
 
 } // namespace Cask

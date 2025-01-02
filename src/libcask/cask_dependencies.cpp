@@ -8,13 +8,42 @@
 #include "cask_dependencies.h"
 
 using namespace std;
+using namespace Cask;
 
-string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
+#include <vector>
+#include <string>
+#include <span>
+#include <cstdint>
+#include <algorithm>
+#include <iterator>
+
+using namespace std;
+
+static const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                   "abcdefghijklmnopqrstuvwxyz"
+                                   "0123456789-_";
+
+string Base64UrlEncode(const span<uint8_t>& bytes)
 {
-    return "";
+    string encoded;
+    int val = 0, valb = -6;
+    for (uint8_t c : bytes) {
+        val = (val << 8) + c;
+        valb += 8;
+        while (valb >= 0) {
+            encoded.push_back(base64_chars[(val >> valb) & 0x3F]);
+            valb -= 6;
+        }
+    }
+    if (valb > -6) encoded.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
+    while (encoded.size() % 4) encoded.push_back('=');
+    replace(encoded.begin(), encoded.end(), '+', '-');
+    replace(encoded.begin(), encoded.end(), '/', '_');
+    encoded.erase(remove(encoded.begin(), encoded.end(), '='), encoded.end());
+    return encoded;
 }
 
-int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
+int32_t ComputeCrc32(const span<uint8_t>& bytes)
 {
     return 0;
 }
