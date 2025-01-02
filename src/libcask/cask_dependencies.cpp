@@ -23,7 +23,7 @@ static const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                    "abcdefghijklmnopqrstuvwxyz"
                                    "0123456789-_";
 
-string Base64UrlEncode(const span<uint8_t>& bytes)
+string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
 {
     string encoded;
     int val = 0, valb = -6;
@@ -43,7 +43,7 @@ string Base64UrlEncode(const span<uint8_t>& bytes)
     return encoded;
 }
 
-int32_t ComputeCrc32(const span<uint8_t>& bytes)
+int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
 {
     return 0;
 }

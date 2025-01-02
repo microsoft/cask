@@ -14,12 +14,9 @@ TEST(TestCaseName, TestName) {
   EXPECT_TRUE(true);
 }
 
-#include "gtest/gtest.h"
-#include <vector>
-
 static TEST(CaskDependenciesTests, Base64UrlEncode_EmptyInput) {
     span<uint8_t> input = {};
-    std::string expected = "";
-    std::string result = Base64UrlEncode(input);
+    string expected = "";
+    string result = Base64UrlEncode(input);
     EXPECT_EQ(result, expected);
 }
