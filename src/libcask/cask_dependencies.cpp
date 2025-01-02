@@ -23,27 +23,30 @@ static const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                    "abcdefghijklmnopqrstuvwxyz"
                                    "0123456789-_";
 
-string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
-{
-    string encoded;
-    int val = 0, valb = -6;
-    for (uint8_t c : bytes) {
-        val = (val << 8) + c;
-        valb += 8;
-        while (valb >= 0) {
-            encoded.push_back(base64_chars[(val >> valb) & 0x3F]);
-            valb -= 6;
-        }
-    }
-    if (valb > -6) encoded.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
-    while (encoded.size() % 4) encoded.push_back('=');
-    replace(encoded.begin(), encoded.end(), '+', '-');
-    replace(encoded.begin(), encoded.end(), '/', '_');
-    encoded.erase(remove(encoded.begin(), encoded.end(), '='), encoded.end());
-    return encoded;
-}
+namespace Cask {
 
-int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
-{
-    return 0;
+    string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
+    {
+        string encoded;
+        int val = 0, valb = -6;
+        for (uint8_t c : bytes) {
+            val = (val << 8) + c;
+            valb += 8;
+            while (valb >= 0) {
+                encoded.push_back(base64_chars[(val >> valb) & 0x3F]);
+                valb -= 6;
+            }
+        }
+        if (valb > -6) encoded.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
+        while (encoded.size() % 4) encoded.push_back('=');
+        replace(encoded.begin(), encoded.end(), '+', '-');
+        replace(encoded.begin(), encoded.end(), '/', '_');
+        encoded.erase(remove(encoded.begin(), encoded.end(), '='), encoded.end());
+        return encoded;
+    }
+
+    int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
+    {
+        return 0;
+    }
 }
