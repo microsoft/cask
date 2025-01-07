@@ -69,6 +69,11 @@ namespace Polyfill
     {
         public static unsafe string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
         {
+            if (bytes.Length == 0)
+            {
+                return string.Empty;
+            }
+
             fixed (byte* ptr = bytes)
             {
                 return encoding.GetString(ptr, bytes.Length);
@@ -77,6 +82,11 @@ namespace Polyfill
 
         public static unsafe int GetByteCount(this Encoding encoding, ReadOnlySpan<char> chars)
         {
+            if (chars.Length == 0)
+            {
+                return 0;
+            }
+
             fixed (char* ptr = chars)
             {
                 return encoding.GetByteCount(ptr, chars.Length);
@@ -85,6 +95,11 @@ namespace Polyfill
 
         public static unsafe int GetBytes(this Encoding encoding, ReadOnlySpan<char> chars, Span<byte> bytes)
         {
+            if (chars.Length == 0)
+            {
+                return 0;
+            }
+
             fixed (char* charPtr = chars)
             fixed (byte* bytePtr = bytes)
             {

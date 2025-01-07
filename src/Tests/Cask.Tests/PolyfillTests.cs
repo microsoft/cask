@@ -271,6 +271,31 @@ public class PolyfillTests
         Assert.False(random1.SequenceEqual(random2), "RandomNumberGenerator produced two identical 32-byte sequences.");
     }
 
+    [Fact]
+    public void Encoding_GetString_Empty()
+    {
+        ReadOnlySpan<byte> data = [];
+        string text = Encoding.UTF8.GetString(data);
+        Assert.Equal("", text);
+    }
+
+    [Fact]
+    public void Encoding_GetByteCount_Empty()
+    {
+        ReadOnlySpan<char> text = "".AsSpan();
+        int byteCount = Encoding.UTF8.GetByteCount(text);
+        Assert.Equal(0, byteCount);
+    }
+
+    [Fact]
+    public void Encoding_GetBytes_Empty()
+    {
+        ReadOnlySpan<char> text = "".AsSpan();
+        Span<byte> bytes = [];
+        int bytesWritten = Encoding.UTF8.GetBytes(text, bytes);
+        Assert.Equal(0, bytesWritten);
+    }
+
 #if NETFRAMEWORK // We don't need to stress test the modern BCL :)
     [Fact]
     public async Task Polyfill_ThreadingStress()
