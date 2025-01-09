@@ -81,16 +81,16 @@ public class CrossCompanyCorrelatingIdTests
         public static string Compute(string text)
         {
             // Compute the SHA-256 hash of the UTF8-encoded text
-            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));
+            Span<byte> hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));
 
             // Prefix the result with "C3ID" UTF-8 bytes and hash again
             hash = SHA256.HashData([.. "C3ID"u8, .. hash]);
 
             // Truncate to 12 bytes
-            ReadOnlySpan<byte> truncated = hash.AsSpan()[..12];
+            hash = hash[..12];
 
             // Convert to base64 and prepend "C3ID"
-            return "C3ID" + Convert.ToBase64String(truncated);
+            return "C3ID" + Convert.ToBase64String(hash);
         }
     }
 }
