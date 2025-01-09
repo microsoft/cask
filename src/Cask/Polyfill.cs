@@ -60,6 +60,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using Bcl_Convert = System.Convert;
 using Bcl_HMACSHA256 = System.Security.Cryptography.HMACSHA256;
 using Bcl_SHA256 = System.Security.Cryptography.SHA256;
 
@@ -153,6 +154,14 @@ namespace Polyfill
         }
     }
 
+    internal static class Convert
+    {
+        public static string ToBase64String(ReadOnlySpan<byte> bytes)
+        {
+            return Bcl_Convert.ToBase64String(bytes.ToArray());
+        }
+    }
+
     internal static class RandomNumberGenerator
     {
         // RNGCryptoServiceProvider is documented to be thread-safe so we can
@@ -227,6 +236,13 @@ namespace Polyfill
             using var sha = Bcl_SHA256.Create();
             Hash.Compute(sha, source, destination);
             return HashSizeInBytes;
+        }
+
+        public static byte[] HashData(ReadOnlySpan<byte> source)
+        {
+            Span<byte> hash = stackalloc byte[HashSizeInBytes];
+            HashData(source, hash);
+            return hash.ToArray();
         }
     }
 }
