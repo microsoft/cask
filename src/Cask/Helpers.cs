@@ -11,12 +11,6 @@ namespace CommonAnnotatedSecurityKeys;
 
 internal static class Helpers
 {
-    public const int FixedKeyComponentSizeInBytes =
-        3 +  // CASK signature
-        3 +  // Allocator code and timestamp
-        3 +  // Provider signature
-        3;   // Checksum
-
     public const string Base64UrlChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
     public static int RoundUpTo3ByteAlignment(int bytes)
@@ -49,12 +43,74 @@ internal static class Helpers
         return charLength % 4 == 0;
     }
 
-    public static int GetKeyLengthInBytes(int secretEntropyInBytes, int providerDataLengthInBytes)
+    public static int GetKeyLengthInBytes(int providerDataLengthInBytes)
     {
-        Debug.Assert(Is3ByteAligned(secretEntropyInBytes), "secretEntropyInBytes should have been rounded up to 3-byte alignment already.");
-        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes), "providerDataLengthInBytes should have been validated to 3-byte aligned already.");
+        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes), $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
+        int paddedEntropyInBytes = RoundUpTo3ByteAlignment(SecretEntropyInBytes);
+        int keyLengthInBytes = paddedEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+        Debug.Assert(Is3ByteAligned(keyLengthInBytes));
+        return keyLengthInBytes;
+    }
 
-        return secretEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+    public static int GetHashLengthInBytes(int secretSizeInBytes, out int providerDataLengthInBytes)
+    {
+        providerDataLengthInBytes = secretSizeInBytes - PaddedSecretEntropyInBytes - FixedKeyComponentSizeInBytes;
+        int hashLengthInBytes = PaddedHmacSha256SizeInBytes + providerDataLengthInBytes + FixedHashComponentSizeInBytes;
+        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes));
+        Debug.Assert(Is3ByteAligned(hashLengthInBytes));
+        return hashLengthInBytes;
+    }
+
+    public static KeyKind CharToKind(char kindChar)
+    {
+        return (KeyKind)(kindChar - 'A');
+    }
+
+    public static CaskVersion CharToVersion(char versionChar)
+    {
+        return (CaskVersion)(versionChar - 'A');
+    }
+
+    public static byte KindToByte(KeyKind kind)
+    {
+        return (byte)((int)kind << KindReservedBits);
+    }
+
+    public static byte VersionToByte(CaskVersion version)
+    {
+        return (byte)((int)version << VersionReservedBits);
+    }
+
+    /// <summary>
+    /// Converts a byte that encodes the CASK version to the CaskVersion enum.
+    /// Returns false if the reserved bits in that byte are non-zero.
+    /// </summary>
+    public static bool TryByteToVersion(byte value, out CaskVersion version)
+    {
+        if ((value & VersionReservedMask) != 0)
+        {
+            version = default;
+            return false;
+        }
+
+        version = (CaskVersion)(value >> VersionReservedBits);
+        return true;
+    }
+
+    /// <summary>
+    /// Converts a byte that encodeds the key kind to the KeyKind enum.
+    /// Returns false if the reserved bits in that byte are non-zero.
+    /// </summary>
+    public static bool TryByteToKind(byte value, out KeyKind kind)
+    {
+        if ((value & KindReservedMask) != 0)
+        {
+            kind = default;
+            return false;
+        }
+
+        kind = (KeyKind)(value >> KindReservedBits);
+        return true;
     }
 
     public static bool IsValidForBase64Url(string value)
@@ -95,14 +151,29 @@ internal static class Helpers
         return (value + multiple - 1) / multiple * multiple;
     }
 
-    public static void ThrowIfDefault<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null) where T : struct
+    public static void ThrowIfUnitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null) where T : struct, IIsInitialized
     {
-        if (EqualityComparer<T>.Default.Equals(value, default))
+        if (!value.IsInitialized)
         {
-            ThrowDefault(paramName);
+            ThrowUnitializedArgument(paramName);
         }
     }
 
+    public static void ThrowIfNotPrimary(CaskKey value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        if (!value.IsPrimary)
+        {
+            ThrowNotPrimary(paramName);
+        }
+    }
+
+    public static void ThrowIfNotHash(CaskKey value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        if (!value.IsHash)
+        {
+            ThrowNotHash(paramName);
+        }
+    }
     public static void ThrowIfDestinationTooSmall<T>(Span<T> destination, int requiredSize, [CallerArgumentExpression(nameof(destination))] string? paramName = null)
     {
         if (destination.Length < requiredSize)
@@ -120,9 +191,15 @@ internal static class Helpers
     }
 
     [DoesNotReturn]
-    private static void ThrowDefault(string? paramName)
+    private static void ThrowUnitializedArgument(string? paramName)
     {
-        throw new ArgumentException("Value cannot be the default uninitialized value.", paramName);
+        throw new ArgumentException("Value cannot be the default uninitialized struct value.", paramName);
+    }
+
+    [DoesNotReturn]
+    public static void ThrowOperationOnUnitializedInstance()
+    {
+        throw new InvalidOperationException("Operation cannot be performed on the default uninitialized struct value.");
     }
 
     [DoesNotReturn]
@@ -136,4 +213,21 @@ internal static class Helpers
     {
         throw new ArgumentException("Value cannot be empty.", paramName);
     }
+
+    [DoesNotReturn]
+    private static void ThrowNotPrimary(string? paramName)
+    {
+        throw new ArgumentException("Key is not a primary key.", paramName);
+    }
+
+    [DoesNotReturn]
+    private static void ThrowNotHash(string? paramName)
+    {
+        throw new ArgumentException("Key is not a hash.", paramName);
+    }
+}
+
+internal interface IIsInitialized
+{
+    bool IsInitialized { get; }
 }

@@ -12,7 +12,7 @@ namespace CommonAnnotatedSecurityKeys.Benchmarks;
 [MemoryDiagnoser]
 public class IsCaskBenchmarks
 {
-    private static readonly byte[] s_testCaskKeyBytes = Base64Url.DecodeFromChars(TestCaskSecret.AsSpan());
+    private static readonly byte[] s_testCaskKeyUtf8 = Base64Url.DecodeFromChars(TestCaskSecret.AsSpan());
 
     [Benchmark]
     public bool IsCaskString()
@@ -23,6 +23,6 @@ public class IsCaskBenchmarks
     [Benchmark]
     public bool IsCaskBytes()
     {
-        return Cask.IsCaskBytes(s_testCaskKeyBytes);
+        return Cask.IsCaskBytes(s_testCaskKeyUtf8);
     }
 }

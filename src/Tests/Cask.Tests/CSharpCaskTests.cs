@@ -15,20 +15,17 @@ public class CSharpCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public bool CompareHash(string candidateHash,
-                                byte[] derivationInput,
-                                string secret,
-                                int secretEntropyInBytes = 32)
+        public bool CompareHash(string candidateHash, byte[] derivationInput, string secret)
         {
             var candidateHashKey = CaskKey.Create(candidateHash);
             var secretKey = CaskKey.Create(secret);
-            bool result = CSharpCask.CompareHash(candidateHashKey, derivationInput, secretKey, secretEntropyInBytes);
+            bool result = CSharpCask.CompareHash(candidateHashKey, derivationInput, secretKey);
 
             string derivationInputString = Encoding.UTF8.GetString(derivationInput);
             (string name, bool value)[] checks = [
                 ("ReadOnlySpan<byte>)", result),
-                ("string", CSharpCask.CompareHash(candidateHashKey, derivationInputString, secretKey, secretEntropyInBytes)),
-                ("ReadOnlySpan<char>)", CSharpCask.CompareHash(candidateHashKey, derivationInputString.AsSpan(), secretKey, secretEntropyInBytes)),
+                ("string", CSharpCask.CompareHash(candidateHashKey, derivationInputString, secretKey)),
+                ("ReadOnlySpan<char>)", CSharpCask.CompareHash(candidateHashKey, derivationInputString.AsSpan(), secretKey)),
             ];
 
             if (!checks.All(c => c.value == result))
@@ -44,18 +41,16 @@ public class CSharpCaskTests : CaskTestsBase
             return result;
         }
 
-        public string GenerateHash(byte[] derivationInput,
-                                   string secret,
-                                   int secretEntropyInBytes = 32)
+        public string GenerateHash(byte[] derivationInput, string secret)
         {
             var secretKey = CaskKey.Create(secret);
-            string result = CSharpCask.GenerateHash(derivationInput, secretKey, secretEntropyInBytes).ToString();
+            string result = CSharpCask.GenerateHash(derivationInput, secretKey).ToString();
 
             string derivationInputString = Encoding.UTF8.GetString(derivationInput);
             (string name, string value)[] checks = [
                 ("ReadOnlySpan<byte>)", result),
-                ("string", CSharpCask.GenerateHash(derivationInputString, secretKey, secretEntropyInBytes).ToString()),
-                ("ReadOnlySpan<char>)", CSharpCask.GenerateHash(derivationInputString.AsSpan(), secretKey, secretEntropyInBytes).ToString()),
+                ("string", CSharpCask.GenerateHash(derivationInputString, secretKey).ToString()),
+                ("ReadOnlySpan<char>)", CSharpCask.GenerateHash(derivationInputString.AsSpan(), secretKey).ToString()),
             ];
 
             if (!checks.All(c => c.value == result))
@@ -72,11 +67,9 @@ public class CSharpCaskTests : CaskTestsBase
         }
 
         public string GenerateKey(string providerSignature,
-                                  string allocatorCode,
-                                  string? reserved = null,
-                                  int secretEntropyInBytes = 32)
+                                  string? reserved = null)
         {
-            CaskKey key = CSharpCask.GenerateKey(providerSignature, allocatorCode, reserved, secretEntropyInBytes);
+            CaskKey key = CSharpCask.GenerateKey(providerSignature, reserved);
             return key.ToString();
         }
 

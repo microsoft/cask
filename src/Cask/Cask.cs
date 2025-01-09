@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -9,8 +10,6 @@ using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-
-using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys;
 
@@ -36,8 +35,7 @@ public static class Cask
             return false;
         }
 
-        ReadOnlySpan<char> signature = key[^16..^12];
-        if ('J' != signature[0] || 'Q' != signature[1] || 'Q' != signature[2] || 'J' != signature[3])
+        if (!key[CaskSignatureCharRange].SequenceEqual(CaskSignature))
         {
             return false;
         }
@@ -69,33 +67,30 @@ public static class Cask
     /// <summary>
     /// Validates that the provided UTF8-encoded byte sequence represents a valid Cask key.
     /// </summary>
-    public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUTF8)
+    public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUtf8)
     {
-        // NOTE: Since all valid Cask keys are ASCII-safe, we use the we can
-        //       safely apply `char` limits as `byte` limits.
-        if (keyUTF8.Length < MinKeyLengthInChars || keyUTF8.Length > MaxKeyLengthInChars || !Is4CharAligned(keyUTF8.Length))
+        if (keyUtf8.Length < MinKeyLengthInChars || keyUtf8.Length > MaxKeyLengthInChars || !Is4CharAligned(keyUtf8.Length))
         {
             return false;
         }
 
-        ReadOnlySpan<byte> signature = keyUTF8[^16..^12];
-        if ('J' != signature[0] || 'Q' != signature[1] || 'Q' != signature[2] || 'J' != signature[3])
+        if (!keyUtf8[CaskSignatureCharRange].SequenceEqual(CaskSignatureUtf8))
         {
             return false;
         }
 
-        int lengthInBytes = Base64CharsToBytes(keyUTF8.Length);
+        int lengthInBytes = Base64CharsToBytes(keyUtf8.Length);
         Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
         OperationStatus status = Base64Url.DecodeFromUtf8(
-            keyUTF8,
+            keyUtf8,
             keyBytes,
             out int charsConsumed,
             out int bytesWritten,
             isFinalBlock: true);
 
-        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == keyUTF8.Length);
+        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == keyUtf8.Length);
         Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
 
         // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
@@ -119,193 +114,193 @@ public static class Cask
             return false;
         }
 
-        // Check signature: [0x25, 0x04, 0x09] is JQQJ decoded from base64 to bytes
-        ReadOnlySpan<byte> signature = keyBytes[^12..^8];
-        if (0x25 != signature[0] || 0x04 != signature[1] || 0x09 != signature[2])
+        // Check CASK signature
+        if (!keyBytes[CaskSignatureByteRange].SequenceEqual(CaskSignatureBytes))
         {
             return false;
         }
 
-        // Validate 3-byte partial CRC32 checksum
-        ReadOnlySpan<byte> keyBytesWithoutCrc = keyBytes[..^3];
-        ReadOnlySpan<byte> crc = keyBytes[^3..];
-        Span<byte> computedCrc = stackalloc byte[4];
-        Crc32.Hash(keyBytesWithoutCrc, computedCrc);
-        return computedCrc[0] == crc[0] && computedCrc[1] == crc[1] && computedCrc[2] == crc[2];
+        // Check kind. NOTE: Hash384Bit is not implemented yet.
+        if (!TryByteToKind(keyBytes[KindByteIndex], out KeyKind kind) || kind is not KeyKind.Key256Bit and not KeyKind.Hash256Bit)
+        {
+            return false;
+        }
+
+        // Check version: must be 1.0.0 currently.
+        if (!TryByteToVersion(keyBytes[VersionByteIndex], out CaskVersion version) || version is not CaskVersion.OneZeroZero)
+        {
+            return false;
+        }
+
+        // Validate checksum.
+        ReadOnlySpan<byte> keyBytesWithoutCrc = keyBytes[..Crc32ByteRange.Start];
+        uint crc = BinaryPrimitives.ReadUInt32LittleEndian(keyBytes[Crc32ByteRange]);
+        uint computedCrc = Crc32.HashToUInt32(keyBytesWithoutCrc);
+        return crc == computedCrc;
     }
 
-    public static CaskKey GenerateKey(string providerSignature,
-                                      string allocatorCode,
-                                      string? providerData = null,
-                                      int secretEntropyInBytes = 32)
+    public static CaskKey GenerateKey(string providerSignature, string? providerData = null)
     {
         providerData ??= "";
 
-        // Ensure that the secretEntropyInBytes is a multiple of 3. We keep all
-        // data aligned along a 3-byte boundary to ensure consistent base64
-        // encoding in the key for fixed components. 
-        secretEntropyInBytes = RoundUpTo3ByteAlignment(secretEntropyInBytes);
 
         ValidateProviderSignature(providerSignature);
-        ValidateAllocatorCode(allocatorCode);
         ValidateProviderData(providerData);
-        ValidateSecretEntropy(secretEntropyInBytes);
 
         // Calculate the length of the key
         int providerDataLengthInBytes = Base64CharsToBytes(providerData.Length);
-        int keyLengthInBytes = GetKeyLengthInBytes(secretEntropyInBytes, providerDataLengthInBytes);
+        int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes);
 
         // Allocate a buffer on the stack to hold the key bytes
         Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
-        Span<byte> keyBytes = stackalloc byte[keyLengthInBytes];
-
-        // Use another span like a pointer, moving it forward as we write data.
-        Span<byte> destination = keyBytes;
+        Span<byte> key = stackalloc byte[keyLengthInBytes];
 
         // Entropy
-        FillRandom(destination[..secretEntropyInBytes]);
-        destination = destination[secretEntropyInBytes..];
+        FillRandom(key[..SecretEntropyInBytes]);
+
+        // Padding
+        key[SecretEntropyInBytes] = 0;
 
         // Provider data
-        int bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), destination);
+        int bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), key[PaddedSecretEntropyInBytes..]);
         Debug.Assert(bytesWritten == providerDataLengthInBytes);
-        destination = destination[providerDataLengthInBytes..];
 
-        // CASK signature: [0x25, 0x04, 0x09] is JQQJ decoded from base64 to bytes
-        destination[0] = 0x25;
-        destination[1] = 0x04;
-        destination[2] = 0x09;
-        destination = destination[3..];
-
-        // Allocator code and timestamp
-        DateTimeOffset now = GetUtcNow();
-        ValidateTimestamp(now);
-        ReadOnlySpan<char> allocatorAndTimestamp = [
-            allocatorCode[0],
-            allocatorCode[1],
-            Base64UrlChars[now.Year - 2024], // years since 2024
-            Base64UrlChars[now.Month - 1],   // zero-indexed month
-        ];
-        bytesWritten = Base64Url.DecodeFromChars(allocatorAndTimestamp, destination);
-        Debug.Assert(bytesWritten == 3);
-        destination = destination[3..];
+        // CASK signature
+        CaskSignatureBytes.CopyTo(key[CaskSignatureByteRange]);
 
         // Provider signature
-        bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), destination);
+        bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), key[ProviderSignatureByteRange]);
         Debug.Assert(bytesWritten == 3);
-        destination = destination[3..];
 
-        ComputeChecksum(keyBytes, destination);
-        return CaskKey.Encode(keyBytes);
+        FinalizeKey(key, KeyKind.Key256Bit, UseCurrentTime);
+        return CaskKey.Encode(key);
     }
 
-    public static CaskKey GenerateHash(string derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static CaskKey GenerateHash(string derivationInput, CaskKey secret)
     {
-        return GenerateHash(derivationInput.AsSpan(), secret, secretEntropyInBytes);
+        return GenerateHash(derivationInput.AsSpan(), secret);
     }
 
-    public static CaskKey GenerateHash(ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static CaskKey GenerateHash(ReadOnlySpan<char> derivationInput, CaskKey secret)
     {
+        ThrowIfNotPrimary(secret);
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
         Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
         Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        return GenerateHash(derivationInputBytes, secret, secretEntropyInBytes);
+        return GenerateHash(derivationInputBytes, secret);
     }
 
-    public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret)
     {
-        int hashLengthInBytes = GetHashLengthInBytes(secret, ref secretEntropyInBytes, out int providerDataLengthInBytes);
+        ThrowIfNotPrimary(secret);
+        int hashLengthInBytes = GetHashLengthInBytes(secret.SizeInBytes, out int providerDataLengthInBytes);
         Debug.Assert(hashLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> hash = stackalloc byte[hashLengthInBytes];
-        GenerateHashBytes(derivationInput, secret, secretEntropyInBytes, providerDataLengthInBytes, hash);
+        GenerateHashBytes(derivationInput, secret, providerDataLengthInBytes, hash, UseCurrentTime);
         return CaskKey.Encode(hash);
-    }
-
-    private static int GetHashLengthInBytes(CaskKey secret, ref int secretEntropyInBytes, out int providerDataLengthInBytes)
-    {
-        secretEntropyInBytes = RoundUpTo3ByteAlignment(secretEntropyInBytes);
-
-        ThrowIfDefault(secret);
-        ValidateSecretEntropy(secretEntropyInBytes);
-
-        providerDataLengthInBytes = Base64CharsToBytes(secret.ToString().Length) - secretEntropyInBytes - FixedKeyComponentSizeInBytes;
-        return GetKeyLengthInBytes(33, providerDataLengthInBytes);
     }
 
     private static void GenerateHashBytes(
         ReadOnlySpan<byte> derivationInput,
         CaskKey secret,
-        int secretEntropyInBytes,
         int providerDataLengthInBytes,
-        Span<byte> hash)
+        Span<byte> hash,
+        ReadOnlySpan<byte> timestamp)
     {
-        int keyLengthInBytes = Base64CharsToBytes(secret.ToString().Length);
-        Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
-        Span<byte> secretBytes = stackalloc byte[keyLengthInBytes];
-        Base64Url.DecodeFromChars(secret.ToString().AsSpan(), secretBytes);
 
-        Span<byte> destination = hash;
+        Debug.Assert(secret.SizeInBytes <= MaxKeyLengthInBytes);
+        Span<byte> secretBytes = stackalloc byte[secret.SizeInBytes];
+        secret.Decode(secretBytes);
 
         // 32-byte Hash
-        HMACSHA256.HashData(secretBytes, derivationInput, destination);
-        destination = destination[32..];
+        HMACSHA256.HashData(secretBytes, derivationInput, hash);
 
         // 1 padding byte
-        destination[0] = 0;
-        destination = destination[1..];
+        secretBytes[HMACSHA256.HashSizeInBytes] = 0;
 
-        // Copy provider data
-        ReadOnlySpan<byte> source = secretBytes[secretEntropyInBytes..];
-        source[..providerDataLengthInBytes].CopyTo(destination);
-        source = source[providerDataLengthInBytes..];
-        destination = destination[providerDataLengthInBytes..];
+        // Provider data: copy from secret
+        ReadOnlySpan<byte> providerData = secretBytes.Slice(PaddedSecretEntropyInBytes, providerDataLengthInBytes);
+        providerData.CopyTo(hash[PaddedHmacSha256SizeInBytes..]);
 
-        // Copy all fixed components but checksum: CASK signature, allocator code, timestamp, provider signature
-        source[..9].CopyTo(destination);
-        destination = destination[9..];
+        // C3ID
+        CrossCompanyCorrelatingId.ComputeRaw(secret.ToString(), hash[C3IdByteRange]);
 
-        ComputeChecksum(hash, destination);
+        // Cask signature
+        CaskSignatureBytes.CopyTo(hash[CaskSignatureByteRange]);
+
+        // Provider signature: copy from secret
+        secretBytes[ProviderSignatureByteRange].CopyTo(hash[ProviderSignatureByteRange]);
+
+        FinalizeKey(hash, KeyKind.Hash256Bit, timestamp);
     }
 
-    private static void ComputeChecksum(ReadOnlySpan<byte> keyBytes, Span<byte> checksumDestination)
+    private static ReadOnlySpan<byte> UseCurrentTime => [];
+
+    private static void FinalizeKey(Span<byte> key, KeyKind kind, ReadOnlySpan<byte> timestamp)
     {
-        Debug.Assert(checksumDestination.Length == 3, "There should only be 3 bytes left for the checksum.");
-        Span<byte> crc32 = stackalloc byte[4];
-        Crc32.Hash(keyBytes[..^3], crc32);
-        crc32[..3].CopyTo(checksumDestination);
+        if (timestamp.IsEmpty)
+        {
+            DateTimeOffset now = GetUtcNow();
+            ValidateTimestamp(now);
+            ReadOnlySpan<char> chars = [
+                Base64UrlChars[now.Year - 2024], // years since 2024
+                Base64UrlChars[now.Month - 1],   // zero-indexed month
+                Base64UrlChars[now.Day],         // zero-indexed day
+                Base64UrlChars[now.Hour],        // zero-indexed hour
+            ];
+
+            int bytesWritten = Base64Url.DecodeFromChars(chars, key[TimestampByteRange]);
+            Debug.Assert(bytesWritten == 3);
+        }
+        else
+        {
+            timestamp.CopyTo(key[TimestampByteRange]);
+        }
+
+        key[VersionByteIndex] = VersionToByte(CaskVersion.OneZeroZero);
+        key[KindByteIndex] = KindToByte(kind);
+        Crc32.Hash(key[..Crc32ByteRange.Start], key[Crc32ByteRange]);
     }
 
-    public static bool CompareHash(CaskKey candidateHash, string derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static bool CompareHash(CaskKey candidateHash, string derivationInput, CaskKey secret)
     {
-        return CompareHash(candidateHash, derivationInput.AsSpan(), secret, secretEntropyInBytes);
+        ThrowIfUnitialized(candidateHash);
+        return CompareHash(candidateHash, derivationInput.AsSpan(), secret);
     }
 
-    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret)
     {
+        ThrowIfUnitialized(candidateHash);
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
         Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
         Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        return CompareHash(candidateHash, derivationInputBytes, secret, secretEntropyInBytes);
+        return CompareHash(candidateHash, derivationInputBytes, secret);
     }
 
-    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret, int secretEntropyInBytes)
+    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret)
     {
-        // Compute hash
-        int length = GetHashLengthInBytes(secret, ref secretEntropyInBytes, out int providerDataLengthInBytes);
-        Debug.Assert(length <= MaxKeyLengthInBytes);
-        Span<byte> computedBytes = stackalloc byte[length];
-        GenerateHashBytes(derivationInput, secret, secretEntropyInBytes, providerDataLengthInBytes, computedBytes);
+        ThrowIfUnitialized(candidateHash);
+        ThrowIfNotHash(candidateHash);
+        ThrowIfUnitialized(secret);
+        ThrowIfNotPrimary(secret);
 
-        // Decode candidate hash
-        int candidateHashLengthInBytes = Base64CharsToBytes(candidateHash.ToString().Length);
-        if (candidateHashLengthInBytes != length)
+        // Check if sizes match
+        int length = GetHashLengthInBytes(secret.SizeInBytes, out int providerDataLengthInBytes);
+        if (candidateHash.SizeInBytes != length)
         {
             return false;
         }
 
+        // Decode candidate hash
         Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> candidateBytes = stackalloc byte[length];
-        Base64Url.DecodeFromChars(candidateHash.ToString().AsSpan(), candidateBytes);
+        candidateHash.Decode(candidateBytes);
+
+        // Compute hash with candidate timestamp
+        ReadOnlySpan<byte> candidateTimestamp = candidateBytes[TimestampByteRange];
+        Debug.Assert(length <= MaxKeyLengthInBytes);
+        Span<byte> computedBytes = stackalloc byte[length];
+        GenerateHashBytes(derivationInput, secret, providerDataLengthInBytes, computedBytes, candidateTimestamp);
 
         // Compare
         return CryptographicOperations.FixedTimeEquals(candidateBytes, computedBytes);
@@ -368,12 +363,6 @@ public static class Cask
         {
             ThrowInvalidYear();
         }
-    }
-
-    private static void ValidateSecretEntropy(int secretEntropyInBytes)
-    {
-        ThrowIfLessThan(secretEntropyInBytes, MinSecretEntropyInBytes);
-        ThrowIfGreaterThan(secretEntropyInBytes, MaxSecretEntropyInBytes);
     }
 
     private static void ValidateProviderData(string providerData)

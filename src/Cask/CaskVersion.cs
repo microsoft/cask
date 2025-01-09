@@ -2,12 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace CommonAnnotatedSecurityKeys;
-internal enum CaskVersion : byte
+
+public enum CaskVersion
 {
     /// <summary>
     /// Specifies version 1.0.0 of CASK.
     /// </summary>
-    OneZeroZero,
-
-    Reserved = 0xfe,
+    OneZeroZero = 0,
 }

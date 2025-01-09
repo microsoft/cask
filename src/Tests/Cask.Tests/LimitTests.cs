@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 using Xunit;
 
+using static CommonAnnotatedSecurityKeys.InternalConstants;
 using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
@@ -11,7 +12,6 @@ public class LimitTests
     [Fact]
     public void Limits_MaxBytesAreStackAllocSafe()
     {
-        AssertStackAllocSafe(MaxSecretEntropyInBytes);
         AssertStackAllocSafe(MaxProviderDataLengthInBytes);
         AssertStackAllocSafe(MaxKeyLengthInBytes);
     }
@@ -19,7 +19,6 @@ public class LimitTests
     [Fact]
     public void Limits_MinLessThanMax()
     {
-        AssertMinLessThanMax(MinSecretEntropyInBytes, MaxSecretEntropyInBytes);
         AssertMinLessThanMax(MinKeyLengthInBytes, MaxKeyLengthInBytes);
         AssertMinLessThanMax(MinKeyLengthInChars, MaxKeyLengthInChars);
     }

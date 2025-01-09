@@ -20,10 +20,8 @@ CASK_API bool Cask_IsCaskBytes(const uint8_t* keyOrHashBytes,
      return false; 
 }
 
-CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
-                                  const char* providerSignature,
+CASK_API int32_t Cask_GenerateKey(const char* providerSignature,
                                   const char* providerData,
-                                  int32_t secretEntropyInBytes,
                                   char* output,
                                   int32_t outputSizeInBytes)
 {
@@ -53,9 +51,8 @@ CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
 }
 
 CASK_API int32_t Cask_GenerateHash(const uint8_t* derivationInputBytes,
-                                   const int32_t derivationInputLength,
+                                   int32_t derivationInputLength,
                                    const char* secret,
-                                   int32_t secretEntropyInBytes,
                                    char* buffer,
                                    int32_t bufferSize)
 {
@@ -64,9 +61,8 @@ CASK_API int32_t Cask_GenerateHash(const uint8_t* derivationInputBytes,
 
 CASK_API bool Cask_CompareHash(const char* candidateHash,
                                const uint8_t* derivationInputBytes,
-                               const int32_t derivationInputLength,
-                               const char* secret,
-                               int32_t secretEntropyInBytes)
+                               int32_t derivationInputLength,
+                               const char* secret)
 {
     return false;
 }

@@ -20,8 +20,7 @@ public class CompareHashBenchmarks
         return Cask.CompareHash(
             CaskKey.Create(TestCaskHash),
             TestDerivationInput,
-            CaskKey.Create(TestCaskSecret),
-            TestSecretEntropyInBytes);
+            CaskKey.Create(TestCaskSecret));
     }
 
     [Benchmark]
@@ -30,7 +29,7 @@ public class CompareHashBenchmarks
         Span<byte> candidateHash = stackalloc byte[HMACSHA256.HashSizeInBytes];
         Base64Url.DecodeFromChars(TestNonIdentifiableHash.AsSpan(), candidateHash);
 
-        Span<byte> secret = stackalloc byte[TestSecretEntropyInBytes];
+        Span<byte> secret = stackalloc byte[32];
         Base64Url.DecodeFromChars(TestNonIdentifiableSecret.AsSpan(), secret);
 
         Span<byte> hash = stackalloc byte[HMACSHA256.HashSizeInBytes];

@@ -23,19 +23,11 @@ public interface ICask
 
     bool IsCaskBytes(byte[] keyOrHash);
 
-    string GenerateKey(string providerSignature,
-                       string allocatorCode,
-                       string? providerData = null,
-                       int secretEntropyInBytes = 32);
+    string GenerateKey(string providerSignature, string? providerData = null);
 
-    string GenerateHash(byte[] derivationInput,
-                        string secret,
-                        int secretEntropyInBytes);
+    string GenerateHash(byte[] derivationInput, string secret);
 
-    bool CompareHash(string candidateHash,
-                     byte[] derivationInput,
-                     string secret,
-                     int secretEntropyInBytes);
+    bool CompareHash(string candidateHash, byte[] derivationInput, string secret);
 
     internal Mock MockUtcNow(UtcNowFunc getUtcNow);
 

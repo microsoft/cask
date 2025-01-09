@@ -27,13 +27,6 @@ internal sealed class GenerateOptions
     public string FixedSignature { get; set; }
 
     [Option(
-        "length",
-        Required = false,
-        Default = 32,
-        HelpText = "The length of the randomized component in bytes. Must be at least 16.")]
-    public int SecretEntropyInBytes { get; set; }
-
-    [Option(
         "count",
         Required = false,
         Default = (uint)1,

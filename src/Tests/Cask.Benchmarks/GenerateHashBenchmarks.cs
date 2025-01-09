@@ -18,8 +18,7 @@ public class GenerateHashBenchmarks
     {
         CaskKey key = Cask.GenerateHash(
             TestDerivationInput,
-            CaskKey.Create(TestCaskSecret),
-            TestSecretEntropyInBytes);
+            CaskKey.Create(TestCaskSecret));
 
         return key.ToString();
     }
@@ -27,7 +26,7 @@ public class GenerateHashBenchmarks
     [Benchmark]
     public string GenerateHash_Floor()
     {
-        Span<byte> secret = stackalloc byte[TestSecretEntropyInBytes];
+        Span<byte> secret = stackalloc byte[32];
         Base64Url.DecodeFromChars(TestNonIdentifiableSecret.AsSpan(), secret);
 
         Span<byte> hash = stackalloc byte[HMACSHA256.HashSizeInBytes];

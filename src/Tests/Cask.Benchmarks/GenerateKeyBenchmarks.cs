@@ -18,7 +18,6 @@ public class GenerateKeyBenchmarks
     {
         CaskKey key = Cask.GenerateKey(
             TestProviderSignature,
-            TestAllocatorCode,
             TestProviderData);
 
         return key.ToString();
@@ -28,7 +27,7 @@ public class GenerateKeyBenchmarks
     [Benchmark]
     public string GenerateKey_Floor()
     {
-        Span<byte> bytes = stackalloc byte[TestSecretEntropyInBytes];
+        Span<byte> bytes = stackalloc byte[32];
         RandomNumberGenerator.Fill(bytes);
         return Base64Url.EncodeToString(bytes);
     }

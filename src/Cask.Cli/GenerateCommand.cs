@@ -25,16 +25,12 @@ internal static class GenerateCommand
 
         for (int i = 0; i < options.Count; i++)
         {
-            CaskKey key = Cask.GenerateKey(providerSignature,
-                                           "99",
-                                           providerData,
-                                           secretEntropyInBytes: options.SecretEntropyInBytes);
-
+            CaskKey key = Cask.GenerateKey(providerSignature, providerData);
 
             string validity = Cask.IsCask(key.ToString()) ? "Valid Key   " : "INVALID KEY ";
             Console.WriteLine($"{validity}: {key}");
 
-            CaskKey hash = Cask.GenerateHash(derivationInput, key, options.SecretEntropyInBytes);
+            CaskKey hash = Cask.GenerateHash(derivationInput, key);
             validity = Cask.IsCask(hash.ToString()) ? "Valid Hash  " : "INVALID HASH";
             Console.WriteLine($"{validity}: {hash}");
         }

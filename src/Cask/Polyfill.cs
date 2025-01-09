@@ -107,6 +107,16 @@ namespace Polyfill
                 return encoding.GetBytes(charPtr, chars.Length, bytePtr, bytes.Length);
             }
         }
+
+        public static int GetHashCode(this string s, StringComparison comparison)
+        {
+            return comparison switch
+            {
+                StringComparison.Ordinal => StringComparer.Ordinal.GetHashCode(s),
+                StringComparison.OrdinalIgnoreCase => StringComparer.OrdinalIgnoreCase.GetHashCode(s),
+                _ => throw new NotSupportedException(),
+            };
+        }
     }
 
     internal static class ArgumentValidation
@@ -269,7 +279,7 @@ namespace Polyfill
 
 namespace CommonAnnotatedSecurityKeys
 {
-    public partial record struct CaskKey
+    partial record struct CaskKey
     {
         // On modern .NET, the regex will be compiled into this partial method
         // by a source generator. For .NET Framework, fill it in by newing up a
