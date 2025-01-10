@@ -16,7 +16,7 @@ namespace CommonAnnotatedSecurityKeys;
 public static class CrossCompanyCorrelatingId
 {
     /// <summary>
-    /// The size of a Cross-Company Correlating ID (aka C3ID) in raw bytes.
+    /// The size of a C3ID in raw bytes.
     /// </summary>
     public const int RawSizeInBytes = 12;
 
