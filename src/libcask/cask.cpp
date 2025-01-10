@@ -16,6 +16,26 @@
 #include "cask_dependencies.h"
 #include "helpers.h"
 
+/// <summary>
+/// The maximum length of provider-reserved data when base64-encoded.
+/// </summary>
+const int32_t MaxProviderDataLengthInBytes = RoundUpTo3ByteAlignment(24);
+
+/// <summary>
+/// The maximum length of provider-reserved data when base64-encoded.
+/// </summary>
+const int32_t MaxProviderDataLengthInChars = BytesToBase64Chars(MaxProviderDataLengthInBytes);
+
+/// <summary>
+/// The minimum number of bytes of entropy that must be used to generate a key.
+/// </summary>
+const int32_t MinSecretEntropyInBytes = RoundUpTo3ByteAlignment(16);
+
+/// <summary>
+/// The maximum number of bytes of entropy that can be used to generate a key
+/// </summary>
+const int32_t MaxSecretEntropyInBytes = RoundUpTo3ByteAlignment(64);
+
 CASK_API bool Cask_IsCask(const char* keyOrHash)
 {
     return false;
@@ -34,26 +54,6 @@ CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
                                   char* output,
                                   int32_t outputSizeInBytes)
 {
-    auto ValidateAllocatorCode = [](const std::string& code) {
-        if (code.length() != 2) {
-            throw std::invalid_argument("Allocator code must be 2 characters long.");
-        }
-        // Add more validation if needed
-    };
-
-    auto ValidateProviderData = [](const std::string& data) {
-        if (data.length() % 4 != 0) {
-            throw std::invalid_argument("Provider data must be a multiple of 4 characters long.");
-        }
-        // Add more validation if needed
-    };
-
-    auto ValidateSecretEntropy = [](int entropy) {
-        if (entropy < 16 || entropy > 64) {
-            throw std::invalid_argument("Secret entropy must be between 16 and 64 bytes.");
-        }
-    };
-
     auto GetKeyLengthInBytes = [](int secretEntropy, int providerDataLength) {
         return secretEntropy + providerDataLength + 12;
     };
@@ -153,8 +153,8 @@ CASK_API bool Cask_CompareHash(const char* candidateHash,
     return false;
 }
 
-bool ValidateProviderSignature (const char* providerSignature) {
-
+void ValidateProviderSignature (const char* providerSignature) 
+{
     if (providerSignature == nullptr)
     {
         throw std::invalid_argument("Provider signature must not be null.");
@@ -169,4 +169,56 @@ bool ValidateProviderSignature (const char* providerSignature) {
         throw std::invalid_argument("Provider signature must be a valid URL-safe Base64 string.");
     }
 }
+
+void ValidateAllocatorCode (const char* allocatorCode) 
+{
+    if (allocatorCode == nullptr) 
+    {
+        throw std::invalid_argument("Allocator code must not be null.");
+    }
+
+    if (std::strlen(allocatorCode) != 2) {
+        throw std::invalid_argument("Allocator code must be 2 characters long.");
+    }
+    
+    if (!IsValidForBase64Url(allocatorCode))
+    {
+        throw std::invalid_argument("Allocator code must be a valid URL-safe Base64 string.");
+    }
+}
+
+void ValidateProviderData(const char* providerData)
+{
+    if (providerData == nullptr)
+    {
+        throw std::invalid_argument("Provider data must not be null.");
+    }
+
+    size_t providerDataLength = std::strlen(providerData);
+
+    if (providerDataLength > MaxProviderDataLengthInChars)
+    {
+        throw std::invalid_argument("Provider data must be at most " + std::to_string(MaxProviderDataLengthInChars) + " characters: '" + std::to_string(providerDataLength) + "'.");
+    }
+
+    if (!Is4CharAligned(providerDataLength))
+    {
+        throw std::invalid_argument("Provider data length must be a multiple of 4: " + std::to_string(providerDataLength));
+    }
+
+    if (!IsValidForBase64Url(providerData))
+    {
+        throw std::invalid_argument("Provider data must be a valid URL-safe Base64 string.");
+    }
+}
+
+void ValidateSecretEntropy(int32_t secretEntropyInBytes)
+{
+    if (secretEntropyInBytes < MinSecretEntropyInBytes || secretEntropyInBytes > MaxSecretEntropyInBytes)
+    {
+        throw std::invalid_argument("Secret entropy must be between " + std::to_string(MinSecretEntropyInBytes) + " and " + std::to_string(MaxSecretEntropyInBytes) + " bytes.");
+    }
+}
+
+
 
