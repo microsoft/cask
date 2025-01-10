@@ -240,9 +240,9 @@ namespace Polyfill
 
         public static byte[] HashData(ReadOnlySpan<byte> source)
         {
-            Span<byte> hash = stackalloc byte[HashSizeInBytes];
+            byte[] hash = new byte[HashSizeInBytes];
             HashData(source, hash);
-            return hash.ToArray();
+            return hash;
         }
     }
 }
