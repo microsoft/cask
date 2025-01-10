@@ -21,7 +21,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{6C9FC733-D366-40BC-9BA0-EBFB72742C7B}"
 	ProjectSection(SolutionItems) = preProject
 		..\..\docs\CSharp_ReleaseHistory.md = ..\..\docs\CSharp_ReleaseHistory.md
-		PrimaryKeyBnf.md = PrimaryKeyBnf.md
+		PrimaryKey.bnf = PrimaryKey.bnf
 	EndProjectSection
 EndProject
 Global

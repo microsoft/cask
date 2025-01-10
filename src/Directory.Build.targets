@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <!-- For .NETFramework, allow nullable annotations, but don't enable analysis.-->
+    <Nullable>annotations</Nullable>
+    <!-- False positives due to polyfill technique for 'IDE0005:Remove Unecessary Usings'. -->
+    <NoWarn>$(NoWarn);IDE0005</NoWarn>
+  </PropertyGroup>
+
+  <!-- Generate packages on build for packable projects in release configuration -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true' and '$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+</Project>

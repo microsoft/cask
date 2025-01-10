@@ -1,0 +1,14 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+
+  <ItemGroup Label="Common Test-Only Dependencies" Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" PrivateAssets="all" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="xunit" />
+  </ItemGroup>
+
+  <!-- Share .NET Framework polyfill global usings with other projects -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildProjectName)' != 'Cask'">
+    <Compile Include="$(MSBuildThisFileDirectory)..\Cask\Polyfill.GlobalUsings.cs" Visible="false" />
+  </ItemGroup>
+</Project>

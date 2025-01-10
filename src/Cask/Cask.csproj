@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net472</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../docs/CSharp_ReleaseHistory.md" Visible="false" Pack="true" PackagePath="ReleaseHistory.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing" />
+    <PackageReference Include="Microsoft.Bcl.Memory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cask.Tests" />
+    <InternalsVisibleTo Include="Cask.Benchmarks" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Compile Remove="Polyfill*.cs" />
+    <None Include="Polyfill*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Using Include="System.ArgumentException" Static="True" />
+    <Using Include="System.ArgumentNullException" Static="true" />
+    <Using Include="System.ArgumentOutOfRangeException" Static="true" />
+  </ItemGroup>
+</Project>

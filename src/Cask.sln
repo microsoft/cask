@@ -1,0 +1,95 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cask.Cli", "Cask.Cli\Cask.Cli.csproj", "{DC47AEEE-C83A-453A-9691-ACCCF0A958C4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cask", "Cask\Cask.csproj", "{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{AA9664D7-21A5-4941-BE8A-D62765F58CE6}"
+	ProjectSection(SolutionItems) = preProject
+		Tests\Directory.Build.props = Tests\Directory.Build.props
+		Tests\Directory.Packages.props = Tests\Directory.Packages.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{0C3A2105-9369-461A-92AB-3D39CA120B83}"
+	ProjectSection(SolutionItems) = preProject
+		..\.editorconfig = ..\.editorconfig
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		Cask.lutconfig = Cask.lutconfig
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.rsp = Directory.Build.rsp
+		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+		Directory.Solution.props = Directory.Solution.props
+		Directory.WarningsAsErrors.props = Directory.WarningsAsErrors.props
+		NuGet.config = NuGet.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3BB9E62C-7DB6-4800-9D97-69E544F5BB52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cask.Tests", "Tests\Cask.Tests\Cask.Tests.csproj", "{7935CC28-E862-416C-B417-A043703C1A4F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BD909936-A204-4B21-8356-EAAEE1958945}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\CSharp_ReleaseHistory.md = ..\docs\CSharp_ReleaseHistory.md
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevDocs", "DevDocs", "{51A4B75A-58BC-4241-8A5C-50297D857233}"
+	ProjectSection(SolutionItems) = preProject
+		..\devdocs\GenerateHashPseudoCode.md = ..\devdocs\GenerateHashPseudoCode.md
+		..\devdocs\GenerateKeyPseudoCode.md = ..\devdocs\GenerateKeyPseudoCode.md
+		..\devdocs\Questions.md = ..\devdocs\Questions.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cask.Benchmarks", "Tests\Cask.Benchmarks\Cask.Benchmarks.csproj", "{FB74046B-2FF6-4316-85B1-39A28D945A18}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{2103FEC5-A66C-48B1-9262-D0CE19CC1E7A}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\no-merge.yml = ..\.github\workflows\no-merge.yml
+		..\.github\workflows\validate.yml = ..\.github\workflows\validate.yml
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcask", "libcask\libcask.vcxproj", "{14013CD3-B963-4851-AA9A-7C7A2F110A52}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC47AEEE-C83A-453A-9691-ACCCF0A958C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC47AEEE-C83A-453A-9691-ACCCF0A958C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC47AEEE-C83A-453A-9691-ACCCF0A958C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC47AEEE-C83A-453A-9691-ACCCF0A958C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0574B57-8291-4E17-BFD1-A1D2DF608A2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7935CC28-E862-416C-B417-A043703C1A4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7935CC28-E862-416C-B417-A043703C1A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7935CC28-E862-416C-B417-A043703C1A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7935CC28-E862-416C-B417-A043703C1A4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB74046B-2FF6-4316-85B1-39A28D945A18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB74046B-2FF6-4316-85B1-39A28D945A18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB74046B-2FF6-4316-85B1-39A28D945A18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB74046B-2FF6-4316-85B1-39A28D945A18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14013CD3-B963-4851-AA9A-7C7A2F110A52}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{14013CD3-B963-4851-AA9A-7C7A2F110A52}.Release|Any CPU.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AA9664D7-21A5-4941-BE8A-D62765F58CE6} = {0C3A2105-9369-461A-92AB-3D39CA120B83}
+		{7935CC28-E862-416C-B417-A043703C1A4F} = {3BB9E62C-7DB6-4800-9D97-69E544F5BB52}
+		{FB74046B-2FF6-4316-85B1-39A28D945A18} = {3BB9E62C-7DB6-4800-9D97-69E544F5BB52}
+		{2103FEC5-A66C-48B1-9262-D0CE19CC1E7A} = {0C3A2105-9369-461A-92AB-3D39CA120B83}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3C6E0D82-3180-4C2D-91AE-EBC2A066168E}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,21 @@
+name: Check no-merge label
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+
+jobs:
+  check-no-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if PR is labeled no-merge
+        if: contains(github.event.pull_request.labels.*.name, 'no-merge')
+        run: |
+          echo "This PR is labeled no-merge and should not be merged."
+          exit 1

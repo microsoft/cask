@@ -1,0 +1,5 @@
+# Normalize line endings to LF in repo, checkout CRLF on Windows
+*                            text=auto
+
+# Allow comments in JSON in GitHub rendering
+*.json                       linguist-language=JSON-with-Comments
