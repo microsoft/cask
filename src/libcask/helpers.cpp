@@ -2,6 +2,11 @@
 
 #include "helpers.h"
 
+const int32_t FixedKeyComponentSizeInBytes =    3 +  // CASK signature
+                                                3 +  // Allocator code and timestamp
+                                                3 +  // Provider signature
+                                                3;   // Checksum
+
 int32_t RoundUpTo3ByteAlignment(int32_t bytes)
 {
     return RoundUpToMultipleOf(bytes, 3);
@@ -10,6 +15,11 @@ int32_t RoundUpTo3ByteAlignment(int32_t bytes)
 int32_t RoundUpToMultipleOf(int32_t value, int32_t multiple)
 {
     return (value + multiple - 1) / multiple * multiple;
+}
+
+int32_t RoundUpTo4CharAlignment(int32_t chars)
+{
+    return RoundUpToMultipleOf(chars, 4);
 }
 
 int32_t GetKeyLengthInBytes(int secretEntropyInBytes, int providerDataLengthInBytes)
@@ -25,6 +35,11 @@ int32_t GetKeyLengthInBytes(int secretEntropyInBytes, int providerDataLengthInBy
     }
 
     return secretEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+}
+
+int32_t Base64CharsToBytes(int32_t chars)
+{
+    return RoundUpTo4CharAlignment(chars) / 4 * 3;
 }
 
 bool IsValidForBase64Url(const char* value)

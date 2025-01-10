@@ -54,28 +54,6 @@ CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
                                   char* output,
                                   int32_t outputSizeInBytes)
 {
-    auto GetKeyLengthInBytes = [](int secretEntropy, int providerDataLength) {
-        return secretEntropy + providerDataLength + 12;
-    };
-
-    auto FillRandom = [](std::span<uint8_t> buffer) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, 255);
-        std::generate(buffer.begin(), buffer.end(), [&]() { return dis(gen); });
-    };
-
-    auto GetUtcNow = []() {
-        return std::time(nullptr);
-    };
-
-    auto ComputeChecksum = [](std::span<const uint8_t> keyBytes, std::span<uint8_t> checksumDestination) {
-        assert(checksumDestination.size() == 3);
-        std::vector<uint8_t> crc32(4);
-        Crc32::Hash(keyBytes.subspan(0, keyBytes.size() - 3), crc32);
-        std::copy(crc32.begin(), crc32.begin() + 3, checksumDestination.begin());
-    };
-
     secretEntropyInBytes = RoundUpTo3ByteAlignment(secretEntropyInBytes);
 
     ValidateProviderSignature(providerSignature);
@@ -83,7 +61,7 @@ CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
     ValidateProviderData(providerData);
     ValidateSecretEntropy(secretEntropyInBytes);
 
-    int providerDataLengthInBytes = Base64Url::CharsToBytes(providerData.length());
+    int providerDataLengthInBytes = Base64CharsToBytes(std::strlen(providerData));
     int keyLengthInBytes = GetKeyLengthInBytes(secretEntropyInBytes, providerDataLengthInBytes);
 
     assert(keyLengthInBytes <= 64);
