@@ -103,7 +103,7 @@ public class CrossCompanyCorrelatingIdTests
     }
 
     /// <summary>
-    /// A trival reference implementation of C3ID that is easy to understand,
+    /// A trivial reference implementation of C3ID that is easy to understand,
     /// but not optimized for performance. We compare this to the production
     /// implementation to ensure that it remains equivalent to this.
     /// </summary>
