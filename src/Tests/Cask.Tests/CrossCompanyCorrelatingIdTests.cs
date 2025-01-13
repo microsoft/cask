@@ -44,6 +44,13 @@ public class CrossCompanyCorrelatingIdTests
     public void C3ID_EmptyRaw_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
+        Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.ComputeRaw("", destination));
+    }
+
+    [Fact]
+    public void C3ID_EmptyRawSpan_Throws()
+    {
+        byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
         Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.ComputeRaw([], destination));
     }
 
