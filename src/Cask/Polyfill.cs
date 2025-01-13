@@ -119,6 +119,14 @@ namespace Polyfill
             }
         }
 
+        public static void ThrowIfNullOrEmpty([NotNull] string? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                ThrowNullOrEmpty(argument, paramName);
+            }
+        }
+
         public static void ThrowIfGreaterThan(int value, int max, [CallerArgumentExpression(nameof(value))] string? paramName = null)
         {
             if (value > max)
@@ -152,6 +160,13 @@ namespace Polyfill
         {
             throw new ArgumentOutOfRangeException(paramName, value, $"Value must be greater than or equal to {min}.");
         }
+
+        [DoesNotReturn]
+        private static void ThrowNullOrEmpty(string? argument, string? paramName)
+        {
+            ThrowIfNull(argument, paramName);
+            throw new ArgumentException("Value cannot be empty.", paramName);
+        }
     }
 
     internal static class Convert
@@ -159,11 +174,6 @@ namespace Polyfill
         public static string ToBase64String(ReadOnlySpan<byte> bytes)
         {
             return Bcl_Convert.ToBase64String(bytes.ToArray());
-        }
-
-        public static byte[] FromBase64String(string s)
-        {
-            return Bcl_Convert.FromBase64String(s);
         }
     }
 

@@ -11,10 +11,10 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 public class CrossCompanyCorrelatingIdTests
 {
     [Theory]
-    [InlineData("Hello world", "C3ID9xeTAR1ewMzk9axi")]
-    [InlineData("😁", "C3IDrASY+FVWgFfMcvcw")]
-    [InlineData("y_-KPF3BQb2-VHZeqrp28c6dgiL9y7H9TRJmQ5jJe9OvJQQJTESTBAU4AAB5mIhC", "C3IDNucDCyn9NEm713r5")]
-    [InlineData("Kq03wDtdCGWvs3sPgbH84H5MDADIJMZEERRhUN73CaGBJQQJTESTBAU4AADqe9ge", "C3IDHW9XUFlW+lHLTNFU")]
+    [InlineData("Hello world", "C3IDnw4dY6uIibYownZw")]
+    [InlineData("😁", "C3IDF8FaWr4yMPcwOOxM")]
+    [InlineData("y_-KPF3BQb2-VHZeqrp28c6dgiL9y7H9TRJmQ5jJe9OvJQQJTESTBAU4AAB5mIhC", "C3IDKx9aukbRgOnPEyeu")]
+    [InlineData("Kq03wDtdCGWvs3sPgbH84H5MDADIJMZEERRhUN73CaGBJQQJTESTBAU4AADqe9ge", "C3IDO93RBPyuaA6ZRK8+")]
     public void C3ID_Basic(string text, string expected)
     {
         string actual = ComputeC3ID(text);
@@ -25,7 +25,7 @@ public class CrossCompanyCorrelatingIdTests
     public void C3ID_LargeText()
     {
         string actual = ComputeC3ID(text: new string('x', 300));
-        Assert.Equal("C3IDuGJvUr8Loa+4dgYT", actual);
+        Assert.Equal("C3IDs+pSKJ1FmRW+7EZk", actual);
     }
 
     [Fact]
@@ -34,37 +34,24 @@ public class CrossCompanyCorrelatingIdTests
         Assert.Throws<ArgumentNullException>("text", () => CrossCompanyCorrelatingId.Compute(null!));
     }
 
-    public static readonly TheoryData<string> EmptyOrAsciiWhitespace =
-    [
-        "",
-        " ",
-        "    ",
-        " \t\r\n\u000B\u000C ",
-    ];
-
-    [Theory]
-    [MemberData(nameof(EmptyOrAsciiWhitespace))]
-    public void C3ID_EmptyOrAsciiWhitespace_Throws(string text)
+    [Fact]
+    public void C3ID_Empty_Throws()
     {
-        Assert.Throws<ArgumentException>(nameof(text), () => CrossCompanyCorrelatingId.Compute(text));
+        Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.Compute(""));
     }
 
-    [Theory]
-    [MemberData(nameof(EmptyOrAsciiWhitespace))]
-    public void C3ID_EmptyOrAsciiWhitespaceRaw_Throws(string text)
+    [Fact]
+    public void C3ID_EmptyRaw_Throws()
     {
-        char[] input = text.ToCharArray();
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
-        Assert.Throws<ArgumentException>(nameof(text), () => CrossCompanyCorrelatingId.ComputeRaw(input, destination));
+        Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.ComputeRaw([], destination));
     }
 
-    [Theory]
-    [MemberData(nameof(EmptyOrAsciiWhitespace))]
-    public void C3ID_EmptyOrAsciiWhitespaceRawUtf8_Throws(string text)
+    [Fact]
+    public void C3ID_EmptyRawUtf8_Throws()
     {
-        byte[] input = Encoding.UTF8.GetBytes(text);
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
-        Assert.Throws<ArgumentException>(nameof(text), () => CrossCompanyCorrelatingId.ComputeRawUtf8(input, destination));
+        Assert.Throws<ArgumentException>("textUtf8", () => CrossCompanyCorrelatingId.ComputeRawUtf8([], destination));
     }
 
     [Fact]
@@ -109,21 +96,19 @@ public class CrossCompanyCorrelatingIdTests
     /// </summary>
     private static class ReferenceCrossCompanyCorrelatingId
     {
-        private static readonly byte[] s_prefix = Convert.FromBase64String("C3ID");
-
         public static string Compute(string text)
         {
             // Compute the SHA-256 hash of the UTF8-encoded text
             Span<byte> hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));
 
-            // Prefix the result and hash again
-            hash = SHA256.HashData([.. s_prefix, .. hash]);
+            // Prefix the result with "C3ID" UTF-8 bytes and hash again
+            hash = SHA256.HashData([.. "C3ID"u8, .. hash]);
 
             // Truncate to 12 bytes
             hash = hash[..12];
 
-            // Prefix the result and convert to base64
-            return Convert.ToBase64String([.. s_prefix, .. hash]);
+            // Convert to base64 and prepend "C3ID"
+            return "C3ID" + Convert.ToBase64String(hash);
         }
     }
 }
