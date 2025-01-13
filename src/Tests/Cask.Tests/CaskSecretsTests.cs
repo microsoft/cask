@@ -59,10 +59,11 @@ public abstract class CaskTestsBase
         Span<byte> bytewiseTimestamp = keyBytes.AsSpan()[^9..^6];
         Assert.Equal(Base64Url.EncodeToString(bytewiseTimestamp), encodedTimestamp);
 
+        // The final 2 bits of this byte are reserved.
         var kind = (KeyKind)(keyBytes.AsSpan()[^6] >> 2);
         Assert.Equal(KeyKind.Hash256Bit, kind);
 
-        var version = (CaskVersion)((keyBytes.AsSpan()[^6] & 0b00000011) << 4 | keyBytes.AsSpan()[^5] >> 4);
+        var version = (CaskVersion)(keyBytes.AsSpan()[^5] >> 4);
         Assert.Equal(CaskVersion.OneZeroZero, version);
 
         // Our checksum buffer here is 6 bytes because the 4-byte checksum
