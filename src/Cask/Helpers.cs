@@ -95,6 +95,37 @@ internal static class Helpers
         return (value + multiple - 1) / multiple * multiple;
     }
 
+    public static void ThrowIfEmptyOrAsciiWhitespace(ReadOnlySpan<byte> textUtf8, [CallerArgumentExpression(nameof(textUtf8))] string? paramName = null)
+    {
+        if (IsEmptyOrAsciiWhiteSpace(textUtf8))
+        {
+            ThrowEmptyOrAsciiWhiteSpace(paramName);
+        }
+    }
+
+    public static bool IsEmptyOrAsciiWhiteSpace(ReadOnlySpan<byte> textUtf8)
+    {
+        for (int i = 0; i < textUtf8.Length; i++)
+        {
+            if (!IsAsciiWhiteSpace((char)textUtf8[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool IsAsciiWhiteSpace(char c)
+    {
+        return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';
+    }
+
+    [DoesNotReturn]
+    private static void ThrowEmptyOrAsciiWhiteSpace(string? paramName)
+    {
+        throw new ArgumentException("Value cannot be empty or consist entirely of ASCII-range white space characters.", paramName);
+    }
+
     public static void ThrowIfDefault<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null) where T : struct
     {
         if (EqualityComparer<T>.Default.Equals(value, default))
