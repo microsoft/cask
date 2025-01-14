@@ -66,7 +66,7 @@ public abstract class CaskTestsBase
         Assert.Equal(Base64Url.EncodeToString([(byte)kind]), $"{encodedKeyKind}A");
 
         int optionalDataIndex = GetOptionalDataByteIndex(kind) + 1;
-        int encodedOptionalDataIndex = (optionalDataIndex/3) * 4;
+        int encodedOptionalDataIndex = (optionalDataIndex / 3) * 4;
         string encodedOptionalData = encodedKey[encodedOptionalDataIndex..^20];
         Span<byte> optionalData = keyBytes.AsSpan()[(optionalDataIndex)..^15];
         Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
@@ -82,7 +82,7 @@ public abstract class CaskTestsBase
         string encodedChecksum = encodedKey[^6..];
         Span<byte> crc32 = stackalloc byte[6];
         Crc32.Hash(keyBytes.AsSpan()[..^4], crc32[2..]);
-        Assert.Equal(Base64Url.EncodeToString(crc32).Substring(2), encodedChecksum);
+        Assert.Equal(Base64Url.EncodeToString(crc32)[2..], encodedChecksum);
 
         // This follow-on example demonstrates obtaining a three-byte sequence and
         // obtain one of its four constituent 6-bit sequences. This is useful in
