@@ -83,4 +83,5 @@
 |encodedKey[^9]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
 |encodedKey[^8]|'A', 'H', 'I'|Represents the key kind, a 256-bit primary key, HMAC256 or HMAC384.
 |encodedKey[^7]|'A'|Cask version 1.0
-|encodedKey[^6..]|'A'...'_'|The checksum of preceding bytewise data.
+|encodedKey[^6]| 'A'...'D'| Four leading zero bits followed by the 
+|encodedKey[^5..]|'A'...'_'|The final five encoded checksum characters.
