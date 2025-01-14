@@ -60,10 +60,19 @@ public abstract class CaskTestsBase
         Assert.Equal(Base64Url.EncodeToString(bytewiseTimestamp), encodedTimestamp);
 
         // The final 2 bits of this byte are reserved.
-        var kind = (KeyKind)(keyBytes.AsSpan()[^6] >> 2);
-        Assert.Equal(KeyKind.Hash256Bit, kind);
+        char encodedKeyKind = encodedKey[^8];
+        var kind = (BytewiseKeyKind)(keyBytes.AsSpan()[^6]);
+        Assert.Equal(BytewiseKeyKind.Hash256Bit, kind);
+        Assert.Equal(Base64Url.EncodeToString([(byte)kind]), $"{encodedKeyKind}A");
 
-        var version = (CaskVersion)(keyBytes.AsSpan()[^5] >> 4);
+        int optionalDataIndex = GetOptionalDataByteIndex(kind) + 1;
+        int encodedOptionalDataIndex = (optionalDataIndex/3) * 4;
+        string encodedOptionalData = encodedKey[encodedOptionalDataIndex..^20];
+        Span<byte> optionalData = keyBytes.AsSpan()[(optionalDataIndex)..^15];
+        Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
+
+        char encodedVersion = encodedKey[^7];
+        var version = (CaskVersion)(keyBytes.AsSpan()[^5]);
         Assert.Equal(CaskVersion.OneZeroZero, version);
 
         // Our checksum buffer here is 6 bytes because the 4-byte checksum
@@ -89,11 +98,26 @@ public abstract class CaskTestsBase
         Span<byte> sizeAndVersionSequence = keyBytes.AsSpan()[^6..^3];
         var sequence = new ThreeByteSequence(sizeAndVersionSequence);
 
-        kind = (KeyKind)sequence.FirstSixBits;
-        Assert.Equal(KeyKind.Hash256Bit, kind);
+        var encodedKind = (EncodedKeyKind)sequence.FirstSixBits;
+        Assert.Equal(BytewiseKeyKind.Hash256Bit, kind);
 
         version = (CaskVersion)sequence.SecondSixBits;
         Assert.Equal(CaskVersion.OneZeroZero, version);
+    }
+
+    private int GetOptionalDataByteIndex(BytewiseKeyKind kind)
+    {
+        switch (kind)
+        {
+            case BytewiseKeyKind.Key256Bit:
+            case BytewiseKeyKind.Hash256Bit:
+                return 32;
+
+            case BytewiseKeyKind.Hash384Bit:
+                return 48;
+        }
+
+        throw new InvalidOperationException();
     }
 
     byte GetSingleEncodedChar(char input)
