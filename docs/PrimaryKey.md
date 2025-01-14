@@ -63,7 +63,7 @@
 |decodedKey[^15..^12]| 37, 4, 9  |0x25, 0x04, 0x09| 00100101b, 00000100b, 00001001b | Decoded 'JQQJ' signature.
 |decodedKey[^12..^9]|0...255|0x0...0xFF|00000000b...11111111b| Provider identifier, e.g. , '0x4c', '0x44', '0x93' (base64 encoded as 'TEST')
 |decodedKey[^9..^6]||||Time stamp data encoded in 4 six-bit blocks for YMDH.
-|decodedKey[^6] >> 2|0, 7, or 8|0xFF|00000000b...11111100b| Leading 6 bits comprises kind enum followed by 2 bits of reserved padding. key[key.Length - 6] & 0xFC == 0.
+|decodedKey[^6] >> 2|0, 28, 32|0x00, 0x1c, 0x20|00000000b...11111100b| Leading 6 bits comprises kind enum followed by 2 bits of reserved padding. key[key.Length - 6] & 0xfc == 0.
 |decodedKey[^5] >> 4]|0|0xFF|00000000b...11110000b| Leading 4 bits comprise 4 bits of reserved version information + 4 bits of zero padding (to preserve consistent rendering of the subsequence checksum data).
 |decodedKey[^4..]|0...255|0x0...0xFF|00000000b..11111111b|CRC32(key[..^4])
 
