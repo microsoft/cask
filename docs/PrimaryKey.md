@@ -78,7 +78,7 @@
 |encodedKey[^16]|'A'...'Z'\|'a'...'z'| The first character of the provider signature which must be alphabetic (upper-case indicating a customer-managed as opposed to service managed secret).
 |encodedKey[^15..^12]|('A'...'Z'-\_)\|('a'...'z'-\_)| | The remaining three encoded characters. Any alphabetic characters must be consistently upper- or lower-case (to distinguish customer- vs. service-managed secrets).
 |encodedKey[^12]|'A'...'_'|Represents the year of key allocation, 'A' (2024) to '_' (2087)|
-|encodedKey[^13]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
-|encodedKey[^14]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
-|encodedKey[^15]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
+|encodedKey[^11]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
+|encodedKey[^10]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
+|encodedKey[^9]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
 
