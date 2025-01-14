@@ -81,6 +81,6 @@
 |encodedKey[^11]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
 |encodedKey[^10]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
 |encodedKey[^9]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
-|encodedKey[^8]|'A', 'H', 'I'|Represents the key kind, a 246-bit primary key, HMAC256 or HMAC394.
+|encodedKey[^8]|'A', 'H', 'I'|Represents the key kind, a 256-bit primary key, HMAC256 or HMAC394.
 |encodedKey[^7]|'A'|Cask version 1.0
 |encodedKey[^6..]|'A'...'_'|The checksum of preceding bytewise data.
