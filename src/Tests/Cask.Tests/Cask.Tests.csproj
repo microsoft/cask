@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net472</TargetFrameworks>
-    <OSIsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</OSIsWindows>
-    <OSIsX64 Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">true</OSIsX64>
-    <MSBuildIsNETFramework Condition="'$(MSBuildRuntimeType)' == 'full'">true</MSBuildIsNETFramework>
-    <BuildCpp Condition="'$(OSIsWindows)' == 'true' and '$(MSBuildIsNETFramework)' == 'true' and '$(OSIsX64)' == 'true'">true</BuildCpp>
+    <!-- Don't try to run net472 tests on  non-Windows using Mono. We do not support Mono. -->
+    <TargetFrameworks Condition="!$(_OSIsWindows)">net8.0</TargetFrameworks>
     <!-- TODO: Our custom C++ build logic is breaking fast-up-to-date for this project. -->
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+    <_BuildCpp>false</_BuildCpp>
+    <_BuildCpp Condition="$(_OSIsWindows) and $(_MSBuildIsNETFramework) and $(_OSIsX64)">true</_BuildCpp>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +15,7 @@
     <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BuildCpp)' == 'true'">
+  <ItemGroup Condition="$(_BuildCpp)">
     <CppProjectReference Include="..\..\libcask\libcask.vcxproj" Properties="Platform=x64" />
     <Content Include="$(ArtifactsPath)\bin\libcask\$(Configuration.ToLowerInvariant())_x64\libcask.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <AssemblyMetadata Include="BuiltWithCppSupport" Value="true" />

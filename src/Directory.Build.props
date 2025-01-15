@@ -51,5 +51,14 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <PropertyGroup Label="Build Environment Helpers">
+    <_OSIsWindows>false</_OSIsWindows>
+    <_OSIsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</_OSIsWindows>
+    <_OSIsX64>false</_OSIsX64>
+    <_OSIsX64 Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">true</_OSIsX64>
+    <_MSBuildIsNETFramework>false</_MSBuildIsNETFramework>
+    <_MSBuildIsNETFramework Condition="'$(MSBuildRuntimeType)' == 'full'">true</_MSBuildIsNETFramework>
+  </PropertyGroup>
+
   <Import Project="Directory.WarningsAsErrors.props" />
 </Project>

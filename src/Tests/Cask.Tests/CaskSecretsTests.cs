@@ -32,6 +32,101 @@ public abstract class CaskTestsBase
     }
 
     [Fact]
+    public void CaskSecrets_EncodedMatchesDecoded()
+    {
+        // The purpose of this test is to actually produce useful notes in documentation
+        // as far as decomposing a CASK key, both from its url-safe base64 form and from
+        // the raw bytes.
+
+        // The test key below introduces a single, optional 3-byte data value, encoded
+        // as the opaque, uninterpreted value of '----'. The remainder of the code
+        // demonstrates the core CASK technique of obtaining metadata from the right
+        // end of the key, obtaining size information from the key kind enum, and
+        // based on that data isolating the randomized component from the optional data.
+
+        string encodedKey = "VOSUKmuLLhv-Fb8czyM-SLRVC5A1orq0vlp65S3fBNEA----JQQJTESTBACDHACcJrXz";
+        byte[] keyBytes = Base64Url.DecodeFromUtf8(Encoding.UTF8.GetBytes(encodedKey));
+
+        string encodedCaskSignature = encodedKey[^20..^16];
+        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[^15..^12];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseCaskSignature), encodedCaskSignature);
+
+        string encodedProviderId = encodedKey[^16..^12];
+        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[^12..^9];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseProviderId), encodedProviderId);
+
+        string encodedTimestamp = encodedKey[^12..^8];
+        Span<byte> bytewiseTimestamp = keyBytes.AsSpan()[^9..^6];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseTimestamp), encodedTimestamp);
+
+        // The final 2 bits of this byte are reserved.
+        char encodedKeyKind = encodedKey[^8];
+        var kind = (BytewiseKeyKind)(keyBytes.AsSpan()[^6]);
+        Assert.Equal(BytewiseKeyKind.Hash256Bit, kind);
+        Assert.Equal(Base64Url.EncodeToString([(byte)kind]), $"{encodedKeyKind}A");
+
+        int optionalDataIndex = GetOptionalDataByteIndex(kind) + 1;
+        int encodedOptionalDataIndex = (optionalDataIndex / 3) * 4;
+        string encodedOptionalData = encodedKey[encodedOptionalDataIndex..^20];
+        Span<byte> optionalData = keyBytes.AsSpan()[(optionalDataIndex)..^15];
+        Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
+
+        char encodedVersion = encodedKey[^7];
+        var version = (CaskVersion)(keyBytes.AsSpan()[^5]);
+        Assert.Equal(CaskVersion.OneZeroZero, version);
+
+        // Our checksum buffer here is 6 bytes because the 4-byte checksum
+        // must itself be decoded from a buffer that properly pads the
+        // initial byte. We simulate this by zeroing the first two bytes
+        // of the buffer and using the last 4 for the checksum
+        string encodedChecksum = encodedKey[^6..];
+        Span<byte> crc32 = stackalloc byte[6];
+        Crc32.Hash(keyBytes.AsSpan()[..^4], crc32[2..]);
+        Assert.Equal(Base64Url.EncodeToString(crc32)[2..], encodedChecksum);
+
+        // This follow-on example demonstrates obtaining a three-byte sequence and
+        // obtain one of its four constituent 6-bit sequences. This is useful in
+        // the core definition to obtain the size and version information, which are
+        // 12 bits that precede a 4-bit zero padding sequence followed by the first
+        // byte of the checksum.
+        // 
+        // Obtaining the textual value of a 6-bit sequence is trivial from the
+        // encoded form but even in this case, it is inconvenient to convert that
+        // data into programmatic constructs such as enums. The 'ThreeByteSequence'
+        // struct is intended to assist with this problem.
+
+        Span<byte> sizeAndVersionSequence = keyBytes.AsSpan()[^6..^3];
+        var sequence = new ThreeByteSequence(sizeAndVersionSequence);
+
+        var encodedKind = (EncodedKeyKind)sequence.FirstSixBits;
+        Assert.Equal(BytewiseKeyKind.Hash256Bit, kind);
+
+        version = (CaskVersion)sequence.SecondSixBits;
+        Assert.Equal(CaskVersion.OneZeroZero, version);
+    }
+
+    private int GetOptionalDataByteIndex(BytewiseKeyKind kind)
+    {
+        switch (kind)
+        {
+            case BytewiseKeyKind.Key256Bit:
+            case BytewiseKeyKind.Hash256Bit:
+                return 32;
+
+            case BytewiseKeyKind.Hash384Bit:
+                return 48;
+        }
+
+        throw new InvalidOperationException();
+    }
+
+    byte GetSingleEncodedChar(char input)
+    {
+        byte[] arg = Encoding.UTF8.GetBytes($"{input}A==");
+        return Base64Url.DecodeFromUtf8(arg).First();
+    }
+
+    [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Null()
     {
         Assert.Throws<ArgumentNullException>(() => Cask.IsCask(null!));
