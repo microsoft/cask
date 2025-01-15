@@ -175,6 +175,11 @@ namespace Polyfill
         {
             return Bcl_Convert.ToBase64String(bytes.ToArray());
         }
+
+        public static byte[] FromBase64String(string base64)
+        {
+            return Bcl_Convert.FromBase64String(base64);
+        }
     }
 
     internal static class RandomNumberGenerator
