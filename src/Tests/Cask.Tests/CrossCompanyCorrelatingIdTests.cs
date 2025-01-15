@@ -15,54 +15,54 @@ public class CrossCompanyCorrelatingIdTests
     [InlineData("😁", "C3IDF8FaWr4yMPcwOOxM")]
     [InlineData("y_-KPF3BQb2-VHZeqrp28c6dgiL9y7H9TRJmQ5jJe9OvJQQJTESTBAU4AAB5mIhC", "C3IDKx9aukbRgOnPEyeu")]
     [InlineData("Kq03wDtdCGWvs3sPgbH84H5MDADIJMZEERRhUN73CaGBJQQJTESTBAU4AADqe9ge", "C3IDO93RBPyuaA6ZRK8+")]
-    public void C3ID_Basic(string text, string expected)
+    public void C3Id_Basic(string text, string expected)
     {
-        string actual = ComputeC3ID(text);
+        string actual = ComputeC3Id(text);
         Assert.Equal(expected, actual);
     }
 
     [Fact]
-    public void C3ID_LargeText()
+    public void C3Id_LargeText()
     {
-        string actual = ComputeC3ID(text: new string('x', 300));
+        string actual = ComputeC3Id(text: new string('x', 300));
         Assert.Equal("C3IDs+pSKJ1FmRW+7EZk", actual);
     }
 
     [Fact]
-    public void C3ID_Null_Throws()
+    public void C3Id_Null_Throws()
     {
         Assert.Throws<ArgumentNullException>("text", () => CrossCompanyCorrelatingId.Compute(null!));
     }
 
     [Fact]
-    public void C3ID_Empty_Throws()
+    public void C3Id_Empty_Throws()
     {
         Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.Compute(""));
     }
 
     [Fact]
-    public void C3ID_EmptyRaw_Throws()
+    public void C3Id_EmptyRaw_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
         Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.ComputeRaw("", destination));
     }
 
     [Fact]
-    public void C3ID_EmptyRawSpan_Throws()
+    public void C3Id_EmptyRawSpan_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
         Assert.Throws<ArgumentException>("text", () => CrossCompanyCorrelatingId.ComputeRaw([], destination));
     }
 
     [Fact]
-    public void C3ID_EmptyRawUtf8_Throws()
+    public void C3Id_EmptyRawUtf8_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes];
         Assert.Throws<ArgumentException>("textUtf8", () => CrossCompanyCorrelatingId.ComputeRawUtf8([], destination));
     }
 
     [Fact]
-    public void C3ID_DestinationTooSmall_Throws()
+    public void C3Id_DestinationTooSmall_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes - 1];
         Assert.Throws<ArgumentException>(
@@ -71,7 +71,7 @@ public class CrossCompanyCorrelatingIdTests
     }
 
     [Fact]
-    public void C3ID_DestinationTooSmallUtf8_Throws()
+    public void C3Id_DestinationTooSmallUtf8_Throws()
     {
         byte[] destination = new byte[CrossCompanyCorrelatingId.RawSizeInBytes - 1];
         Assert.Throws<ArgumentException>(
@@ -79,7 +79,7 @@ public class CrossCompanyCorrelatingIdTests
             () => CrossCompanyCorrelatingId.ComputeRawUtf8("test"u8, destination));
     }
 
-    private static string ComputeC3ID(string text)
+    private static string ComputeC3Id(string text)
     {
         string reference = ReferenceCrossCompanyCorrelatingId.Compute(text);
         string actual = CrossCompanyCorrelatingId.Compute(text);
