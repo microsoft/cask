@@ -29,7 +29,7 @@ public class CompareHashBenchmarks
         Span<byte> candidateHash = stackalloc byte[HMACSHA256.HashSizeInBytes];
         Base64Url.DecodeFromChars(TestNonIdentifiableHash.AsSpan(), candidateHash);
 
-        Span<byte> secret = stackalloc byte[32];
+        Span<byte> secret = stackalloc byte[TestSecretEntropyInBytes];
         Base64Url.DecodeFromChars(TestNonIdentifiableSecret.AsSpan(), secret);
 
         Span<byte> hash = stackalloc byte[HMACSHA256.HashSizeInBytes];

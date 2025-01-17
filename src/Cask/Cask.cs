@@ -35,6 +35,7 @@ public static class Cask
             return false;
         }
 
+        // Check for CASK signature, "JQQJ".
         if (!key[CaskSignatureCharRange].SequenceEqual(CaskSignature))
         {
             return false;
@@ -74,6 +75,7 @@ public static class Cask
             return false;
         }
 
+        // Check for CASK signature, "JQQJ" UTF-8 encoded.
         if (!keyUtf8[CaskSignatureCharRange].SequenceEqual(CaskSignatureUtf8))
         {
             return false;
@@ -108,26 +110,27 @@ public static class Cask
     /// </summary>
     public static bool IsCaskBytes(ReadOnlySpan<byte> keyBytes)
     {
-        // Check length is within limits and 3-byte aligned.
         if (keyBytes.Length < MinKeyLengthInBytes || keyBytes.Length > MaxKeyLengthInBytes || !Is3ByteAligned(keyBytes.Length))
         {
             return false;
         }
 
-        // Check CASK signature
+        // Check for CASK signature. "JQQJ" base64-decoded.
         if (!keyBytes[CaskSignatureByteRange].SequenceEqual(CaskSignatureBytes))
         {
             return false;
         }
 
-        // Check kind. NOTE: Hash384Bit is not implemented yet.
+        // Check that kind is valid. NOTE: 'Hash384Bit' is not implemented yet
+        // and is therefore treated as invalid here for now.
         if (!TryByteToKind(keyBytes[KindByteIndex], out KeyKind kind) || kind is not KeyKind.Key256Bit and not KeyKind.Hash256Bit)
         {
             return false;
         }
 
-        // Check version: must be 1.0.0 currently.
-        if (!TryByteToVersion(keyBytes[VersionByteIndex], out CaskVersion version) || version is not CaskVersion.OneZeroZero)
+        // Check that reserved version byte is zeroed out. If not, this might be
+        // a CASK key from a future version that we do not support.
+        if (keyBytes[ReservedVersionByteIndex] != 0)
         {
             return false;
         }
@@ -257,7 +260,7 @@ public static class Cask
             timestamp.CopyTo(key[TimestampByteRange]);
         }
 
-        key[VersionByteIndex] = VersionToByte(CaskVersion.OneZeroZero);
+        key[ReservedVersionByteIndex] = 0;
         key[KindByteIndex] = KindToByte(kind);
         Crc32.Hash(key[..Crc32ByteRange.Start], key[Crc32ByteRange]);
     }

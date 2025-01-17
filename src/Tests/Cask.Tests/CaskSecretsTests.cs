@@ -100,9 +100,8 @@ public abstract class CaskTestsBase
         Span<byte> optionalData = keyBytes.AsSpan()[(optionalDataIndex)..^15];
         Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
 
-        char encodedVersion = encodedKey[^7];
-        var version = (CaskVersion)(keyBytes.AsSpan()[^5]);
-        Assert.Equal(CaskVersion.OneZeroZero, version);
+        char encodedReservedForVersion = encodedKey[^7];
+        Assert.Equal('A', encodedReservedForVersion);
 
         // Our checksum buffer here is 6 bytes because the 4-byte checksum
         // must itself be decoded from a buffer that properly pads the
@@ -113,13 +112,13 @@ public abstract class CaskTestsBase
         Crc32.Hash(keyBytes.AsSpan()[..^4], crc32[2..]);
         Assert.Equal(Base64Url.EncodeToString(crc32)[2..], encodedChecksum);
 
-        // This follow-on demonstrates how to get the key kind and version
-        // from the bytewise form by shifting out the reserved bits.
+        // This follow-on demonstrates how to get the key kind and reservd version
+        // byte from the bytewise form.
         var kind = (KeyKind)(keyBytes[^6] >> KindReservedBits);
         Assert.Equal(expectedKind, kind);
 
-        version = (CaskVersion)(keyBytes[^5] >> VersionReservedBits);
-        Assert.Equal(CaskVersion.OneZeroZero, version);
+        byte reservedForVersion = keyBytes[^5];
+        Assert.Equal(0, reservedForVersion);
     }
 
     enum BytewiseKeyKind : byte

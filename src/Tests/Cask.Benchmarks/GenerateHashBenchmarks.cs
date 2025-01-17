@@ -26,7 +26,7 @@ public class GenerateHashBenchmarks
     [Benchmark]
     public string GenerateHash_Floor()
     {
-        Span<byte> secret = stackalloc byte[32];
+        Span<byte> secret = stackalloc byte[TestSecretEntropyInBytes];
         Base64Url.DecodeFromChars(TestNonIdentifiableSecret.AsSpan(), secret);
 
         Span<byte> hash = stackalloc byte[HMACSHA256.HashSizeInBytes];

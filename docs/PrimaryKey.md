@@ -63,8 +63,8 @@
 |decodedKey[^15..^12]| 37, 4, 9  |0x25, 0x04, 0x09| 00100101b, 00000100b, 00001001b | Decoded 'JQQJ' signature.
 |decodedKey[^12..^9]|0...255|0x0...0xFF|00000000b...11111111b| Provider identifier, e.g. , '0x4c', '0x44', '0x93' (base64 encoded as 'TEST')
 |decodedKey[^9..^6]||||Time stamp data encoded in 4 six-bit blocks for YMDH.
-|decodedKey[^6]|0, 28, 32|0x00, 0x1c, 0x20|00000000b, 00011100b, 00100000b| Leading 6 bits comprises kind enum followed by 2 bits of reserved zero padding.
-|decodedKey[^5]|0|0x00|00000000b| Leading 4 bits comprise version number (currenty 0 = Cask 1.0), followed by 4 bits of reserved zero padding.
+|decodedKey[^6]|0, 28, 32|0x00, 0x1c, 0x20|00000000b, 00011100b, 00100000b | Leading 6 bits comprises kind enum followed by 2 bits of reserved zero padding.
+|decodedKey[^5]|0|0x00|00000000b| Reserved. Must be zero.
 |decodedKey[^4..]|0...255|0x0...0xFF|00000000b..11111111b|CRC32(key[..^4])
 
 ## Primary 256-bit Key Base64-Encoded Rendering
@@ -82,7 +82,7 @@
 |encodedKey[^10]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
 |encodedKey[^9]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
 |encodedKey[^8]|'A', 'H', 'I'|Represents the key kind, a 256-bit primary key, HMAC256 or HMAC384.
-|encodedKey[^7]|'A'|Cask version 1.0
-|encodedKey[^6]| 'A'...'D'| Encoded character of four leading zero bits followed by the first two bits of the CRC32 checksum.
+|encodedKey[^7]|'A'| Reserved. Must be 'A'.
+|encodedKey[^6]|'A'...'D'| Encoded character of four leading zero bits followed by the first two bits of the CRC32 checksum.
 |encodedKey[^5..]|'A'...'_'|The final five encoded checksum characters representing the remaining 30 bits of the CRC32 checksum.
 ```

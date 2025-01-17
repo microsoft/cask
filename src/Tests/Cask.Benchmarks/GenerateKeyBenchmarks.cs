@@ -27,7 +27,7 @@ public class GenerateKeyBenchmarks
     [Benchmark]
     public string GenerateKey_Floor()
     {
-        Span<byte> bytes = stackalloc byte[32];
+        Span<byte> bytes = stackalloc byte[TestSecretEntropyInBytes];
         RandomNumberGenerator.Fill(bytes);
         return Base64Url.EncodeToString(bytes);
     }

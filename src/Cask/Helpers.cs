@@ -46,8 +46,7 @@ internal static class Helpers
     public static int GetKeyLengthInBytes(int providerDataLengthInBytes)
     {
         Debug.Assert(Is3ByteAligned(providerDataLengthInBytes), $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
-        int paddedEntropyInBytes = RoundUpTo3ByteAlignment(SecretEntropyInBytes);
-        int keyLengthInBytes = paddedEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+        int keyLengthInBytes = PaddedSecretEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
         Debug.Assert(Is3ByteAligned(keyLengthInBytes));
         return keyLengthInBytes;
     }
@@ -63,38 +62,13 @@ internal static class Helpers
 
     public static KeyKind CharToKind(char kindChar)
     {
+        Debug.Assert(kindChar == 'A' || kindChar == 'H' || kindChar == 'I', "This is only meant to be called using the kind char of a known valid key.");
         return (KeyKind)(kindChar - 'A');
-    }
-
-    public static CaskVersion CharToVersion(char versionChar)
-    {
-        return (CaskVersion)(versionChar - 'A');
     }
 
     public static byte KindToByte(KeyKind kind)
     {
         return (byte)((int)kind << KindReservedBits);
-    }
-
-    public static byte VersionToByte(CaskVersion version)
-    {
-        return (byte)((int)version << VersionReservedBits);
-    }
-
-    /// <summary>
-    /// Converts a byte that encodes the CASK version to the CaskVersion enum.
-    /// Returns false if the reserved bits in that byte are non-zero.
-    /// </summary>
-    public static bool TryByteToVersion(byte value, out CaskVersion version)
-    {
-        if ((value & VersionReservedMask) != 0)
-        {
-            version = default;
-            return false;
-        }
-
-        version = (CaskVersion)(value >> VersionReservedBits);
-        return true;
     }
 
     /// <summary>
@@ -151,7 +125,8 @@ internal static class Helpers
         return (value + multiple - 1) / multiple * multiple;
     }
 
-    public static void ThrowIfUnitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null) where T : struct, IIsInitialized
+    public static void ThrowIfUnitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+        where T : struct, IIsInitialized
     {
         if (!value.IsInitialized)
         {
@@ -174,6 +149,7 @@ internal static class Helpers
             ThrowNotHash(paramName);
         }
     }
+
     public static void ThrowIfDestinationTooSmall<T>(Span<T> destination, int requiredSize, [CallerArgumentExpression(nameof(destination))] string? paramName = null)
     {
         if (destination.Length < requiredSize)

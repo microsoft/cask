@@ -36,15 +36,6 @@ public readonly partial record struct CaskKey : IIsInitialized
         }
     }
 
-    public CaskVersion CaskVersion
-    {
-        get
-        {
-            ThrowIfUnitialized();
-            return CharToVersion(_key[VersionCharIndex]);
-        }
-    }
-
     public int SizeInBytes
     {
         get

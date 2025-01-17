@@ -1,11 +1,4 @@
 # Questions
-1. MD5 vs. CRC32 (or something else)?
-   - CRC32 is a good choice, we're using it for its intended purpose.
-   - Can we make room for all four bytes? There isn't a lot of prior art for truncating CRC-32 like SHAs.
-   - Reserving a byte or two for future use by us might be a good idea anyway?
-   - Possible uses:
-     - Record secret entropy length. Right now, it's a bit of a footgun that you have to pass the correct length to Generate/CompareHash.
-
 1. Should provider data be allowed to be unaligned. Should we pad it instead of throwing?
 
 1. Should we combine Cask and CaskKey, putting the statics as helpers on the struct?
