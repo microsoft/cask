@@ -9,7 +9,6 @@ internal static class BenchmarkTestData
 {
     public const string TestDerivationInput = "Lorem ipsum dolor sit amet, consectetur adipiscing elit";
     public const string TestProviderSignature = "TEST";
-    public const string TestAllocatorCode = "88";
     public const string TestProviderData = "0123456789ABCDEF";
     public const int TestSecretEntropyInBytes = 32;
 

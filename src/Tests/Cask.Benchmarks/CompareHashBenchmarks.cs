@@ -20,8 +20,7 @@ public class CompareHashBenchmarks
         return Cask.CompareHash(
             CaskKey.Create(TestCaskHash),
             TestDerivationInput,
-            CaskKey.Create(TestCaskSecret),
-            TestSecretEntropyInBytes);
+            CaskKey.Create(TestCaskSecret));
     }
 
     [Benchmark]

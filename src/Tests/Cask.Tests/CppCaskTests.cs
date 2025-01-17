@@ -39,33 +39,25 @@ public class CppCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public bool CompareHash(string candidateHash,
-                                byte[] derivationInput,
-                                string secret,
-                                int secretEntropyInBytes = 32)
+        public bool CompareHash(string candidateHash, byte[] derivationInput, string secret)
         {
-            return NativeMethods.Cask_CompareHash(candidateHash, derivationInput, derivationInput.Length, secret, secretEntropyInBytes);
+            return NativeMethods.Cask_CompareHash(candidateHash, derivationInput, derivationInput.Length, secret);
         }
 
-        public string GenerateHash(byte[] derivationInput,
-                                   string secret,
-                                   int secretEntropyInBytes = 32)
+        public string GenerateHash(byte[] derivationInput, string secret)
         {
-            int size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, secretEntropyInBytes, null, 0);
+            int size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, null, 0);
             byte[] bytes = new byte[size];
-            size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, secretEntropyInBytes, bytes, size);
+            size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, bytes, size);
             Assert.True(size == bytes.Length, "Cask_GenerateKey did not use as many bytes as it said it would.");
             return Encoding.UTF8.GetString(bytes, 0, size - 1); // - 1 to remove null terminator
         }
 
-        public string GenerateKey(string providerSignature,
-                                  string allocatorCode,
-                                  string? reserved = null,
-                                  int secretEntropyInBytes = 32)
+        public string GenerateKey(string providerSignature, string? providerData = null)
         {
-            int size = NativeMethods.Cask_GenerateKey(providerSignature, allocatorCode, reserved, secretEntropyInBytes, null, 0);
+            int size = NativeMethods.Cask_GenerateKey(providerSignature, providerData, null, 0);
             byte[] bytes = new byte[size];
-            size = NativeMethods.Cask_GenerateKey(providerSignature, allocatorCode, reserved, secretEntropyInBytes, bytes, size);
+            size = NativeMethods.Cask_GenerateKey(providerSignature, providerData, bytes, size);
             Assert.True(size == bytes.Length, "Cask_GenerateKey did not use as many bytes as it said it would.");
             return Encoding.UTF8.GetString(bytes, 0, size - 1); // -1 to remove null terminator
         }
@@ -110,18 +102,14 @@ public class CppCaskTests : CaskTestsBase
                 string candidateHash,
                 byte[] derivationInput,
                 int derivationInputLength,
-                [MarshalAs(LPUTF8Str)] string secret,
-                int secretEntropyInBytes);
+                [MarshalAs(LPUTF8Str)] string secret);
 
             [DllImport("libcask")]
             public static extern int Cask_GenerateKey(
                 [MarshalAs(LPUTF8Str)]
                 string providerSignature,
                 [MarshalAs(LPUTF8Str)]
-                string allocatorCode,
-                [MarshalAs(LPUTF8Str)]
                 string? providerData,
-                int secretEntropyInBytes,
                 byte[]? output,
                 int outputCapacity);
 
@@ -131,7 +119,6 @@ public class CppCaskTests : CaskTestsBase
                 int derivationInputLength,
                 [MarshalAs(LPUTF8Str)]
                 string secret,
-                int secretEntropyInBytes,
                 byte[]? output,
                 int outputCapacity);
         }

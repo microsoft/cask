@@ -18,7 +18,6 @@ public class GenerateKeyBenchmarks
     {
         CaskKey key = Cask.GenerateKey(
             TestProviderSignature,
-            TestAllocatorCode,
             TestProviderData);
 
         return key.ToString();
