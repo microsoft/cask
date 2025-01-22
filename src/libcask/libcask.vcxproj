@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="base64url.h" />
     <ClInclude Include="cask.h" />
     <ClInclude Include="cask_dependencies.h" />
     <ClInclude Include="helpers.h" />

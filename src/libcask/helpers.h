@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+const std::string Base64UrlChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
 int32_t RoundUpTo3ByteAlignment(int32_t value);
 
 int32_t BytesToBase64Chars(int32_t bytes);

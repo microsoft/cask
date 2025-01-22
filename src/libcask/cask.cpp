@@ -15,6 +15,7 @@
 #include "cask.h"
 #include "cask_dependencies.h"
 #include "helpers.h"
+#include "base64url.h"
 #include <bcrypt.h>
 #include <windows.h>
 
@@ -95,11 +96,11 @@ CASK_API int32_t Cask_GenerateKey(const char* allocatorCode,
     std::string allocatorAndTimestamp = {
         allocatorCode[0],
         allocatorCode[1],
-        Base64Url::Chars[year - 2024],
-        Base64Url::Chars[month - 1]
+        Base64UrlChars[year - 2024],
+        Base64UrlChars[month - 1]
     };
 
-    bytesWritten = Base64Url::DecodeFromChars(allocatorAndTimestamp, destination);
+    bytesWritten = Base64Url::DecodeFromChars(allocatorAndTimestamp.c_str(), destination);
     assert(bytesWritten == 3);
     destination = destination.subspan(3);
 
@@ -200,15 +201,15 @@ void ValidateSecretEntropy(int32_t secretEntropyInBytes)
     }
 }
 
-void FillRandom(std::span<uint8_t> destination, int32_t secretEntropyInBytes) {
-    if (destination.size() < secretEntropyInBytes) {
-        throw std::invalid_argument("Destination span is too small to hold the required number of random bytes.");
+void FillRandom(std::span<uint8_t> destination) {
+    if (destination.empty()) {
+        throw std::invalid_argument("Destination span must not be empty.");
     }
 
     NTSTATUS status = BCryptGenRandom(
         nullptr, // Use the default RNG algorithm
         destination.data(),
-        secretEntropyInBytes,
+        static_cast<ULONG>(destination.size()),
         BCRYPT_USE_SYSTEM_PREFERRED_RNG
     );
 
