@@ -15,6 +15,8 @@
 #include "cask.h"
 #include "cask_dependencies.h"
 #include "helpers.h"
+#include <bcrypt.h>
+#include <windows.h>
 
 /// <summary>
 /// The maximum length of provider-reserved data when base64-encoded.
@@ -196,6 +198,41 @@ void ValidateSecretEntropy(int32_t secretEntropyInBytes)
     {
         throw std::invalid_argument("Secret entropy must be between " + std::to_string(MinSecretEntropyInBytes) + " and " + std::to_string(MaxSecretEntropyInBytes) + " bytes.");
     }
+}
+
+void FillRandom(std::span<uint8_t> destination, int32_t secretEntropyInBytes) {
+    if (destination.size() < secretEntropyInBytes) {
+        throw std::invalid_argument("Destination span is too small to hold the required number of random bytes.");
+    }
+
+    NTSTATUS status = BCryptGenRandom(
+        nullptr, // Use the default RNG algorithm
+        destination.data(),
+        secretEntropyInBytes,
+        BCRYPT_USE_SYSTEM_PREFERRED_RNG
+    );
+
+    if (!BCRYPT_SUCCESS(status)) {
+        throw std::runtime_error("Failed to generate random bytes.");
+    }
+}
+
+std::time_t GetUtcNow() {
+    SYSTEMTIME systemTime;
+    GetSystemTime(&systemTime); // Get the current UTC time
+
+    // Convert SYSTEMTIME to struct tm
+    std::tm timeInfo = {};
+    timeInfo.tm_year = systemTime.wYear - 1900;
+    timeInfo.tm_mon = systemTime.wMonth - 1;
+    timeInfo.tm_mday = systemTime.wDay;
+    timeInfo.tm_hour = systemTime.wHour;
+    timeInfo.tm_min = systemTime.wMinute;
+    timeInfo.tm_sec = systemTime.wSecond;
+    timeInfo.tm_isdst = -1; // Not considering daylight saving time
+
+    // Convert struct tm to time_t
+    return _mkgmtime(&timeInfo);
 }
 
 
