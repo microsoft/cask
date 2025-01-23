@@ -1,0 +1,36 @@
+# GenerateKey Pseudo-Code
+
+1. Validate input. Return an error if any of the following are NOT true:
+    - Provider signature is exactly 4 characters long.
+    - Provider signature consists entirely of characters that are valid in base64url encoding.
+    - Provider data (if any) has a length that is a multiple of 3 characters and no more than 32 characters.
+    - Provider data (if any) consists entirely of characters that are valid in base64url encoding.
+1. Let N = the length of the base64url-decoded provider data. Number of characters in the provider data, divided by 3, times 4.
+1. Allocate storage for the generated key:
+    - 32 bytes for entropy
+    - 1 padding byte
+    - N bytes for provider data
+    - 3 bytes for CASK signature
+    - 3 bytes for provider signature
+    - 3 bytes for timestamp
+    - 1 reserved byte
+    - 1 byte for size and kind
+    - 4 bytes for CRC32 checksum
+1. Generate 256 bits of cryptographically secure random data. Store the result at the beginning of the generated key.
+1. Write zero to the next byte (padding to maintain 3-byte alignment).
+1. base64url decode provider data and store the result in the next N bytes.
+1. Write CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
+1. base64url decode provider signature and store the result in the next 3 bytes.
+1. Obtain the current date and time in UTC. Store it in 4 characters, YMDH:
+    - Y = base64url encoding of (Year - 2024).
+    - M = base64url encoding of zero-based month.
+    - D = base64url encoding of zero-based hour.
+    - H = base64url encoding of zero-based day.
+1. base64url-decode YMDH and store the result in the next 3 bytes.
+1. Write zero to the next byte (reserved).
+1. Write 0x00 to the next byte to indicate a 256-bit primary key.
+1. Compute the CRC32 of all key bytes written above (everything but the last 4 bytes). Store the result in little-endian byte order in the last 4 bytes.
+1. base64url encode the generated key and return the result.
+
+## References
+- base64url: https://datatracker.ietf.org/doc/html/rfc4648#section-5
