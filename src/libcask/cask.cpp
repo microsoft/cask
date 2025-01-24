@@ -16,6 +16,7 @@
 #include "cask_dependencies.h"
 #include "helpers.h"
 #include "base64url.h"
+#include <winnt.h>
 #include <bcrypt.h>
 #include <windows.h>
 
@@ -234,6 +235,14 @@ std::time_t GetUtcNow() {
 
     // Convert struct tm to time_t
     return _mkgmtime(&timeInfo);
+}
+
+void ComputeChecksum(std::span<const uint8_t> keyBytes, std::span<uint8_t> checksumDestination)
+{
+    assert(checksumDestination.size() == 3 && "There should only be 3 bytes left for the checksum.");
+    std::array<uint8_t, 4> crc32;
+    Crc32::Hash(keyBytes.subspan(0, keyBytes.size() - 3), crc32);
+    std::copy(crc32.begin(), crc32.begin() + 3, checksumDestination.begin());
 }
 
 

@@ -7,8 +7,10 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789-_";
 
+        // Convert C-style string to std::string
+        std::string base64_input(source, std::strlen(source));
+
         // Replace URL-safe characters with standard Base64 characters
-        std::string base64_input(source.begin(), source.end());
         std::replace(base64_input.begin(), base64_input.end(), '-', '+');
         std::replace(base64_input.begin(), base64_input.end(), '_', '/');
 
