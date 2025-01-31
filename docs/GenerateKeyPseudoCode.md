@@ -17,7 +17,7 @@
     - 1 byte for size and kind
     - 4 bytes for CRC32 checksum
 1. Generate 256 bits of cryptographically secure random data. Store the result at the beginning of the generated key.
-1. Write zero to the next byte (padding to maintain 3-byte alignment).
+1. Write 0x00 to the next byte (padding to maintain 3-byte alignment).
 1. base64url decode provider data and store the result in the next N bytes.
 1. Write CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
 1. base64url decode provider signature and store the result in the next 3 bytes.
@@ -27,7 +27,7 @@
     - D = base64url encoding of zero-based hour.
     - H = base64url encoding of zero-based day.
 1. base64url-decode YMDH and store the result in the next 3 bytes.
-1. Write zero to the next byte (reserved).
+1. Write 0x00 to the next byte (reserved).
 1. Write 0x00 to the next byte to indicate a 256-bit primary key.
 1. Compute the CRC32 of all key bytes written above (everything but the last 4 bytes). Store the result in little-endian byte order in the last 4 bytes.
 1. base64url encode the generated key and return the result.

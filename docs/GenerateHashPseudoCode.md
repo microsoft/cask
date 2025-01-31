@@ -13,7 +13,7 @@
     - 1 byte for size and kind
     - 4 bytes for CRC32 checksum
 1. Compute HMACSHA256 or HMACSHA384 using the CASK secret as the key and the provided derivation input as the message. Store the result at the beginning of the CASK hash.
-1. If using HMACSHA256, write zero to the next byte (padding to maintain 3-byte alignment).
+1. If using HMACSHA256, write 0x00 to the next byte (padding to maintain 3-byte alignment).
 1. Copy provider data from the CASK secret to the next N bytes.
 1. Compute C3ID of the CASK secret. Store the result in the next 12 bytes.
 1. Write the CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
@@ -24,9 +24,9 @@
     - D = base64url encoding of zero-based hour.
     - H = base64url encoding of zero-based day.
 1. base64url-decode YMDH and store the result in the next 3 bytes.
-1. Write zero to next byte (reserved).
+1. Write 0x00 to the next byte (reserved).
 1. Write 0x1C to indicate HMACSHA256 or 0x20 to indicate HMACSHA384 to the next byte.
-1. Compute the CRC32 of all CASK hash bytes written above (everything but last 4 bytes.) Store the result in little-endian byte order in the last 4 bytes.
+1. Compute the CRC32 of all CASK hash bytes written above (everything but last 4 bytes). Store the result in little-endian byte order in the last 4 bytes.
 1. base64url encode the CASK hash and return the result.
 
 ## References
