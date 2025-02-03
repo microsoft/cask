@@ -3,9 +3,9 @@
 1. Validate input. Return an error if any of the following are NOT true:
     - Provider signature is exactly 4 characters long.
     - Provider signature consists entirely of characters that are valid in base64url encoding.
-    - Provider data (if any) has a length that is a multiple of 3 characters and no more than 32 characters.
+    - Provider data (if any) has a length that is a multiple of 4 characters and no more than 32 characters.
     - Provider data (if any) consists entirely of characters that are valid in base64url encoding.
-1. Let N = the length of the base64url-decoded provider data. Number of characters in the provider data, divided by 3, times 4.
+1. Let N = the length of the base64url-decoded provider data. (Number of characters in provider data, divided by 4, times 3.
 1. Allocate storage for the generated key:
     - 32 bytes for entropy
     - 1 padding byte
