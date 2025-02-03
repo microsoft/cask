@@ -7,6 +7,7 @@ using System.Text;
 
 using Xunit;
 
+using static CommonAnnotatedSecurityKeys.Helpers;
 using static CommonAnnotatedSecurityKeys.InternalConstants;
 using static CommonAnnotatedSecurityKeys.Limits;
 
@@ -264,7 +265,7 @@ public abstract class CaskTestsBase
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         string key = Cask.GenerateKey("TEST", "ABCD");
-        Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAABCDJQQJTESTAABAAAAbwUpv", key);
+        Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAABCDJQQJTESTAAAAAADbTNAf", key);
     }
 
     [Theory]
@@ -294,15 +295,20 @@ public abstract class CaskTestsBase
         // most programmers will be.
         for (int year = 0; year < 64; year++)
         {
-            // Ìt's unnecessary to test every month for every year since the
-            // code only is dirt simple and correctly only needs to check the
-            // year. 64 * 12 = 768 tests is excessive for this concern.
             int month = year % 12;
-            using Mock mock = Cask.MockUtcNow(
-                () => new DateTimeOffset(2024 + year, 1 + month, 1, 0, 0, 0, TimeSpan.Zero));
+            int day = year % 28;
+            int hour = year % 24;
+
+            var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute: 0, second: 0, TimeSpan.Zero);
+            using Mock mock = Cask.MockUtcNow(() => timestamp);
 
             string key = Cask.GenerateKey(providerSignature: "TEST", providerData: "ABCD");
             IsCaskValidate(key);
+
+            string b = Base64UrlChars;
+            string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}";
+            string actual = key[TimestampCharRange];
+            Assert.True(expected == actual, $"Expected key '{key}' to have encoded timestamp '{expected}' representing '{timestamp}' but found '{actual}'.");
         }
     }
 

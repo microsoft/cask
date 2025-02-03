@@ -144,6 +144,11 @@ internal static partial class InternalConstants
     public static Range CaskSignatureCharRange = ^20..^16;
 
     /// <summary>
+    /// The range of chars in a base64-encoded key that hold the timestamp.
+    /// </summary>
+    public static Range TimestampCharRange = ^12..^8;
+
+    /// <summary>
     /// The index of the kind char in a base64-encoded key.
     /// </summary>
     public static Index KindCharIndex => ^8;
