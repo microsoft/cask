@@ -1,6 +1,6 @@
 # GenerateHash Pseudo-code
 
-1. Examine the provided secret to determine if it is a CASK primary key. If it is not, return an error.
+1. Examine the provided secret to determine if it is a valid CASK primary key. If it is not, return an error.
 1. Let N = number of bytes in the provider data of the CASK secret. (N may be 0 if there is no provider data.)
 1. Allocate storage for the CASK hash:
     - 33 bytes for padded HMACSHA256 or 48 bytes for HMACSHA384
