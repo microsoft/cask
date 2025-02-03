@@ -146,32 +146,31 @@ public static class Cask
     {
         providerData ??= "";
 
-
         ValidateProviderSignature(providerSignature);
         ValidateProviderData(providerData);
 
-        // Calculate the length of the key
+        // Calculate the length of the key.
         int providerDataLengthInBytes = Base64CharsToBytes(providerData.Length);
         int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes);
 
-        // Allocate a buffer on the stack to hold the key bytes
+        // Allocate a buffer on the stack to hold the key bytes.
         Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> key = stackalloc byte[keyLengthInBytes];
 
-        // Entropy
+        // Entropy.
         FillRandom(key[..SecretEntropyInBytes]);
 
-        // Padding
+        // Padding.
         key[SecretEntropyInBytes] = 0;
 
-        // Provider data
+        // Provider data.
         int bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), key[PaddedSecretEntropyInBytes..]);
         Debug.Assert(bytesWritten == providerDataLengthInBytes);
 
-        // CASK signature
+        // CASK signature.
         CaskSignatureBytes.CopyTo(key[CaskSignatureByteRange]);
 
-        // Provider signature
+        // Provider signature.
         bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), key[ProviderSignatureByteRange]);
         Debug.Assert(bytesWritten == 3);
 
@@ -215,23 +214,23 @@ public static class Cask
         Span<byte> secretBytes = stackalloc byte[secret.SizeInBytes];
         secret.Decode(secretBytes);
 
-        // 32-byte Hash
+        // 32-byte hash.
         HMACSHA256.HashData(secretBytes, derivationInput, hash);
 
-        // 1 padding byte
+        // 1 padding byte.
         secretBytes[HMACSHA256.HashSizeInBytes] = 0;
 
-        // Provider data: copy from secret
+        // Provider data: copy from secret.
         ReadOnlySpan<byte> providerData = secretBytes.Slice(PaddedSecretEntropyInBytes, providerDataLengthInBytes);
         providerData.CopyTo(hash[PaddedHmacSha256SizeInBytes..]);
 
-        // C3ID
+        // C3ID.
         CrossCompanyCorrelatingId.ComputeRaw(secret.ToString(), hash[C3IdByteRange]);
 
-        // Cask signature
+        // Cask signature.
         CaskSignatureBytes.CopyTo(hash[CaskSignatureByteRange]);
 
-        // Provider signature: copy from secret
+        // Provider signature: copy from secret.
         secretBytes[ProviderSignatureByteRange].CopyTo(hash[ProviderSignatureByteRange]);
 
         FinalizeKey(hash, KeyKind.Hash256Bit, timestamp);
@@ -246,10 +245,10 @@ public static class Cask
             DateTimeOffset now = GetUtcNow();
             ValidateTimestamp(now);
             ReadOnlySpan<char> chars = [
-                Base64UrlChars[now.Year - 2024], // years since 2024
-                Base64UrlChars[now.Month - 1],   // zero-indexed month
-                Base64UrlChars[now.Day],         // zero-indexed day
-                Base64UrlChars[now.Hour],        // zero-indexed hour
+                Base64UrlChars[now.Year - 2024], // Years since 2024.
+                Base64UrlChars[now.Month - 1],   // Zero-indexed month.
+                Base64UrlChars[now.Day],         // Zero-indexed day.
+                Base64UrlChars[now.Hour],        // Zero-indexed hour.
             ];
 
             int bytesWritten = Base64Url.DecodeFromChars(chars, key[TimestampByteRange]);
@@ -287,25 +286,25 @@ public static class Cask
         ThrowIfUnitialized(secret);
         ThrowIfNotPrimary(secret);
 
-        // Check if sizes match
+        // Check if sizes match.
         int length = GetHashLengthInBytes(secret.SizeInBytes, out int providerDataLengthInBytes);
         if (candidateHash.SizeInBytes != length)
         {
             return false;
         }
 
-        // Decode candidate hash
+        // Decode candidate hash.
         Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> candidateBytes = stackalloc byte[length];
         candidateHash.Decode(candidateBytes);
 
-        // Compute hash with candidate timestamp
+        // Compute hash with candidate timestamp.
         ReadOnlySpan<byte> candidateTimestamp = candidateBytes[TimestampByteRange];
         Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> computedBytes = stackalloc byte[length];
         GenerateHashBytes(derivationInput, secret, providerDataLengthInBytes, computedBytes, candidateTimestamp);
 
-        // Compare
+        // Compare.
         return CryptographicOperations.FixedTimeEquals(candidateBytes, computedBytes);
     }
 
