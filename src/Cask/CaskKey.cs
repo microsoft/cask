@@ -176,7 +176,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     }
 
     // language=regex
-    private const string RegexPattern = """(^|[^A-Za-z0-9+/-_])([A-Za-z0-9-_]{4}){6,}JQQJ[A-Za-z0-9-_]{16}($|[^A-Za-z0-9+/-_])""";
+    private const string RegexPattern = """(^|[^A-Za-z0-9+/\-_])([A-Za-z0-9\-_]{4}){6,}JQQJ[A-Za-z0-9\-_]{16}($|[^A-Za-z0-9+/\-_])""";
     private const RegexOptions RegexFlags = RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant;
 
     [GeneratedRegex(RegexPattern, RegexFlags)]
