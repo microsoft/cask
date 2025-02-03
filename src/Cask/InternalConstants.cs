@@ -125,7 +125,7 @@ internal static partial class InternalConstants
     /// <summary>
     /// The index of the byte in a key that contains the key kind.
     /// </summary>
-    public static Index KindByteIndex = ^6;
+    public static Index KindByteIndex => ^6;
 
     /// <summary>
     /// The index of the byte in a key that is currently reserved to be zeroed
@@ -141,12 +141,12 @@ internal static partial class InternalConstants
     /// <summary>
     /// The range of chars in a base64-encoded key that hold the Cask signature.
     /// </summary>
-    public static Range CaskSignatureCharRange = ^20..^16;
+    public static Range CaskSignatureCharRange => ^20..^16;
 
     /// <summary>
     /// The range of chars in a base64-encoded key that hold the timestamp.
     /// </summary>
-    public static Range TimestampCharRange = ^12..^8;
+    public static Range TimestampCharRange => ^12..^8;
 
     /// <summary>
     /// The index of the kind char in a base64-encoded key.
