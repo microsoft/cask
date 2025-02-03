@@ -125,12 +125,12 @@ internal static class Helpers
         return (value + multiple - 1) / multiple * multiple;
     }
 
-    public static void ThrowIfUnitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    public static void ThrowIfNotInitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
         where T : struct, IIsInitialized
     {
         if (!value.IsInitialized)
         {
-            ThrowUnitializedArgument(paramName);
+            ThrowArgumentNotInitialized(paramName);
         }
     }
 
@@ -167,13 +167,13 @@ internal static class Helpers
     }
 
     [DoesNotReturn]
-    private static void ThrowUnitializedArgument(string? paramName)
+    private static void ThrowArgumentNotInitialized(string? paramName)
     {
         throw new ArgumentException("Value cannot be the default uninitialized struct value.", paramName);
     }
 
     [DoesNotReturn]
-    public static void ThrowOperationOnUnitializedInstance()
+    public static void ThrowOperationOnUninitializedInstance()
     {
         throw new InvalidOperationException("Operation cannot be performed on the default uninitialized struct value.");
     }

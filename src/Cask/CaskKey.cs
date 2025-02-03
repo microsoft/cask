@@ -31,7 +31,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     {
         get
         {
-            ThrowIfUnitialized();
+            ThrowIfNotInitialized();
             return CharToKind(_key[KindCharIndex]);
         }
     }
@@ -40,7 +40,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     {
         get
         {
-            ThrowIfUnitialized();
+            ThrowIfNotInitialized();
             return Base64CharsToBytes(_key.Length);
         }
     }
@@ -147,7 +147,7 @@ public readonly partial record struct CaskKey : IIsInitialized
 
     public void Decode(Span<byte> destination)
     {
-        ThrowIfUnitialized();
+        ThrowIfNotInitialized();
         ThrowIfDestinationTooSmall(destination, SizeInBytes);
 
         int bytesWritten = Base64Url.DecodeFromChars(_key.AsSpan(), destination);
@@ -157,21 +157,21 @@ public readonly partial record struct CaskKey : IIsInitialized
     public override string ToString()
     {
         // Throwing violates the contract for ToString(), but it's a safety
-        // measure to block a bug from causing an unitialized key from being
+        // measure to block a bug from causing an uninitialized key from being
         // used as a production key.
         //
         // This is not considered final and needs more thought. We may move
         // access to the underlying string elsewhere.
-        ThrowIfUnitialized();
+        ThrowIfNotInitialized();
         return _key;
     }
 
     [MemberNotNull(nameof(_key))]
-    private void ThrowIfUnitialized()
+    private void ThrowIfNotInitialized()
     {
         if (!IsInitialized)
         {
-            ThrowOperationOnUnitializedInstance();
+            ThrowOperationOnUninitializedInstance();
         }
     }
 

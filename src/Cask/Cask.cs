@@ -266,13 +266,13 @@ public static class Cask
 
     public static bool CompareHash(CaskKey candidateHash, string derivationInput, CaskKey secret)
     {
-        ThrowIfUnitialized(candidateHash);
+        ThrowIfNotInitialized(candidateHash);
         return CompareHash(candidateHash, derivationInput.AsSpan(), secret);
     }
 
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret)
     {
-        ThrowIfUnitialized(candidateHash);
+        ThrowIfNotInitialized(candidateHash);
         int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
         Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
         Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
@@ -281,9 +281,9 @@ public static class Cask
 
     public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret)
     {
-        ThrowIfUnitialized(candidateHash);
+        ThrowIfNotInitialized(candidateHash);
         ThrowIfNotHash(candidateHash);
-        ThrowIfUnitialized(secret);
+        ThrowIfNotInitialized(secret);
         ThrowIfNotPrimary(secret);
 
         // Check if sizes match.
