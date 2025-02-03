@@ -5,7 +5,7 @@
     - Provider signature consists entirely of characters that are valid in base64url encoding.
     - Provider data (if any) has a length that is a multiple of 4 characters and no more than 32 characters.
     - Provider data (if any) consists entirely of characters that are valid in base64url encoding.
-1. Let N = the length of the base64url-decoded provider data. (Number of characters in provider data, divided by 4, times 3.
+1. Let N = the length of the base64url-decoded provider data. (Number of characters in provider data, divided by 4, times 3.)
 1. Allocate storage for the generated key:
     - 32 bytes for entropy
     - 1 padding byte
