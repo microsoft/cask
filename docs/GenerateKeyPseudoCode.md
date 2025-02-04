@@ -1,18 +1,27 @@
 # GenerateKey Pseudo-Code
 
+## Inputs:
+- Provider signature: string
+- Provider data: string (optional)
+
+## Outputs:
+- Generated key: string
+
+## Computation
 1. Validate input. Return an error if any of the following are NOT true:
     - Provider signature is exactly 4 characters long.
     - Provider signature consists entirely of characters that are valid in base64url encoding.
     - Provider data (if any) has a length that is a multiple of 4 characters and no more than 32 characters.
     - Provider data (if any) consists entirely of characters that are valid in base64url encoding.
-1. Let N = the length of the base64url-decoded provider data. (Number of characters in provider data, divided by 4, times 3.)
+1. Let N = the length of the base64url-decoded provider data.
+    - Number of characters in provider data divided by 4, times 3.
 1. Allocate storage for the generated key:
-    - 32 bytes for entropy
-    - 1 padding byte
-    - N bytes for provider data
-    - 3 bytes for CASK signature
-    - 3 bytes for provider signature
-    - 3 bytes for timestamp
+    - 32 bytes for entropy.
+    - 1 padding byte.
+    - N bytes for provider data. (Guaranteed to be a multiple of 3 by input validation.)
+    - 3 bytes for CASK signature.
+    - 3 bytes for provider signature.
+    - 3 bytes for timestamp.
     - 1 reserved byte
     - 1 byte for size and kind
     - 4 bytes for CRC32 checksum
