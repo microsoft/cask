@@ -21,7 +21,8 @@
 1. base64url decode provider data and store the result in the next N bytes.
 1. Write CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
 1. base64url decode provider signature and store the result in the next 3 bytes.
-1. Obtain the current date and time in UTC. Store it in 4 characters, YMDH:
+1. Let T = current date and time in UTC.
+1. Encode T in 4 characters, YMDH:
     - Y = base64url encoding of (Year - 2024).
     - M = base64url encoding of zero-based month.
     - D = base64url encoding of zero-based hour.
