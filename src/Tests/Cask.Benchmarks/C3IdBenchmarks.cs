@@ -20,15 +20,15 @@ public class C3IdBenchmarks
     [Benchmark]
     public string ComputeC3Id()
     {
-        return CrossCompanyCorrelatingId.Compute(TestCaskSecret);
+        return CaskComputedCorrelatingId.Compute(TestCaskSecret);
     }
 
     // Measures cost without encoding conversion, converting to base64, or allocating a string for the result.
     [Benchmark]
     public void ComputeC3Id_Utf8Raw()
     {
-        Span<byte> c3id = stackalloc byte[CrossCompanyCorrelatingId.RawSizeInBytes];
-        CrossCompanyCorrelatingId.ComputeRawUtf8(s_testCaskSecretUtf8, c3id);
+        Span<byte> c3id = stackalloc byte[CaskComputedCorrelatingId.RawSizeInBytes];
+        CaskComputedCorrelatingId.ComputeRawUtf8(s_testCaskSecretUtf8, c3id);
     }
 
     // Measures the cost of two SHA256 hash rounds and nothing else.

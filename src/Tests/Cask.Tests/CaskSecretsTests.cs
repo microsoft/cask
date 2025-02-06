@@ -33,9 +33,10 @@ public abstract class CaskTestsBase
 
     [Theory]
     [InlineData("xFLPv3MNBm6q607WSVO0LdzW0frQ3K3fNf-z9jq25QMA----JQQJTESTBAQSAAB6sX_c", KeyKind.Key256Bit)]
-    [InlineData("kIn1KAwUqd9JA3krJXuCDB1xvoXJBbC8IuAeaqhneasA----5Fwj_iLe-F84hlOsJQQJTESTBAQRHABzvypD", KeyKind.Hash256Bit, "C3ID5Fwj/iLe+F84hlOs")]
+    [InlineData("GN-P_f9uiz1Mq7iNEMRI8xXfLyS2symJBBNxLZH85yIA----ImE96teyjTrWMUaeFkodJQQJTESTBBFXHAA2SxFR", KeyKind.Hash256Bit, "C3IDImE96teyjTrWMUaeFkod")]
     public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, KeyKind expectedKeyKind, string expectedC3Id = "")
     {
+        string value = Cask.GenerateHash(Encoding.UTF8.GetBytes("test"), "xFLPv3MNBm6q607WSVO0LdzW0frQ3K3fNf-z9jq25QMA----JQQJTESTBAQSAAB6sX_c");
         TestEncodedMatchedDecoded(encodedKey, expectedKeyKind, expectedC3Id);
     }
 
@@ -50,7 +51,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedHash()
     {
         string secret = Cask.GenerateKey(providerSignature: "TEST", providerData: "----");
-        string c3Id = CrossCompanyCorrelatingId.Compute(secret);
+        string c3Id = CaskComputedCorrelatingId.Compute(secret);
         string hash = Cask.GenerateHash(derivationInput: Encoding.UTF8.GetBytes("TEST"), secret);
         TestEncodedMatchedDecoded(hash, KeyKind.Hash256Bit, c3Id);
     }
@@ -73,7 +74,7 @@ public abstract class CaskTestsBase
 
         if (!string.IsNullOrEmpty(expectedC3Id))
         {
-            string encodedC3Id = encodedKey[^36..^20];
+            string encodedC3Id = encodedKey[^40..^20];
             string canonicalC3Id = "C3ID" + encodedC3Id.Replace('_', '/').Replace('-', '+');
             Assert.Equal(expectedC3Id, canonicalC3Id);
         }

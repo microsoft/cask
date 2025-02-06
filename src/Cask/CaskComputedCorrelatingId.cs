@@ -9,20 +9,26 @@ using static CommonAnnotatedSecurityKeys.Limits;
 namespace CommonAnnotatedSecurityKeys;
 
 /// <summary>
-/// Cross-Company Correlating Id (C3ID) a 12-byte value used to correlate a
+/// A Cask Computed Correlating Id (C3ID) is a 15-byte value used to correlate
 /// high-entropy keys with other data. The canonical textual representation is
 /// base64 encoded and prefixed with "C3ID".
 /// </summary>
-public static class CrossCompanyCorrelatingId
+public static class CaskComputedCorrelatingId
 {
     /// <summary>
     /// The size of a C3ID in raw bytes.
     /// </summary>
-    public const int RawSizeInBytes = 12;
+    public const int RawSizeInBytes = 15;
 
     /// <summary>
-    /// The byte sequence prepended to the input for the first SHA256 hash. It
-    /// is defined as the UTF-8 encoding of "C3ID".
+    /// The byte sequence prepended to the input when hashing data to
+    /// produce a C3ID. It is defined as the UTF-8 encoding of
+    /// "CaskComputedCorrelatingId".
+    private static ReadOnlySpan<byte> Salt => "CaskComputedCorrelatingId"u8;
+
+    /// <summary>
+    /// The byte sequence prepended to the input for canonical C3ID
+    /// representation. It is defined as the UTF-8 encoding of "C3ID".
     /// </summary>
     private static ReadOnlySpan<byte> Prefix => "C3ID"u8;
 
@@ -79,10 +85,10 @@ public static class CrossCompanyCorrelatingId
         ThrowIfEmpty(textUtf8);
         ThrowIfDestinationTooSmall(destination, RawSizeInBytes);
 
-        // Produce input for second hash: "C3ID"u8 + SHA256(text)
-        Span<byte> input = stackalloc byte[Prefix.Length + SHA256.HashSizeInBytes];
-        Prefix.CopyTo(input);
-        SHA256.HashData(textUtf8, input[Prefix.Length..]);
+        // Produce input for second hash: "CaskComputedCorrelatingId"u8 + text
+        Span<byte> input = stackalloc byte[Salt.Length + textUtf8.Length];
+        Salt.CopyTo(input);
+        textUtf8.CopyTo(input[Salt.Length..]);
 
         // Perform second hash, truncate, and copy to destination.
         Span<byte> sha = stackalloc byte[SHA256.HashSizeInBytes];

@@ -66,7 +66,7 @@ internal static partial class InternalConstants
     /// <summary>
     /// The number of bytes in the fixed components of a hash key, from the C3ID to the end of the key.
     /// </summary>
-    public const int FixedHashComponentSizeInBytes = FixedKeyComponentSizeInBytes + CrossCompanyCorrelatingId.RawSizeInBytes;
+    public const int FixedHashComponentSizeInBytes = FixedKeyComponentSizeInBytes + CaskComputedCorrelatingId.RawSizeInBytes;
 
     /// <summary>
     /// The number of bytes of entropy in a primary key. 32-bytes (256 bits) of
@@ -105,7 +105,7 @@ internal static partial class InternalConstants
     /// <summary>
     /// The range of byte indices in a hash for the bytes that contain the C3ID of the secret.
     /// </summary>
-    public static Range C3IdByteRange => ^27..^15;
+    public static Range C3IdByteRange => ^30..^15;
 
     /// <summary>
     /// The range of byte indices in a key for the bytes that contain the CASK signature.

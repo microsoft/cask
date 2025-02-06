@@ -225,7 +225,7 @@ public static class Cask
         providerData.CopyTo(hash[PaddedHmacSha256SizeInBytes..]);
 
         // C3ID.
-        CrossCompanyCorrelatingId.ComputeRaw(secret.ToString(), hash[C3IdByteRange]);
+        CaskComputedCorrelatingId.ComputeRaw(secret.ToString(), hash[C3IdByteRange]);
 
         // Cask signature.
         CaskSignatureBytes.CopyTo(hash[CaskSignatureByteRange]);
