@@ -116,23 +116,26 @@ public class CaskComputedCorrelatingIdTests
         return actual;
     }
 
-    // ...
-
+    /// <summary>
+    /// A trivial reference implementation of C3ID that is easy to understand,
+    /// but not optimized for performance. We compare this to the production
+    /// implementation to ensure that it remains equivalent to this.
+    /// </summary>
     private static class ReferenceCaskComputedCorrelatingId
     {
         public static string Compute(string text)
         {
-            // Compute the SHA-256 hash of the UTF8-encoded text
+            // UTF8-encode the input.
             Span<byte> input = Encoding.UTF8.GetBytes(text);
 
-            // Prefix the result with "C3ID" UTF-8 bytes and hash again
+            // Prefix the result with "CaskComputedCorrelatingId" UTF-8 bytes and hash again.
             byte[] hash = SHA256.HashData([.. "CaskComputedCorrelatingId"u8, .. input]);
 
-            // Truncate to 15 bytes
-            hash = hash.Take(15).ToArray();
+            // Truncate to 15 bytes.
+            Span<byte> truncated = new Span<byte>(hash)[..15];
 
             // Convert to base64 and prepend "C3ID"
-            return "C3ID" + Convert.ToBase64String(hash);
+            return "C3ID" + Convert.ToBase64String(truncated);
         }
     }
 }

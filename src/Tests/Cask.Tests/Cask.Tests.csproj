@@ -9,6 +9,10 @@
     <_BuildCpp>false</_BuildCpp>
     <_BuildCpp Condition="$(_OSIsWindows) and $(_MSBuildIsNETFramework) and $(_OSIsX64)">true</_BuildCpp>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="System.Runtime" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Cask\Cask.csproj" />
