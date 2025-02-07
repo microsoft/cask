@@ -89,7 +89,7 @@ public static class CaskComputedCorrelatingId
         Encoding.UTF8.GetBytes(text, textUtf8[Salt.Length..]);
 
         // Compute the hash and copy to the destination.
-        ComputePrefixedRawUtf8(textUtf8, destination);
+        ComputeSaltedRawUtf8(textUtf8, destination);
     }
 
     /// <summary>
@@ -110,10 +110,14 @@ public static class CaskComputedCorrelatingId
         textUtf8.CopyTo(input[Salt.Length..]);
 
         // Compute the hash and copy to the destination.
-        ComputePrefixedRawUtf8(input, destination);
+        ComputeSaltedRawUtf8(input, destination);
     }
 
-    private static void ComputePrefixedRawUtf8(ReadOnlySpan<byte> prefixedTextUtf8, Span<byte> destination)
+    /// <summary>
+    /// Computes the raw C3ID bytes for the salted given UTF-8 
+    /// encoded text sequence and writes them to the destination span.
+    /// </summary>>
+    private static void ComputeSaltedRawUtf8(ReadOnlySpan<byte> prefixedTextUtf8, Span<byte> destination)
     {
         // Hash, truncate, and copy to destination.
         Span<byte> sha = stackalloc byte[SHA256.HashSizeInBytes];
