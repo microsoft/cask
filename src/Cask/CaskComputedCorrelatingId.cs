@@ -4,6 +4,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using static System.Net.Mime.MediaTypeNames;
 using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys;
@@ -38,7 +39,7 @@ public static class CaskComputedCorrelatingId
     /// base64-encoding. It is defined as the base64-decoding of "C3ID". This
     /// results in all canonical base64 encoded C3IDs starting with "C3ID".
     /// </summary>
-    private static ReadOnlySpan<byte> PrefixBase64Decoded => [0x0B, 0x72, 0x03];
+    public static ReadOnlySpan<byte> PrefixBase64Decoded => [0x0B, 0x72, 0x03];
 
     /// <summary>
     /// Computes the C3ID for the given text in canonical textual form.
@@ -71,10 +72,16 @@ public static class CaskComputedCorrelatingId
         ThrowIfEmpty(text);
         ThrowIfDestinationTooSmall(destination, RawSizeInBytes);
 
-        int byteCount = Encoding.UTF8.GetByteCount(text);
+        // Allocate the UTF8 buffer including space for the salt.
+        int byteCount = Encoding.UTF8.GetByteCount(text) + Salt.Length;
         Span<byte> textUtf8 = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
-        Encoding.UTF8.GetBytes(text, textUtf8);
-        ComputeRawUtf8(textUtf8, destination);
+
+        // Prepare the salted UTF8 bytes for hashing.
+        Salt.CopyTo(textUtf8);
+        Encoding.UTF8.GetBytes(text, textUtf8[Salt.Length..]);
+
+        // Compute the hash and copy to the destination.
+        ComputePrefixedRawUtf8(textUtf8, destination);
     }
 
     /// <summary>
@@ -86,15 +93,23 @@ public static class CaskComputedCorrelatingId
         ThrowIfEmpty(textUtf8);
         ThrowIfDestinationTooSmall(destination, RawSizeInBytes);
 
-        // Produce input for second hash: "CaskComputedCorrelatingId"u8 + text
-        Span<byte> input = stackalloc byte[Salt.Length + textUtf8.Length];
+        // Allocate the UTF8 buffer including space for the salt.
+        int byteCount = textUtf8.Length + Salt.Length;
+        Span<byte> input = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
+
+        // Prepare the salted UTF8 bytes for hashing.
         Salt.CopyTo(input);
         textUtf8.CopyTo(input[Salt.Length..]);
 
-        // Perform second hash, truncate, and copy to destination.
+        // Compute the hash and copy to the destination.
+        ComputePrefixedRawUtf8(input, destination);
+    }
+
+    private static void ComputePrefixedRawUtf8(ReadOnlySpan<byte> prefixedTextUtf8, Span<byte> destination)
+    {
+        // Hash, truncate, and copy to destination.
         Span<byte> sha = stackalloc byte[SHA256.HashSizeInBytes];
-        SHA256.HashData(input, sha);
+        SHA256.HashData(prefixedTextUtf8, sha);
         sha[..RawSizeInBytes].CopyTo(destination);
     }
 }
-

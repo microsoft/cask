@@ -25,18 +25,16 @@ public class CaskComputedCorrelatingIdTests
     [Fact]
     public void C3Id_Test()
     {
-        // This is a detail test simply to process an explicit value that
-        // may be useful to note in the specification. There are actually
-        // two reference implementations of C3ID computation in play, one
-        // provided by the 'ComputeC3Id' method in this test class, and
-        // two-liner below that simply hashes a prefixed string.
         string test = nameof(test);
         string actual = ComputeC3Id(text: test);
         string expected = "C3IDnG/kvvNePwLu3YsnIvr1";
-
         Assert.Equal(expected, actual);
 
-        string input = $"CaskComputedCorrelatingId{test}";
+        // This simple implementation of the C3ID computation
+        // shows the layout of the hashed input, i.e., the
+        // standard prefix 'CaskComputedCorrelatingId' followed
+        // by the UTF8-encoded text to hash, 'test'.
+        string input = "CaskComputedCorrelatingIdtest";
         byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         Assert.Equal(expected, $"C3ID{Convert.ToBase64String(hash)[..20]}");
     }
@@ -46,6 +44,14 @@ public class CaskComputedCorrelatingIdTests
     {
         string actual = ComputeC3Id(text: new string('x', 300));
         Assert.Equal("C3IDSa9GXyMk8rporJr/nB1t", actual);
+    }
+
+    [Fact]
+    public void C3Id_HugeText()
+    {
+        // This string size exceeds stack allocation limits.
+        string actual = ComputeC3Id(text: new string('x', 5 * 1024 * 100));
+        Assert.Equal("C3IDGD2Ig7zeuou74UE+9sZb", actual);
     }
 
     [Fact]
@@ -107,7 +113,22 @@ public class CaskComputedCorrelatingIdTests
         Assert.True(
             actual == reference,
             $"""
-            Actual implementation did not match reference implementation for '{text}'.
+            Actual implementation did not match reference implementation for UTF16 '{text}'.
+
+              reference: {reference}
+                 actual: {actual}
+            """);
+
+        byte[] textUtf8 = Encoding.UTF8.GetBytes(text);
+        Span<byte> destination = stackalloc byte[CaskComputedCorrelatingId.PrefixBase64Decoded.Length + CaskComputedCorrelatingId.RawSizeInBytes];
+        CaskComputedCorrelatingId.PrefixBase64Decoded.CopyTo(destination);
+        CaskComputedCorrelatingId.ComputeRawUtf8(textUtf8, destination[CaskComputedCorrelatingId.PrefixBase64Decoded.Length..]);
+        actual = Convert.ToBase64String(destination);
+
+        Assert.True(
+            actual == reference,
+            $"""
+            Actual implementation did not match reference implementation for UTF8 '{text}'.
 
               reference: {reference}
                  actual: {actual}
@@ -129,13 +150,13 @@ public class CaskComputedCorrelatingIdTests
             Span<byte> input = Encoding.UTF8.GetBytes(text);
 
             // Prefix the result with "CaskComputedCorrelatingId" UTF-8 bytes and hash again.
-            byte[] hash = SHA256.HashData([.. "CaskComputedCorrelatingId"u8, .. input]);
+            Span<byte> hash = SHA256.HashData([.. "CaskComputedCorrelatingId"u8, .. input]);
 
             // Truncate to 15 bytes.
-            Span<byte> truncated = new Span<byte>(hash)[..15];
+            hash = hash[..15];
 
             // Convert to base64 and prepend "C3ID"
-            return "C3ID" + Convert.ToBase64String(truncated);
+            return "C3ID" + Convert.ToBase64String(hash);
         }
     }
 }
