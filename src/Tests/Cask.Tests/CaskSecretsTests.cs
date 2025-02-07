@@ -36,7 +36,6 @@ public abstract class CaskTestsBase
     [InlineData("GN-P_f9uiz1Mq7iNEMRI8xXfLyS2symJBBNxLZH85yIA----ImE96teyjTrWMUaeFkodJQQJTESTBBFXHAA2SxFR", KeyKind.Hash256Bit, "C3IDImE96teyjTrWMUaeFkod")]
     public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, KeyKind expectedKeyKind, string expectedC3Id = "")
     {
-        string value = Cask.GenerateHash(Encoding.UTF8.GetBytes("test"), "xFLPv3MNBm6q607WSVO0LdzW0frQ3K3fNf-z9jq25QMA----JQQJTESTBAQSAAB6sX_c");
         TestEncodedMatchedDecoded(encodedKey, expectedKeyKind, expectedC3Id);
     }
 

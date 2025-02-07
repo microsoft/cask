@@ -24,6 +24,7 @@ public static class CaskComputedCorrelatingId
     /// The byte sequence prepended to the input when hashing data to
     /// produce a C3ID. It is defined as the UTF-8 encoding of
     /// "CaskComputedCorrelatingId".
+    /// </summary>
     private static ReadOnlySpan<byte> Salt => "CaskComputedCorrelatingId"u8;
 
     /// <summary>
