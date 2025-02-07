@@ -101,7 +101,7 @@ public class CaskComputedCorrelatingIdTests
 
     private static string ComputeC3Id(string text)
     {
-        string reference = ReferenceCrossCompanyCorrelatingId.Compute(text);
+        string reference = ReferenceCaskComputedCorrelatingId.Compute(text);
         string actual = CaskComputedCorrelatingId.Compute(text);
 
         Assert.True(
@@ -118,7 +118,7 @@ public class CaskComputedCorrelatingIdTests
 
     // ...
 
-    private static class ReferenceCrossCompanyCorrelatingId
+    private static class ReferenceCaskComputedCorrelatingId
     {
         public static string Compute(string text)
         {
