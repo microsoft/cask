@@ -63,8 +63,9 @@ public static class CaskComputedCorrelatingId
     /// <summary>
     /// Computes the C3ID for the given text in canonical textual form.
     /// </summary>
-    public static string ComputeUtf8(Span<byte> textUtf8)
+    public static string ComputeUtf8(ReadOnlySpan<byte> textUtf8)
     {
+        ThrowIfEmpty(textUtf8);
         Span<byte> destination = stackalloc byte[PrefixBase64Decoded.Length + RawSizeInBytes];
         PrefixBase64Decoded.CopyTo(destination);
         ComputeRawUtf8(textUtf8, destination[PrefixBase64Decoded.Length..]);
