@@ -50,8 +50,8 @@ public class CaskComputedCorrelatingIdTests
     public void C3Id_HugeText()
     {
         // This string size exceeds stack allocation limits.
-        string actual = ComputeC3Id(text: new string('x', 5 * 1024 * 100));
-        Assert.Equal("C3IDGD2Ig7zeuou74UE+9sZb", actual);
+        string actual = ComputeC3Id(text: new string('x', 5 * 1024 * 1000));
+        Assert.Equal("C3IDZ667VxU1F+rFRLrccJGS", actual);
     }
 
     [Fact]

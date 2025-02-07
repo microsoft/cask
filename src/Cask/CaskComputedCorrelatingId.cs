@@ -4,9 +4,6 @@
 using System.Security.Cryptography;
 using System.Text;
 
-using static System.Net.Mime.MediaTypeNames;
-using static CommonAnnotatedSecurityKeys.Limits;
-
 namespace CommonAnnotatedSecurityKeys;
 
 /// <summary>
