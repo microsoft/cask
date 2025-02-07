@@ -26,12 +26,6 @@ public static class CaskComputedCorrelatingId
     private static ReadOnlySpan<byte> Salt => "CaskComputedCorrelatingId"u8;
 
     /// <summary>
-    /// The byte sequence prepended to the input for canonical C3ID
-    /// representation. It is defined as the UTF-8 encoding of "C3ID".
-    /// </summary>
-    private static ReadOnlySpan<byte> Prefix => "C3ID"u8;
-
-    /// <summary>
     /// The byte sequence prepended to the to the output of the
     /// base64-encoding. It is defined as the base64-decoding of "C3ID". This
     /// results in all canonical base64 encoded C3IDs starting with "C3ID".
