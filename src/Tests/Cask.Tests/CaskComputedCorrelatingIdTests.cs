@@ -120,10 +120,7 @@ public class CaskComputedCorrelatingIdTests
             """);
 
         byte[] textUtf8 = Encoding.UTF8.GetBytes(text);
-        Span<byte> destination = stackalloc byte[CaskComputedCorrelatingId.PrefixBase64Decoded.Length + CaskComputedCorrelatingId.RawSizeInBytes];
-        CaskComputedCorrelatingId.PrefixBase64Decoded.CopyTo(destination);
-        CaskComputedCorrelatingId.ComputeRawUtf8(textUtf8, destination[CaskComputedCorrelatingId.PrefixBase64Decoded.Length..]);
-        actual = Convert.ToBase64String(destination);
+        actual = CaskComputedCorrelatingId.ComputeUtf8(textUtf8);
 
         Assert.True(
             actual == reference,

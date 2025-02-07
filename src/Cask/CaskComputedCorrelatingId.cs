@@ -36,7 +36,7 @@ public static class CaskComputedCorrelatingId
     /// base64-encoding. It is defined as the base64-decoding of "C3ID". This
     /// results in all canonical base64 encoded C3IDs starting with "C3ID".
     /// </summary>
-    public static ReadOnlySpan<byte> PrefixBase64Decoded => [0x0B, 0x72, 0x03];
+    private static ReadOnlySpan<byte> PrefixBase64Decoded => [0x0B, 0x72, 0x03];
 
     /// <summary>
     /// Computes the C3ID for the given text in canonical textual form.
@@ -44,10 +44,10 @@ public static class CaskComputedCorrelatingId
     public static string Compute(string text)
     {
         ThrowIfNullOrEmpty(text);
-        Span<byte> bytes = stackalloc byte[PrefixBase64Decoded.Length + RawSizeInBytes];
-        PrefixBase64Decoded.CopyTo(bytes);
-        ComputeRaw(text, bytes[PrefixBase64Decoded.Length..]);
-        return Convert.ToBase64String(bytes);
+        Span<byte> destination = stackalloc byte[PrefixBase64Decoded.Length + RawSizeInBytes];
+        PrefixBase64Decoded.CopyTo(destination);
+        ComputeRaw(text, destination[PrefixBase64Decoded.Length..]);
+        return Convert.ToBase64String(destination);
     }
 
     /// <summary>
@@ -58,6 +58,17 @@ public static class CaskComputedCorrelatingId
     {
         ThrowIfNull(text);
         ComputeRaw(text.AsSpan(), destination);
+    }
+
+    /// <summary>
+    /// Computes the C3ID for the given text in canonical textual form.
+    /// </summary>
+    public static string ComputeUtf8(Span<byte> textUtf8)
+    {
+        Span<byte> destination = stackalloc byte[PrefixBase64Decoded.Length + RawSizeInBytes];
+        PrefixBase64Decoded.CopyTo(destination);
+        ComputeRawUtf8(textUtf8, destination[PrefixBase64Decoded.Length..]);
+        return Convert.ToBase64String(destination);
     }
 
     /// <summary>
