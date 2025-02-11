@@ -3,32 +3,32 @@
 ```
 <key> ::= <payload-data> <checksum>
 
-<payload-data> ::= <random-data> <reserved> [<optional-fields>] <cask-signature> <provider-id> <timestamp> <key-type> <version>
+<payload-data> ::= <random-data> <reserved> [<optional-fields>] <cask-signature> <provider-id> <provider-kind> <cask-kind> <correlating-id> <timestamp> <expiry>
 <random-data> ::= 42 * <base64url> <base64-two-zeros-suffix> ; The total random data comprises 256 bits encoded as 42
                                                              ; characters x 6 bit bits of random data = 252 bits and
                                                              ; 1 character providing 4 bits of random data padded with 00b.
-<reserved> ::= '0' ; Reserved for future use.
+<reserved> ::= 'A' ; i.e., encoded value of '0', reserved for future use.
 <optional-fields> ::= { <optional-field> } ; Zero or more 4-character (24 bit) sequences of optional data.
 <optional-field> ::= 4 * <base64url> ; Each optional field is 4 characters (24 bits). This keeps
                                      ; data cleanly aligned along 3-byte/4-encoded character boundaries
                                      ; facilitating readability of encoded form as well as byte-wise use.
 <cask-signature> ::= 'JQQJ' ; Fixed signature identifying the CASK key
 <provider-id> ::= 4 * <base64url> ; Provider identifier (24 bits)
-<timestamp> ::= <year> <month> <day> <hour> ; Timestamp components
-<year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
-<month> ::= 'A'..'L' ; For months January to December
-<day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'e' = day 30, ... 'e' = day 31
-<hour> ::= 'A'..'X' ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
-<key-type> ::= <256-bit-key> |  <256-bit-hash> | <384-bit-hash>
+<provider-kind> ::= <base64url> ; Optionally populated provider key kind.
+<cask-kind> ::= <256-bit-key> |  <256-bit-hash> | <384-bit-hash>
 <256-bit-key> ::= 'A'
 <256-bit-hash> ::= 'H'
 <384-bit-hash> ::= 'I'
-<version> ::= 'A' 
-<checksum> ::= <four-zeros-prefix-base64> 5 * <base64url> ; The checksum is 32 bits total encoded in six 6-bit characters.
-                                                          ; The data starts with 0000b (four leading zero bit) and 2 bits
-                                                          ; of checksum data followed by the remaining 30 bits of checksum.
+<timestamp> ::= <year> <month> <day> <hour> <second>; Timestamp components
+<year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
+<month> ::= 'A'..'L' ; For months January to December
+<day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'd' = day 30, ... 'e' = day 31
+<hour> ::= 'A'..'X' ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
+<minute> ::= 'A'..'7' ; Represents minutes 0-59.
+<expiry> ::= 3 * <base64url> ; 18 bits expiry data, comprising a count of 5 minute values.
+                             ; 64 ^ 3 = 5 - 1,310,720 minutes, or a maximum expiry of ~910 days.
+<checksum> ::= 4 * <base64url> ; The first three bytes of the litte-endian CRC32 of the remainder of the key.
 <base64url> ::= 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_'
-<four-zeros-prefix-base64> ::= 'A'..'D' ; Base64 characters starting with 0000b (indices 0-3).
 <base64-two-zeros-suffix> ::= 'A' | 'E' | 'I' | 'M' | 'Q' | 'U' | 'Y' | 'c' ; Base64 characters ending in 00b. These indices are all
                             | 'g' | 'k' | 'o' | 's' | 'w' | '0' | '4' | '8' ; multiple of 4 (or the value of 0b), a fact that may be
                                                                             ; useful in some contexts.
@@ -38,13 +38,15 @@
 |-|-|-|-|-|
 |decodedKey[..32]|0...255|0x0...0xFF|00000000b...11111111b|256 bits of random data produced by a cryptographically secure RNG|
 |decodedKey[32]|0|0x00|00000000b| A reserved byte to enforce 3-byte alignment, set to zero.
-|decodedKey[33..^15]|0...255|0x0...0xFF|00000000b...11111111b|Provider-defined data, comprising 0 or more 3-byte sequences, of arbitrary interpretation.
-|decodedKey[^15..^12]| 37, 4, 9  |0x25, 0x04, 0x09| 00100101b, 00000100b, 00001001b | Decoded 'JQQJ' signature.
-|decodedKey[^12..^9]|0...255|0x0...0xFF|00000000b...11111111b| Provider identifier, e.g. , '0x4c', '0x44', '0x93' (base64 encoded as 'TEST')
+|decodedKey[33..^33]|0...255|0x0...0xFF|00000000b...11111111b|Provider-defined data, comprising 0 or more 3-byte sequences, of arbitrary interpretation.
+|decodedKey[^33..^30]| 37, 4, 9  |0x25, 0x04, 0x09| 00100101b, 00000100b, 00001001b | Decoded 'JQQJ' signature.
+|decodedKey[^30..^27]|0...255|0x0...0xFF|00000000b...11111111b| Provider identifier, e.g. , '0x4c', '0x44', '0x93' (base64 encoded as 'TEST')
+|decodedKey[^27]|||| Provider key kind + two bits of reserved padding.
+|decodedKey[^26]|||| CASK key kind (4 bits) + 4 bits padding.
+|decodedKey[^25..^9]||||16 byte c3id
 |decodedKey[^9..^6]||||Time stamp data encoded in 4 six-bit blocks for YMDH.
-|decodedKey[^6]|0, 28, 32|0x00, 0x1c, 0x20|00000000b, 00011100b, 00100000b | Leading 6 bits comprises kind enum followed by 2 bits of reserved zero padding.
-|decodedKey[^5]|0|0x00|00000000b| Reserved. Must be zero.
-|decodedKey[^4..]|0...255|0x0...0xFF|00000000b..11111111b|CRC32(key[..^4])
+|decodedKey[^6..^3]||||Time stamp data encoded in 4 six-bit blocks for MEEE (Minute, 24 bits expiry)
+|decodedKey[^3..]|0...255|0x0...0xFF|00000000b..11111111b|CRC32(key[..^3])[..^1]
 
 ## Primary 256-bit Key Base64-Encoded Rendering
 |String Range|Text Value|Description|
@@ -52,16 +54,19 @@
 |encodedKey[..42] | 'A'...'_' | 252 bits of randomized data generated by cryptographically secure RNG
 |encodedKey[42] | <base64-two-zeros-suffix> | 4 bits of randomized data followed by 2 zero bits. See the <base64-two-zeros-suffix> definition for legal values.
 |encodedKey[43] | 'A' | 6 bits of reserved data specified as 'A', base64 character index zero.
-|encodedKey[44..^20]|'A'...'_'|0 or more 4-character sequences comprising provider optional data, of arbitrary interpretation.
-|encodedKey[^20..^16]|'JQQJ'| Fixed CASK signature.
-|encodedKey[^16]|'A'...'Z'\|'a'...'z'| The first character of the provider signature which must be alphabetic (upper-case indicating a customer-managed as opposed to service managed secret).
-|encodedKey[^15..^12]|('A'...'Z'-\_)\|('a'...'z'-\_)| | The remaining three encoded characters. Any alphabetic characters must be consistently upper- or lower-case (to distinguish customer- vs. service-managed secrets).
+|encodedKey[44..^44]|'A'...'_'|0 or more 4-character sequences comprising provider optional data, of arbitrary interpretation.
+|encodedKey[^44..^40]|'JQQJ'| Fixed CASK signature.
+|encodedKey[^40]|'A'...'Z'\|'a'...'z'| The first character of the provider signature which must be alphabetic (upper-case indicating a customer-managed as opposed to service managed secret).
+|encodedKey[^39..^36]|('A'...'Z'-\_)\|('a'...'z'-\_)| | The remaining three encoded characters. Any alphabetic characters must be consistently upper- or lower-case (to distinguish customer- vs. service-managed secrets).
+|encodedKey[^36]|'A'...'_'|Provider key kind or 'A' if not populated|
+|encodedKey[^35]|'A', 'H', 'I'|CASK key kind|
+|encodedKey[^34]|'A', 'Q', 'g', 'w'|The first character of the c3id|
+|encodedKey[^35..^12]|'A'...'_'|The remaining 21 characters of the c3id|
 |encodedKey[^12]|'A'...'_'|Represents the year of key allocation, 'A' (2024) to '_' (2087)|
 |encodedKey[^11]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
 |encodedKey[^10]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
 |encodedKey[^9]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
-|encodedKey[^8]|'A', 'H', 'I'|Represents the key kind, a 256-bit primary key, HMAC256 or HMAC384.
-|encodedKey[^7]|'A'| Reserved. Must be 'A'.
-|encodedKey[^6]|'A'...'D'| Encoded character of four leading zero bits followed by the first two bits of the CRC32 checksum.
-|encodedKey[^5..]|'A'...'_'|The final five encoded checksum characters representing the remaining 30 bits of the CRC32 checksum.
+|encodedKey[^8]|'A'...'8'| Represents the minute of allocation kind or 'A' if the minute value isn't populated.
+|encodedKey[^7..^4]|'A'...'_'| 18-bit value comprising an expiry.
+|encodedKey[^4..]|'A'...'_'|The final four encoded checksum characters representing the first 3 bytes of the little endian expression of the CRC32 checksum.
 ```
