@@ -7,7 +7,7 @@
 <random-data> ::= 42 * <base64url> <base64-two-zeros-suffix> ; The total random data comprises 256 bits encoded as 42
                                                              ; characters x 6 bit bits of random data = 252 bits and
                                                              ; 1 character providing 4 bits of random data padded with 00b.
-<reserved> ::= 'A' ; i.e., encoded value of '0', reserved for future use.
+<reserved> ::= 'A' ;Reserved for future use.
 <optional-fields> ::= { <optional-field> } ; Zero or more 4-character (24 bit) sequences of optional data.
 <optional-field> ::= 4 * <base64url> ; Each optional field is 4 characters (24 bits). This keeps
                                      ; data cleanly aligned along 3-byte/4-encoded character boundaries
@@ -19,10 +19,10 @@
 <256-bit-key> ::= 'A'
 <256-bit-hash> ::= 'H'
 <384-bit-hash> ::= 'I'
-<timestamp> ::= <year> <month> <day> <hour> <second>; Timestamp components
+<timestamp> ::= <year> <month> <day> <hour> <minute>; Timestamp components
 <year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
 <month> ::= 'A'..'L' ; For months January to December
-<day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'd' = day 30, ... 'e' = day 31
+<day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'e' = day 31
 <hour> ::= 'A'..'X' ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
 <minute> ::= 'A'..'7' ; Represents minutes 0-59.
 <expiry> ::= 3 * <base64url> ; 18 bits expiry data, comprising a count of 5 minute values.
