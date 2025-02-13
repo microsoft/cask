@@ -58,8 +58,8 @@
 |encodedKey[^36..^32]|('A'...'Z'-\_)\|('a'...'z'-\_)| | The provider signature. Optionally, this data can be encoded to distinguish user- vs. service-managed keys.
 |encodedKey[^32]|'A'...'_'|Provider key kind or 'A' if not populated|
 |encodedKey[^31]|'A', 'H', 'I'|CASK key kind|
-|encodedKey[^30]|'A', 'Q', 'g', 'w'|The first character of the c3id|
-|encodedKey[^31..^8]|'A'...'_'|The remaining 21 characters of the c3id|
+|encodedKey[^30]|'A', 'Q', 'g', 'w'|The first character of the correlating id|
+|encodedKey[^31..^8]|'A'...'_'|The remaining 21 characters of the correlating id|
 |encodedKey[^8]|'A'...'_'|Represents the year of key allocation, 'A' (2024) to '_' (2087)|
 |encodedKey[^7]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
 |encodedKey[^6]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
