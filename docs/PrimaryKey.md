@@ -64,6 +64,6 @@
 |encodedKey[^7]|'A'...'L'|Represents the month of allocation time, 'A' (January) to 'L' (December)|
 |encodedKey[^6]|'A'...'Z'\|'a'..'e'|Represents the day of allocation time, 'A' (0) to 'e' (31)|
 |encodedKey[^5]|'A'...'X'|Represents the hour of allocation time, 'A' (hour 0 or midnight) to 'X' (hour 23).
-|encodedKey[^4]|'A'...'8'| Represents the minute of allocation time.
+|encodedKey[^4]|'A'...'7'| Represents the minute of allocation time.
 |encodedKey[^3..]|'A'...'_'| 18-bit value comprising an expiry.
 ```
