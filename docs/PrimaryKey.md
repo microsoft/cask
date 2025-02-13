@@ -17,7 +17,7 @@
 <256-bit-key> ::= 'A'
 <256-bit-hash> ::= 'H'
 <384-bit-hash> ::= 'I'
-<correlating-id> ::= <four-bits-prefixed-base64url> 21 * <base64url> ; 21 characters of a C3ID (128 bits)
+<correlating-id> ::= <four-bits-prefixed-base64url> 21 * <base64url> ; 0000b + prefix 22 character correlating id (128 bits)
 <timestamp> ::= <year> <month> <day> <hour> <minute>; Timestamp components
 <year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
 <month> ::= 'A'..'L' ; For months January to December
