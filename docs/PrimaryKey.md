@@ -60,10 +60,10 @@
 |encodedKey[^31]|'A', 'H', 'I'|CASK key kind|
 |encodedKey[^30]|'A', 'Q', 'g', 'w'|The first character of the correlating id|
 |encodedKey[^31..^8]|'A'...'_'|The remaining 21 characters of the correlating id|
-|encodedKey[^8]|'A'...'_'|Represents the year of key allocation, 'A' (2024) to '_' (2087)|
-|encodedKey[^7]|'A'...'L'|Represents the month of key allocation, 'A' (January) to 'L' (December)|
-|encodedKey[^6]|'A'...'Z'\|'a'..'e'|Represents the day of key allocation, 'A' (0) to 'e' (31)|
-|encodedKey[^5]|'A'...'X'|Represents the hour of key allocation, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
-|encodedKey[^4]|'A'...'8'| Represents the minute of key allocation.
+|encodedKey[^8]|'A'...'_'|Represents the year of allocation time, 'A' (2024) to '_' (2087)|
+|encodedKey[^7]|'A'...'L'|Represents the month of allocation time, 'A' (January) to 'L' (December)|
+|encodedKey[^6]|'A'...'Z'\|'a'..'e'|Represents the day of allocation time, 'A' (0) to 'e' (31)|
+|encodedKey[^5]|'A'...'X'|Represents the hour of allocation time, 'A' (hour 0 or midnight) to 'X' (hour 23). [TBD: This value could be used for half hour increments instead].
+|encodedKey[^4]|'A'...'8'| Represents the minute of allocation time.
 |encodedKey[^3..]|'A'...'_'| 18-bit value comprising an expiry.
 ```
