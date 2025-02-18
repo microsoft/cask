@@ -8,8 +8,10 @@ namespace CommonAnnotatedSecurityKeys.Benchmarks;
 internal static class BenchmarkTestData
 {
     public const string TestDerivationInput = "Lorem ipsum dolor sit amet, consectetur adipiscing elit";
-    public const string TestProviderSignature = "TEST";
     public const string TestProviderData = "0123456789ABCDEF";
+    public const string TestProviderSignature = "TEST";
+    public const string TestProviderKind = "M";
+
     public const int TestSecretEntropyInBytes = 32;
 
     public static readonly byte[] TestDerivationInputUtf8 = Encoding.UTF8.GetBytes(TestDerivationInput);

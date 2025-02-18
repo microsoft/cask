@@ -2,11 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -115,38 +113,36 @@ public static class Cask
             return false;
         }
 
+        // We have not yet implemented a key or HMAC that exceeds 256 bits in size.
+        if (!TryByteToSensitiveDataSize(keyBytes[SensitiveDataSizeByteIndex], out SensitiveDataSize size) || size is not SensitiveDataSize.Bits256)
+        {
+            return false;
+        }
+
         // Check for CASK signature. "JQQJ" base64-decoded.
         if (!keyBytes[CaskSignatureByteRange].SequenceEqual(CaskSignatureBytes))
         {
             return false;
         }
 
-        // Check that kind is valid. NOTE: 'Hash384Bit' is not implemented yet
-        // and is therefore treated as invalid here for now.
-        if (!TryByteToKind(keyBytes[KindByteIndex], out KeyKind kind) || kind is not KeyKind.Key256Bit and not KeyKind.Hash256Bit)
+        // Check that kind is valid.
+        if (!TryByteToKind(keyBytes[CaskKindByteIndex], out CaskKeyKind kind) || kind is not CaskKeyKind.PrimaryKey and not CaskKeyKind.HMAC)
         {
             return false;
         }
 
-        // Check that reserved version byte is zeroed out. If not, this might be
-        // a CASK key from a future version that we do not support.
-        if (keyBytes[ReservedVersionByteIndex] != 0)
-        {
-            return false;
-        }
+        // TBD More validation? e.g., we have lots of natural limits on the timestamp data.
 
-        // Validate checksum.
-        ReadOnlySpan<byte> keyBytesWithoutCrc = keyBytes[..Crc32ByteRange.Start];
-        uint crc = BinaryPrimitives.ReadUInt32LittleEndian(keyBytes[Crc32ByteRange]);
-        uint computedCrc = Crc32.HashToUInt32(keyBytesWithoutCrc);
-        return crc == computedCrc;
+        return true;
     }
 
-    public static CaskKey GenerateKey(string providerSignature, string? providerData = null)
+    public static CaskKey GenerateKey(string providerSignature, string? providerKeyKind = null, string? providerData = null)
     {
-        providerData ??= "";
+        providerKeyKind ??= "A"; // 'A' comprises index 0 of base64-encoded characters.
+        providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
+        ValidateProviderKeyKind(providerKeyKind);
         ValidateProviderData(providerData);
 
         // Calculate the length of the key.
@@ -157,24 +153,29 @@ public static class Cask
         Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> key = stackalloc byte[keyLengthInBytes];
 
-        // Entropy.
+        // Entropy comprising the sensitive component of the key.
         FillRandom(key[..SecretEntropyInBytes]);
 
-        // Padding.
-        key[SecretEntropyInBytes] = 0;
-
-        // Provider data.
-        int bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), key[PaddedSecretEntropyInBytes..]);
-        Debug.Assert(bytesWritten == providerDataLengthInBytes);
+        // Sensitive component size.
+        key[SecretEntropyInBytes] = (byte)SensitiveDataSize.Bits256;
 
         // CASK signature.
         CaskSignatureBytes.CopyTo(key[CaskSignatureByteRange]);
 
         // Provider signature.
-        bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), key[ProviderSignatureByteRange]);
+        int bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), key[ProviderSignatureByteRange]);
         Debug.Assert(bytesWritten == 3);
 
-        FinalizeKey(key, KeyKind.Key256Bit, UseCurrentTime);
+        // Provider key kind.
+        key[ProviderKindByteIndex] = ProviderKindToByte(providerKeyKind);
+
+        // CASK key kind.
+        key[CaskKindByteIndex] = KindToByte(CaskKeyKind.PrimaryKey);
+
+        // Entropy comprising the non-sensitive correlating id of the key.
+        FillRandom(key[CorrelatingIdByteRange]);
+
+        FinalizeKey(key, UseCurrentTime, providerData.AsSpan());
         return CaskKey.Encode(key);
     }
 
@@ -195,19 +196,17 @@ public static class Cask
     public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret)
     {
         ThrowIfNotPrimary(secret);
-        int hashLengthInBytes = GetHashLengthInBytes(secret.SizeInBytes, out int providerDataLengthInBytes);
+        int nonSensitiveSecretSize = secret.SizeInBytes - RoundUpTo3ByteAlignment(secret.SensitiveSizeInBytes);
+        int hashLengthInBytes = GetHashLengthInBytes(nonSensitiveSecretSize);
         Debug.Assert(hashLengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> hash = stackalloc byte[hashLengthInBytes];
-        GenerateHashBytes(derivationInput, secret, providerDataLengthInBytes, hash, UseCurrentTime);
+        GenerateHashBytes(derivationInput, secret, hash);
         return CaskKey.Encode(hash);
     }
 
-    private static void GenerateHashBytes(
-        ReadOnlySpan<byte> derivationInput,
-        CaskKey secret,
-        int providerDataLengthInBytes,
-        Span<byte> hash,
-        ReadOnlySpan<byte> timestamp)
+    private static void GenerateHashBytes(ReadOnlySpan<byte> derivationInput,
+                                          CaskKey secret,
+                                          Span<byte> hash)
     {
 
         Debug.Assert(secret.SizeInBytes <= MaxKeyLengthInBytes);
@@ -217,30 +216,23 @@ public static class Cask
         // 32-byte hash.
         HMACSHA256.HashData(secretBytes, derivationInput, hash);
 
-        // 1 padding byte.
-        secretBytes[HMACSHA256.HashSizeInBytes] = 0;
+        // Copy all non-sensitive data from secret.
+        secretBytes[SensitiveDataSizeByteIndex..].CopyTo(hash[SensitiveDataSizeByteIndex..]);
 
-        // Provider data: copy from secret.
-        ReadOnlySpan<byte> providerData = secretBytes.Slice(PaddedSecretEntropyInBytes, providerDataLengthInBytes);
-        providerData.CopyTo(hash[PaddedHmacSha256SizeInBytes..]);
+        // Specify our hash size.
+        hash[HMACSHA256.HashSizeInBytes] = (byte)SensitiveDataSize.Bits256;
 
-        // C3ID.
-        CaskComputedCorrelatingId.ComputeRaw(secret.ToString(), hash[C3IdByteRange]);
-
-        // Cask signature.
-        CaskSignatureBytes.CopyTo(hash[CaskSignatureByteRange]);
-
-        // Provider signature: copy from secret.
-        secretBytes[ProviderSignatureByteRange].CopyTo(hash[ProviderSignatureByteRange]);
-
-        FinalizeKey(hash, KeyKind.Hash256Bit, timestamp);
+        // Set the CASK key kind.
+        hash[CaskKindByteIndex] = KindToByte(CaskKeyKind.HMAC);
     }
 
     private static ReadOnlySpan<byte> UseCurrentTime => [];
 
-    private static void FinalizeKey(Span<byte> key, KeyKind kind, ReadOnlySpan<byte> timestamp)
+    private static void FinalizeKey(Span<byte> key, ReadOnlySpan<byte> timestampAndExpiry, ReadOnlySpan<char> providerData)
     {
-        if (timestamp.IsEmpty)
+        int bytesWritten;
+
+        if (timestampAndExpiry.IsEmpty)
         {
             DateTimeOffset now = GetUtcNow();
             ValidateTimestamp(now);
@@ -251,17 +243,28 @@ public static class Cask
                 Base64UrlChars[now.Hour],        // Zero-indexed hour.
             ];
 
-            int bytesWritten = Base64Url.DecodeFromChars(chars, key[TimestampByteRange]);
+            bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
+            Debug.Assert(bytesWritten == 3);
+
+            chars = [
+                Base64UrlChars[now.Minute],    // Zero-indexed minute.
+                'A',   // TBD expiry part 1.
+                'A',   // TBD expiry part 2.
+                'A',   // TBD expiry part 2.
+            ];
+
+            bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);
             Debug.Assert(bytesWritten == 3);
         }
         else
         {
-            timestamp.CopyTo(key[TimestampByteRange]);
+            timestampAndExpiry.CopyTo(key[YearMonthHoursDaysTimestampByteRange]);
         }
 
-        key[ReservedVersionByteIndex] = 0;
-        key[KindByteIndex] = KindToByte(kind);
-        Crc32.Hash(key[..Crc32ByteRange.Start], key[Crc32ByteRange]);
+        // Provider data.
+        Debug.Assert(Is4CharAligned(providerData.Length));
+        bytesWritten = Base64Url.DecodeFromChars(providerData, key[OptionalDataByteRange]);
+        Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
     }
 
     public static bool CompareHash(CaskKey candidateHash, string derivationInput, CaskKey secret)
@@ -287,7 +290,7 @@ public static class Cask
         ThrowIfNotPrimary(secret);
 
         // Check if sizes match.
-        int length = GetHashLengthInBytes(secret.SizeInBytes, out int providerDataLengthInBytes);
+        int length = GetHashLengthInBytes(secret.SizeInBytes);
         if (candidateHash.SizeInBytes != length)
         {
             return false;
@@ -299,10 +302,10 @@ public static class Cask
         candidateHash.Decode(candidateBytes);
 
         // Compute hash with candidate timestamp.
-        ReadOnlySpan<byte> candidateTimestamp = candidateBytes[TimestampByteRange];
+        ReadOnlySpan<byte> candidateTimestamp = candidateBytes[YearMonthHoursDaysTimestampByteRange];
         Debug.Assert(length <= MaxKeyLengthInBytes);
         Span<byte> computedBytes = stackalloc byte[length];
-        GenerateHashBytes(derivationInput, secret, providerDataLengthInBytes, computedBytes, candidateTimestamp);
+        GenerateHashBytes(derivationInput, secret, computedBytes);
 
         // Compare.
         return CryptographicOperations.FixedTimeEquals(candidateBytes, computedBytes);
@@ -341,6 +344,20 @@ public static class Cask
         if (!IsValidForBase64Url(providerSignature))
         {
             ThrowIllegalUrlSafeBase64(providerSignature);
+        }
+    }
+    private static void ValidateProviderKeyKind(string providerKeyKind)
+    {
+        ThrowIfNull(providerKeyKind);
+
+        if (providerKeyKind.Length != 1)
+        {
+            ThrowLengthNotEqual(providerKeyKind, 1);
+        }
+
+        if (!IsValidForBase64Url(providerKeyKind))
+        {
+            ThrowIllegalUrlSafeBase64(providerKeyKind);
         }
     }
 

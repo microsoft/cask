@@ -34,11 +34,6 @@ internal static partial class InternalConstants
     public const int CaskSignatureSizeInBytes = 3;
 
     /// <summary>
-    /// The number of bytes used to store the timestamp in a key.
-    /// </summary>
-    public const int TimestampSizeInBytes = 3;
-
-    /// <summary>
     /// The number of bytes in a provider signature.
     /// </summary>
     public const int ProviderSignatureSizeInBytes = 3;
@@ -54,14 +49,29 @@ internal static partial class InternalConstants
     public const int Crc32SizeInBytes = 4;
 
     /// <summary>
-    /// The number of bytes in the fixed components of a primary key, from the CASK signature to the end of the key.
+    /// The number of bytes for the general CASK and provider-specific key kinds.
     /// </summary>
-    public const int FixedKeyComponentSizeInBytes =
-        CaskSignatureSizeInBytes +
-        ProviderSignatureSizeInBytes +
-        TimestampSizeInBytes +
-        VersionAndKindSizeInBytes +
-        Crc32SizeInBytes;
+    public const int CaskAndProviderKeyKindSizeInBytes = 2;
+
+    /// <summary>
+    /// The number of bytes for the non-sensitive, unique correlating id of the secret.
+    /// </summary>
+    public const int CorrelatingIdSizeInBytes = 16;
+
+    /// <summary>
+    /// The number of bytes for time-of-allocation and validity lifetime of the secret.
+    /// </summary>
+    public const int TimestampAndExpirySizeInBytes = 6;
+
+    /// <summary>
+    /// The number of bytes in the fixed components of a primary key,
+    /// from the CASK signature to the end of the key.
+    /// </summary>
+    public const int FixedKeyComponentSizeInBytes = CaskSignatureSizeInBytes +
+                                                    ProviderSignatureSizeInBytes +
+                                                    CaskAndProviderKeyKindSizeInBytes +
+                                                    CorrelatingIdSizeInBytes +
+                                                    TimestampAndExpirySizeInBytes;
 
     /// <summary>
     /// The number of bytes in the fixed components of a hash key, from the C3ID to the end of the key.
@@ -93,68 +103,98 @@ internal static partial class InternalConstants
     public const int MaxStackAlloc = 256;
 
     /// <summary>
-    /// The number of least significant bits reserved in the key kind byte.
+    /// The number of most significant bits reserved in the key kind byte.
     /// </summary>
-    public const int KindReservedBits = 2;
+    public const int CaskKindReservedBits = 4;
+
+    /// <summary>
+    /// The number of most significant bits reserved in the key kind byte.
+    /// </summary>
+    public const int SensitiveDataSizeReservedBits = 6;
+
+    /// <summary>
+    /// The number of least significant bits reserved in the provider key kind byte.
+    /// </summary>
+    public const int ProviderKindReservedBits = 2;
 
     /// <summary>
     /// A bit mask to obtain the reserved bits from the key kind.
     /// </summary>
-    public const int KindReservedMask = (1 << KindReservedBits) - 1;
+    public const int CaskKindReservedMask = (1 << CaskKindReservedBits) - 1;
 
     /// <summary>
-    /// The range of byte indices in a hash for the bytes that contain the C3ID of the secret.
+    /// A bit mask to obtain the reserved bits from the key kind.
     /// </summary>
-    public static Range C3IdByteRange => ^30..^15;
+    public const int SensitiveDataReservedMask = (1 << SensitiveDataSizeReservedBits) - 1;
+
+    /// <summary>
+    /// The index of the byte in a key that contains the key size.
+    /// </summary>
+    public static Index SensitiveDataSizeByteIndex => 32;
 
     /// <summary>
     /// The range of byte indices in a key for the bytes that contain the CASK signature.
     /// </summary>
-    public static Range CaskSignatureByteRange => ^15..^12;
+    public static Range CaskSignatureByteRange => 33..36;
 
     /// <summary>
     /// The range of byte indices in a key for the bytes that contain the provider signature.
     /// </summary>
-    public static Range ProviderSignatureByteRange => ^12..^9;
-
-    /// <summary>
-    /// The range of byte indices in a key for the bytes that contain the timestamp.
-    /// </summary>
-    public static Range TimestampByteRange => ^9..^6;
+    public static Range ProviderSignatureByteRange => 36..39;
 
     /// <summary>
     /// The index of the byte in a key that contains the key kind.
     /// </summary>
-    public static Index KindByteIndex => ^6;
+    public static Index ProviderKindByteIndex => 39;
 
     /// <summary>
-    /// The index of the byte in a key that is currently reserved to be zeroed
-    /// out, and may be used in the future to indicate a format change.
+    /// The index of the byte in a key that contains the key kind.
     /// </summary>
-    public static Index ReservedVersionByteIndex => ^5;
+    public static Index CaskKindByteIndex => 40;
 
     /// <summary>
-    /// The range of byte indices in a key for the bytes that contain the CRC32 of the key.
+    /// The range of byte indices in a hash for the bytes that contain
+    /// the non-sensitive, unique id of the generated secret.
     /// </summary>
-    public static Range Crc32ByteRange => ^4..;
+    public static Range CorrelatingIdByteRange => 41..57;
+
+    /// <summary>
+    /// The range of byte indices in a key for the bytes that contain
+    /// the year, month, hour, and day of the time of secret allocation.
+    /// </summary>
+    public static Range YearMonthHoursDaysTimestampByteRange => 57..60;
+
+    /// <summary>
+    /// The range of byte indices in a key for the bytes that contain the
+    /// the 6-bit minute component of the time of secret allocation,
+    /// followed by the 18-bit secret expiry.
+    /// </summary>
+    public static Range MinutesAndExpiryByteRange => 60..63;
+
+    public static Range OptionalDataByteRange => 63..;
 
     /// <summary>
     /// The range of chars in a base64-encoded key that hold the Cask signature.
     /// </summary>
-    public static Range CaskSignatureCharRange => ^20..^16;
+    public static Range CaskSignatureCharRange => 44..48;
 
     /// <summary>
     /// The range of chars in a base64-encoded key that hold the timestamp.
     /// </summary>
-    public static Range TimestampCharRange => ^12..^8;
+    public static Range TimestampCharRange => 76..81;
 
     /// <summary>
-    /// The index of the kind char in a base64-encoded key.
+    /// The range of chars in a base64-encoded key that hold the expiry.
     /// </summary>
-    public static Index KindCharIndex => ^8;
+    public static Range ExpiryCharRange => 81..84;
 
     /// <summary>
-    /// The index of the version char in a base64-encoded key.
+    /// The index of the provider-specific kind char in a base64-encoded key.
     /// </summary>
-    public static Index VersionCharIndex => ^7;
+    public static Index ProviderKindCharIndex => 52;
+
+    /// <summary>
+    /// The index of the CASK kind char in a base64-encoded key.
+    /// </summary>
+    public static Index CaskKindCharIndex => 53;
 }

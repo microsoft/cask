@@ -26,15 +26,16 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerData: null);
+                                      providerKeyKind: "M",
+                                      providerData: "_NG_");
 
         IsCaskValidate(key);
     }
 
     [Theory]
-    [InlineData("xFLPv3MNBm6q607WSVO0LdzW0frQ3K3fNf-z9jq25QMA----JQQJTESTBAQSAAB6sX_c", KeyKind.Key256Bit)]
-    [InlineData("GN-P_f9uiz1Mq7iNEMRI8xXfLyS2symJBBNxLZH85yIA----ImE96teyjTrWMUaeFkodJQQJTESTBBFXHAA2SxFR", KeyKind.Hash256Bit, "C3IDImE96teyjTrWMUaeFkod")]
-    public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, KeyKind expectedKeyKind, string expectedC3Id = "")
+    [InlineData("xFLPv3MNBm6q607WSVO0LdzW0frQ3K3fNf-z9jq25QMA----JQQJTESTBAQSAAB6sX_c", CaskKeyKind.PrimaryKey)]
+    [InlineData("V5ja_SGw4_eyqKw-mBfx8DlqjJfea4Qs5B6AR3HjlgwAJQQJTESTMPCK8K_4JYG3ppYTmdnSS4TcBBQXDAAA_NG_", CaskKeyKind.PrimaryKey, "CK8K_4JYG3ppYTmdnSS4Tc")]
+    public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, CaskKeyKind expectedKeyKind, string expectedC3Id = "")
     {
         TestEncodedMatchedDecoded(encodedKey, expectedKeyKind, expectedC3Id);
     }
@@ -42,20 +43,20 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey()
     {
-        string key = Cask.GenerateKey(providerSignature: "TEST", providerData: "----");
-        TestEncodedMatchedDecoded(key, KeyKind.Key256Bit);
+        string key = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "B", providerData: "----");
+        TestEncodedMatchedDecoded(key, CaskKeyKind.PrimaryKey);
     }
 
     [Fact]
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedHash()
     {
-        string secret = Cask.GenerateKey(providerSignature: "TEST", providerData: "----");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "C", providerData: "----");
         string c3Id = CaskComputedCorrelatingId.Compute(secret);
         string hash = Cask.GenerateHash(derivationInput: Encoding.UTF8.GetBytes("TEST"), secret);
-        TestEncodedMatchedDecoded(hash, KeyKind.Hash256Bit, c3Id);
+        TestEncodedMatchedDecoded(hash, CaskKeyKind.HMAC, c3Id);
     }
 
-    private void TestEncodedMatchedDecoded(string encodedKey, KeyKind expectedKind, string expectedC3Id = "")
+    private void TestEncodedMatchedDecoded(string encodedKey, CaskKeyKind expectedKind, string expectedC2id = "")
     {
         // The purpose of this test is to actually produce useful notes in documentation
         // as far as decomposing a CASK key, both from its url-safe base64 form and from
@@ -67,55 +68,37 @@ public abstract class CaskTestsBase
 
         IsCaskValidate(encodedKey);
 
-        var expectedBytewiseKind = (BytewiseKeyKind)((int)expectedKind << 2);
-
         byte[] keyBytes = Base64Url.DecodeFromUtf8(Encoding.UTF8.GetBytes(encodedKey));
 
-        if (!string.IsNullOrEmpty(expectedC3Id))
+        if (!string.IsNullOrEmpty(expectedC2id))
         {
-            string encodedC3Id = encodedKey[^40..^20];
-            string canonicalC3Id = "C3ID" + encodedC3Id.Replace('_', '/').Replace('-', '+');
-            Assert.Equal(expectedC3Id, canonicalC3Id);
+            string encodedC2Id = encodedKey[54..76];
+            Assert.Equal(expectedC2id, encodedC2Id);
         }
 
-        string encodedCaskSignature = encodedKey[^20..^16];
-        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[^15..^12];
+        string encodedCaskSignature = encodedKey[44..48];
+        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[33..36];
         Assert.Equal(Base64Url.EncodeToString(bytewiseCaskSignature), encodedCaskSignature);
 
-        string encodedProviderId = encodedKey[^16..^12];
-        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[^12..^9];
+        string encodedProviderId = encodedKey[48..52];
+        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[36..39];
         Assert.Equal(Base64Url.EncodeToString(bytewiseProviderId), encodedProviderId);
-        string encodedTimestamp = encodedKey[^12..^8];
-        Span<byte> bytewiseTimestamp = keyBytes.AsSpan()[^9..^6];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseTimestamp), encodedTimestamp);
 
-        // The final 2 bits of this byte are reserved.
-        char encodedKeyKind = encodedKey[^8];
-        var bytewiseKind = (BytewiseKeyKind)(keyBytes.AsSpan()[^6]);
-        Assert.Equal(expectedBytewiseKind, bytewiseKind);
-        Assert.Equal(Base64Url.EncodeToString([(byte)bytewiseKind]), $"{encodedKeyKind}A");
+        string encodedYearMonthDay = encodedKey[76..80];
+        Span<byte> bytewiseYearMonthDay = keyBytes.AsSpan()[57..60];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseYearMonthDay), encodedYearMonthDay);
 
-        int optionalDataIndex = GetOptionalDataByteIndex(bytewiseKind) + 1;
-        int encodedOptionalDataIndex = (optionalDataIndex / 3) * 4;
-        string encodedOptionalData = encodedKey[encodedOptionalDataIndex..^20];
-        Span<byte> optionalData = keyBytes.AsSpan()[(optionalDataIndex)..^15];
+        string encodedMinuteAndExpiry = encodedKey[80..84];
+        Span<byte> bytewiseMinuteAndExpiry = keyBytes.AsSpan()[60..63];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseMinuteAndExpiry), encodedMinuteAndExpiry);
+
+        string encodedOptionalData = encodedKey[84..];
+        Span<byte> optionalData = keyBytes.AsSpan()[63..];
         Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
 
-        char encodedReservedForVersion = encodedKey[^7];
-        Assert.Equal('A', encodedReservedForVersion);
-
-        // Our checksum buffer here is 6 bytes because the 4-byte checksum
-        // must itself be decoded from a buffer that properly pads the
-        // initial byte. We simulate this by zeroing the first two bytes
-        // of the buffer and using the last 4 for the checksum
-        string encodedChecksum = encodedKey[^6..];
-        Span<byte> crc32 = stackalloc byte[6];
-        Crc32.Hash(keyBytes.AsSpan()[..^4], crc32[2..]);
-        Assert.Equal(Base64Url.EncodeToString(crc32)[2..], encodedChecksum);
-
-        // This follow-on demonstrates how to get the key kind and reservd version
+        // This follow-on demonstrates how to get the key kind
         // byte from the bytewise form.
-        var kind = (KeyKind)(keyBytes[^6] >> KindReservedBits);
+        var kind = (CaskKeyKind)(keyBytes[40] >> CaskKindReservedBits);
         Assert.Equal(expectedKind, kind);
 
         byte reservedForVersion = keyBytes[^5];
@@ -124,26 +107,10 @@ public abstract class CaskTestsBase
 
     enum BytewiseKeyKind : byte
     {
-        Key256Bit = KeyKind.Key256Bit << KindReservedBits,
-        Hash256Bit = KeyKind.Hash256Bit << KindReservedBits,
-        Hash384Bit = KeyKind.Hash384Bit << KindReservedBits,
+        Key256Bit = CaskKeyKind.PrimaryKey << CaskKindReservedBits,
+        Hash256Bit = CaskKeyKind.HMAC << CaskKindReservedBits,
+        Hash384Bit = CaskKeyKind.HMAC << CaskKindReservedBits,
     }
-
-    private static int GetOptionalDataByteIndex(BytewiseKeyKind kind)
-    {
-        switch (kind)
-        {
-            case BytewiseKeyKind.Key256Bit:
-            case BytewiseKeyKind.Hash256Bit:
-                return 32;
-
-            case BytewiseKeyKind.Hash384Bit:
-                return 48;
-        }
-
-        throw new InvalidOperationException();
-    }
-
     private static byte GetSingleEncodedChar(char input)
     {
         byte[] arg = Encoding.UTF8.GetBytes($"{input}A==");
@@ -183,7 +150,7 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
-        string key = Cask.GenerateKey("TEST", "UNALIGN_") + "-";
+        string key = Cask.GenerateKey("TEST", providerKeyKind: "X", providerData: "UNALIGN_") + "-";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that was not aligned to 4 chars: {key}");
     }
@@ -193,7 +160,7 @@ public abstract class CaskTestsBase
     {
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
-        string key = $"    {Cask.GenerateKey("TEST")[4..]}";
+        string key = $"    {Cask.GenerateKey("TEST", "X")[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
     }
@@ -201,7 +168,7 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
-        string key = Cask.GenerateKey("TEST");
+        string key = Cask.GenerateKey("TEST", "-");
         key = '?' + key[1..];
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"IsCask' unexpectedly succeeded with key that was not valid URL-Safe Base64: {key}");
@@ -211,6 +178,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateKey_Basic()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
+                                      providerKeyKind: "Q",
                                       providerData: "ABCD");
 
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
@@ -222,12 +190,13 @@ public abstract class CaskTestsBase
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("ABC")]   // Too short
-    [InlineData("ABCDE")] // Too long
+    [InlineData("ABC")]   // Too short.
+    [InlineData("ABCDE")] // Too long.
     [InlineData("????")]  // Invalid base64
+    [InlineData("    ")]  // Whitespace.
     public void CaskSecrets_GenerateKey_InvalidProviderSignature(string? providerSignature)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A"));
         Assert.IsType(providerSignature == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerSignature), ex.ParamName);
     }
@@ -236,10 +205,11 @@ public abstract class CaskTestsBase
     [InlineData("ABC")]   // Too short
     [InlineData("ABCDE")] // Unaligned
     [InlineData("éééé")]  // Invalid base64
+    [InlineData("EXCEEDS_THE_MAX_BY_ONE_XX")]
     [InlineData("THIS_IS_TOO_MUCH_PROVIDER_DATA_SERIOUSLY_IT_IS_VERY_VERY_LONG_AND_THAT_IS_NOT_OKAY")]
     public void CaskSecrets_GenerateKey_InvalidProviderData(string providerData)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", providerData));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", providerData));
         Assert.IsType(providerData == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerData), ex.ParamName);
     }
@@ -249,11 +219,11 @@ public abstract class CaskTestsBase
     {
         // We should add more sophistication to checking randomness, but during
         // development, there was once had a bug on .NET Framework polyfill of
-        // RNG tha left all the entropy bytes zeroed out, so at least cover that
+        // RNG that left all the entropy bytes zeroed out, so at least cover that
         // in the meantime. :)
 
-        string key = Cask.GenerateKey("TEST", "ABCD");
-        string key2 = Cask.GenerateKey("TEST", "ABCD");
+        string key = Cask.GenerateKey("TEST", "M", "ABCD");
+        string key2 = Cask.GenerateKey("TEST", "M", "ABCD");
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
@@ -282,7 +252,7 @@ public abstract class CaskTestsBase
             () => new DateTimeOffset(invalidYear, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         Exception ex = Assert.Throws<InvalidOperationException>(
-            () => Cask.GenerateKey(providerSignature: "TEST", providerData: "ABCD"));
+            () => Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "y", providerData: "ABCD"));
 
         Assert.Contains("2024", ex.Message, StringComparison.Ordinal);
     }
@@ -298,15 +268,16 @@ public abstract class CaskTestsBase
             int month = year % 12;
             int day = year % 28;
             int hour = year % 24;
+            int minute = year % 60;
 
-            var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute: 0, second: 0, TimeSpan.Zero);
+            var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute, second: 0, TimeSpan.Zero);
             using Mock mock = Cask.MockUtcNow(() => timestamp);
 
-            string key = Cask.GenerateKey(providerSignature: "TEST", providerData: "ABCD");
+            string key = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "Z", providerData: "ABCD");
             IsCaskValidate(key);
 
             string b = Base64UrlChars;
-            string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}";
+            string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}{b[minute]}";
             string actual = key[TimestampCharRange];
             Assert.True(expected == actual, $"Expected key '{key}' to have encoded timestamp '{expected}' representing '{timestamp}' but found '{actual}'.");
         }
@@ -346,29 +317,13 @@ public abstract class CaskTestsBase
             keyBytes = Base64Url.DecodeFromChars(modifiedKey.AsSpan());
             Assert.False(Cask.IsCaskBytes(keyBytes), $"'IsCask(byte[])' unexpectedly succeeded with modified 'JQQJ' signature: {modifiedKey}");
         }
-
-        // Having established that the key is a CASK secret, we now will modify
-        // every character in the key, which should invalidate the checksum.
-
-        for (int i = 0; i < key.Length; i++)
-        {
-            char replacement = key[i] == '-' ? '_' : '-';
-            string modifiedKey = $"{key[..i]}{replacement}{key[(i + 1)..]}";
-
-            bool result = Cask.IsCask(modifiedKey);
-            Assert.False(result, $"'IsCask(string)' unexpectedly succeeded after invalidating checksum: {modifiedKey}. Original key was: {key}");
-
-            keyBytes = Base64Url.DecodeFromChars(modifiedKey.AsSpan());
-            result = Cask.IsCaskBytes(keyBytes);
-            Assert.False(result, $"'IsCask(byte[])' unexpectedly succeeded after invalidating checksum: {modifiedKey}. Original key was: {key}");
-        }
     }
 
     [Fact]
     public void CaskSecrets_CompareHash_DeterministicAndNotTimestampSensitive()
     {
         byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
-        string secret = Cask.GenerateKey(providerSignature: "TEST");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "r");
         string hash = Cask.GenerateHash(derivationInput, secret);
         using Mock mock = Cask.MockUtcNow(() => DateTimeOffset.UtcNow.AddMonths(13));
         bool result = Cask.CompareHash(hash, derivationInput, secret);
@@ -379,8 +334,8 @@ public abstract class CaskTestsBase
     public void CaskSecrets_CompareHash_TwoDifferentSecrets()
     {
         byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
-        string secret1 = Cask.GenerateKey(providerSignature: "TEST");
-        string secret2 = Cask.GenerateKey(providerSignature: "TEST");
+        string secret1 = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "P");
+        string secret2 = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "P");
         string hash = Cask.GenerateHash(derivationInput, secret1);
         bool result = Cask.CompareHash(hash, derivationInput, secret2);
         Assert.False(result, $"'CompareHash' should not have succeeded. Two different secrets were used.");
@@ -390,7 +345,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateHash_SmallDerivationInput()
     {
         byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
-        string secret = Cask.GenerateKey(providerSignature: "TEST");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "_");
         string hash = Cask.GenerateHash(derivationInput, secret);
         IsCaskValidate(hash);
     }
@@ -399,7 +354,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateHash_LargeDerivationInput()
     {
         byte[] derivationInput = new byte[4242];
-        string secret = Cask.GenerateKey(providerSignature: "TEST");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "E");
         string hash = Cask.GenerateHash(derivationInput, secret);
         IsCaskValidate(hash);
     }
@@ -408,7 +363,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_CompareHash_SmallDerivationInput()
     {
         byte[] derivationInput = Encoding.UTF8.GetBytes("DERIVATION_INPUT");
-        string secret = Cask.GenerateKey(providerSignature: "TEST");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "j");
         string hash = Cask.GenerateHash(derivationInput, secret);
         bool result = Cask.CompareHash(hash, derivationInput, secret);
         Assert.True(result, $"'CompareHash' failed with same secret and same derivation input.");
@@ -418,7 +373,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_CompareHash_LargeDerivationInput()
     {
         byte[] derivationInput = new byte[500];
-        string secret = Cask.GenerateKey(providerSignature: "TEST");
+        string secret = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "x");
         string hash = Cask.GenerateHash(derivationInput, secret);
         bool result = Cask.CompareHash(hash, derivationInput, secret);
         Assert.True(result, $"'CompareHash' failed with same secret and same derivation input.");

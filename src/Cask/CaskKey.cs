@@ -27,12 +27,22 @@ public readonly partial record struct CaskKey : IIsInitialized
     [MemberNotNullWhen(true, nameof(_key))]
     public bool IsInitialized => _key != null;
 
-    public KeyKind Kind
+    public CaskKeyKind Kind
     {
         get
         {
             ThrowIfNotInitialized();
-            return CharToKind(_key[KindCharIndex]);
+            return CharToKind(_key[CaskKindCharIndex]);
+        }
+    }
+
+    public int SensitiveSizeInBytes
+    {
+        get
+        {
+            // TBD: this helper should consult what's encoded.
+            ThrowIfNotInitialized();
+            return 32;
         }
     }
 
@@ -45,9 +55,9 @@ public readonly partial record struct CaskKey : IIsInitialized
         }
     }
 
-    public bool IsPrimary => Kind < KeyKind.Hash256Bit;
+    public bool IsPrimary => Kind == CaskKeyKind.PrimaryKey;
 
-    public bool IsHash => !IsPrimary;
+    public bool IsHmac => Kind == CaskKeyKind.HMAC;
 
     private CaskKey(string value)
     {
@@ -176,7 +186,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     }
 
     // language=regex
-    private const string RegexPattern = """(^|[^A-Za-z0-9+/\-_])([A-Za-z0-9\-_]{4}){6,}JQQJ[A-Za-z0-9\-_]{16}($|[^A-Za-z0-9+/\-_])""";
+    private const string RegexPattern = """(^|[^A-Za-z0-9+\/\-_])[A-Za-z0-9\-_]{43}AJQQJ[A-Za-z0-9\-_]{29}[A-L][A-Za-e][A-X][A-Za-z0-7][A-Za-z0-9\-_]{3,27}($|[^A-Za-z0-9+\/\-_])""";
     private const RegexOptions RegexFlags = RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant;
 
     [GeneratedRegex(RegexPattern, RegexFlags)]

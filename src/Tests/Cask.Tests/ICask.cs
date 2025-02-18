@@ -23,7 +23,8 @@ public interface ICask
 
     bool IsCaskBytes(byte[] keyOrHash);
 
-    string GenerateKey(string providerSignature, string? providerData = null);
+    // TBD two sequential optional string arguments is a bad idea.
+    string GenerateKey(string providerSignature, string? providerKeyKind, string? providerData = null);
 
     string GenerateHash(byte[] derivationInput, string secret);
 

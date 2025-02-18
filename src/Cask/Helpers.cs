@@ -45,45 +45,76 @@ internal static class Helpers
 
     public static int GetKeyLengthInBytes(int providerDataLengthInBytes)
     {
-        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes), $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
+        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes),
+                     $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
         int keyLengthInBytes = PaddedSecretEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
         Debug.Assert(Is3ByteAligned(keyLengthInBytes));
         return keyLengthInBytes;
     }
 
-    public static int GetHashLengthInBytes(int secretSizeInBytes, out int providerDataLengthInBytes)
+    public static int GetHashLengthInBytes(int secretSizeInBytes)
     {
-        providerDataLengthInBytes = secretSizeInBytes - PaddedSecretEntropyInBytes - FixedKeyComponentSizeInBytes;
-        int hashLengthInBytes = PaddedHmacSha256SizeInBytes + providerDataLengthInBytes + FixedHashComponentSizeInBytes;
-        Debug.Assert(Is3ByteAligned(providerDataLengthInBytes));
+        int hashLengthInBytes = PaddedHmacSha256SizeInBytes + secretSizeInBytes;
+        Debug.Assert(Is3ByteAligned(secretSizeInBytes));
         Debug.Assert(Is3ByteAligned(hashLengthInBytes));
         return hashLengthInBytes;
     }
 
-    public static KeyKind CharToKind(char kindChar)
+    public static CaskKeyKind CharToKind(char kindChar)
     {
-        Debug.Assert(kindChar == 'A' || kindChar == 'H' || kindChar == 'I', "This is only meant to be called using the kind char of a known valid key.");
-        return (KeyKind)(kindChar - 'A');
+        Debug.Assert(kindChar == 'P' || kindChar == 'H',
+                     "This is only meant to be called using the kind char of a known valid key.");
+        return (CaskKeyKind)(kindChar - 'A');
     }
 
-    public static byte KindToByte(KeyKind kind)
+    public static byte KindToByte(CaskKeyKind kind)
     {
-        return (byte)((int)kind << KindReservedBits);
+        return (byte)((int)kind << CaskKindReservedBits);
+    }
+
+    public static byte ProviderKindToByte(string providerKind)
+    {
+        const string base64UrlChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+        int index = base64UrlChars.IndexOf(providerKind, StringComparison.Ordinal);
+
+        if (index == -1)
+        {
+            throw new ArgumentException($"Character '{providerKind}' is not a valid URL-safe base64 character.", nameof(providerKind));
+        }
+
+        return (byte)(index << ProviderKindReservedBits);
+    }
+
+    /// <summary>
+    /// Converts a byte that encodes the key kind to the KeyKind enum.
+    /// Returns false if the reserved bits in that byte are non-zero.
+    /// </summary>
+    public static bool TryByteToSensitiveDataSize(byte value, out SensitiveDataSize size)
+    {
+        if ((value & SensitiveDataReservedMask) != 0)
+        {
+            size = default;
+            return false;
+        }
+
+        size = (SensitiveDataSize)(value);
+        return true;
     }
 
     /// <summary>
     /// Converts a byte that encodeds the key kind to the KeyKind enum.
     /// Returns false if the reserved bits in that byte are non-zero.
     /// </summary>
-    public static bool TryByteToKind(byte value, out KeyKind kind)
+    public static bool TryByteToKind(byte value, out CaskKeyKind kind)
     {
-        if ((value & KindReservedMask) != 0)
+        if ((value & CaskKindReservedMask) != 0)
         {
             kind = default;
             return false;
         }
 
-        kind = (KeyKind)(value >> KindReservedBits);
+        kind = (CaskKeyKind)(value >> CaskKindReservedBits);
         return true;
     }
 
@@ -144,7 +175,7 @@ internal static class Helpers
 
     public static void ThrowIfNotHash(CaskKey value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
-        if (!value.IsHash)
+        if (!value.IsHmac)
         {
             ThrowNotHash(paramName);
         }

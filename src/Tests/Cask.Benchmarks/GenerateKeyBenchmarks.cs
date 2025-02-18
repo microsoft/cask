@@ -16,9 +16,8 @@ public class GenerateKeyBenchmarks
     [Benchmark]
     public string GenerateKey_Cask()
     {
-        CaskKey key = Cask.GenerateKey(
-            TestProviderSignature,
-            TestProviderData);
+        CaskKey key = Cask.GenerateKey(TestProviderSignature,
+                                       TestProviderData);
 
         return key.ToString();
     }

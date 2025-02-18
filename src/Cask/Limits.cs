@@ -33,7 +33,7 @@ public static class Limits
     /// <summary>
     /// The maximum length of a Cask key or hash when decoded to bytes.
     /// </summary>
-    public static int MaxKeyLengthInBytes { get; } = GetHashLengthInBytes(GetKeyLengthInBytes(MaxProviderDataLengthInBytes), out _);
+    public static int MaxKeyLengthInBytes { get; } = GetHashLengthInBytes(GetKeyLengthInBytes(MaxProviderDataLengthInBytes) - 33);
 
     /// <summary>
     /// The minimum length of a Cask key in characters.

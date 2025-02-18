@@ -67,9 +67,10 @@ public class CSharpCaskTests : CaskTestsBase
         }
 
         public string GenerateKey(string providerSignature,
+                                  string? providerKind = "A",
                                   string? reserved = null)
         {
-            CaskKey key = CSharpCask.GenerateKey(providerSignature, reserved);
+            CaskKey key = CSharpCask.GenerateKey(providerSignature, providerKind, reserved);
             return key.ToString();
         }
 
