@@ -39,20 +39,6 @@ public class CppCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public bool CompareHash(string candidateHash, byte[] derivationInput, string secret)
-        {
-            return NativeMethods.Cask_CompareHash(candidateHash, derivationInput, derivationInput.Length, secret);
-        }
-
-        public string GenerateHash(byte[] derivationInput, string secret)
-        {
-            int size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, null, 0);
-            byte[] bytes = new byte[size];
-            size = NativeMethods.Cask_GenerateHash(derivationInput, derivationInput.Length, secret, bytes, size);
-            Assert.True(size == bytes.Length, "Cask_GenerateKey did not use as many bytes as it said it would.");
-            return Encoding.UTF8.GetString(bytes, 0, size - 1); // - 1 to remove null terminator
-        }
-
         public string GenerateKey(string providerSignature, string? providerKeyKind = null, string? providerData = null)
         {
             int size = NativeMethods.Cask_GenerateKey(providerSignature, providerKeyKind, providerData, null, 0);
@@ -94,25 +80,11 @@ public class CppCaskTests : CaskTestsBase
                                                        int length);
 
             [DllImport("libcask")]
-            [return: MarshalAs(I1)]
-            public static extern bool Cask_CompareHash([MarshalAs(LPUTF8Str)] string candidateHash,
-                                                       byte[] derivationInput,
-                                                       int derivationInputLength,
-                                                       [MarshalAs(LPUTF8Str)] string secret);
-
-            [DllImport("libcask")]
             public static extern int Cask_GenerateKey([MarshalAs(LPUTF8Str)] string providerSignature,
                                                       [MarshalAs(LPUTF8Str)] string? providerKeyKind,
                                                       [MarshalAs(LPUTF8Str)] string? providerData,
                                                       byte[]? output,
                                                       int outputCapacity);
-
-            [DllImport("libcask")]
-            public static extern int Cask_GenerateHash(byte[] derivationInput,
-                                                       int derivationInputLength,
-                                                       [MarshalAs(LPUTF8Str)] string secret,
-                                                       byte[]? output,
-                                                       int outputCapacity);
         }
     }
 }

@@ -18,7 +18,4 @@ internal static class BenchmarkTestData
 
     public static readonly string TestCaskSecret = new GenerateKeyBenchmarks().GenerateKey_Cask();
     public static readonly string TestNonIdentifiableSecret = new GenerateKeyBenchmarks().GenerateKey_Floor();
-
-    public static readonly string TestCaskHash = new GenerateHashBenchmarks().GenerateHash_Cask();
-    public static readonly string TestNonIdentifiableHash = new GenerateHashBenchmarks().GenerateHash_Floor();
 }

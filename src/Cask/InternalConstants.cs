@@ -44,11 +44,6 @@ internal static partial class InternalConstants
     public const int VersionAndKindSizeInBytes = 2;
 
     /// <summary>
-    /// The number of bytes for the CRC32 of the key.
-    /// </summary>
-    public const int Crc32SizeInBytes = 4;
-
-    /// <summary>
     /// The number of bytes for the general CASK and provider-specific key kinds.
     /// </summary>
     public const int CaskAndProviderKeyKindSizeInBytes = 2;
@@ -72,11 +67,6 @@ internal static partial class InternalConstants
                                                     CaskAndProviderKeyKindSizeInBytes +
                                                     CorrelatingIdSizeInBytes +
                                                     TimestampAndExpirySizeInBytes;
-
-    /// <summary>
-    /// The number of bytes in the fixed components of a hash key, from the C3ID to the end of the key.
-    /// </summary>
-    public const int FixedHashComponentSizeInBytes = FixedKeyComponentSizeInBytes + CaskComputedCorrelatingId.RawSizeInBytes;
 
     /// <summary>
     /// The number of bytes of entropy in a primary key. 32-bytes (256 bits) of

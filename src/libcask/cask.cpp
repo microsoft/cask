@@ -21,6 +21,7 @@ CASK_API bool Cask_IsCaskBytes(const uint8_t* keyOrHashBytes,
 }
 
 CASK_API int32_t Cask_GenerateKey(const char* providerSignature,
+                                  const char* providerKeyKind,
                                   const char* providerData,
                                   char* output,
                                   int32_t outputSizeInBytes)
@@ -50,20 +51,4 @@ CASK_API int32_t Cask_GenerateKey(const char* providerSignature,
     return requiredSizeInBytes;
 }
 
-CASK_API int32_t Cask_GenerateHash(const uint8_t* derivationInputBytes,
-                                   int32_t derivationInputLength,
-                                   const char* secret,
-                                   char* buffer,
-                                   int32_t bufferSize)
-{
-    return 0;
-}
-
-CASK_API bool Cask_CompareHash(const char* candidateHash,
-                               const uint8_t* derivationInputBytes,
-                               int32_t derivationInputLength,
-                               const char* secret)
-{
-    return false;
-}
 

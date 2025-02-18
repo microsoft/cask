@@ -13,8 +13,6 @@ internal static class GenerateCommand
 
     internal static int Run(GenerateOptions options)
     {
-        byte[] derivationInput = Encoding.UTF8.GetBytes(nameof(derivationInput));
-
         string cloudText = "AC";
         string region = EncodeForIdentifiableKey("westus");
         string tenant = EncodeForIdentifiableKey(s_microsoftTenantId);
@@ -29,10 +27,6 @@ internal static class GenerateCommand
 
             string validity = Cask.IsCask(key.ToString()) ? "Valid Key   " : "INVALID KEY ";
             Console.WriteLine($"{validity}: {key}");
-
-            CaskKey hash = Cask.GenerateHash(derivationInput, key);
-            validity = Cask.IsCask(hash.ToString()) ? "Valid Hash  " : "INVALID HASH";
-            Console.WriteLine($"{validity}: {hash}");
         }
 
         return 0;

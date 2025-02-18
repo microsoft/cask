@@ -42,7 +42,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BD909936-A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevDocs", "DevDocs", "{51A4B75A-58BC-4241-8A5C-50297D857233}"
 	ProjectSection(SolutionItems) = preProject
-		..\devdocs\GenerateHashPseudoCode.md = ..\devdocs\GenerateHashPseudoCode.md
 		..\devdocs\GenerateKeyPseudoCode.md = ..\devdocs\GenerateKeyPseudoCode.md
 		..\devdocs\Questions.md = ..\devdocs\Questions.md
 	EndProjectSection

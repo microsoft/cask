@@ -15,57 +15,6 @@ public class CSharpCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public bool CompareHash(string candidateHash, byte[] derivationInput, string secret)
-        {
-            var candidateHashKey = CaskKey.Create(candidateHash);
-            var secretKey = CaskKey.Create(secret);
-            bool result = CSharpCask.CompareHash(candidateHashKey, derivationInput, secretKey);
-
-            string derivationInputString = Encoding.UTF8.GetString(derivationInput);
-            (string name, bool value)[] checks = [
-                ("ReadOnlySpan<byte>)", result),
-                ("string", CSharpCask.CompareHash(candidateHashKey, derivationInputString, secretKey)),
-                ("ReadOnlySpan<char>)", CSharpCask.CompareHash(candidateHashKey, derivationInputString.AsSpan(), secretKey)),
-            ];
-
-            if (!checks.All(c => c.value == result))
-            {
-                Assert.Fail(
-                    "Got different results from CompareHash with different forms of derivationInput"
-                    + Environment.NewLine
-                    + $"derivationInput: {derivationInputString}"
-                    + Environment.NewLine
-                    + string.Join(Environment.NewLine, checks.Select(c => $"  {c.name} -> {c.value}")));
-            }
-
-            return result;
-        }
-
-        public string GenerateHash(byte[] derivationInput, string secret)
-        {
-            var secretKey = CaskKey.Create(secret);
-            string result = CSharpCask.GenerateHash(derivationInput, secretKey).ToString();
-
-            string derivationInputString = Encoding.UTF8.GetString(derivationInput);
-            (string name, string value)[] checks = [
-                ("ReadOnlySpan<byte>)", result),
-                ("string", CSharpCask.GenerateHash(derivationInputString, secretKey).ToString()),
-                ("ReadOnlySpan<char>)", CSharpCask.GenerateHash(derivationInputString.AsSpan(), secretKey).ToString()),
-            ];
-
-            if (!checks.All(c => c.value == result))
-            {
-                Assert.Fail(
-                    "Got different results from GenerateHash with different forms of derivationInput"
-                    + Environment.NewLine
-                    + $"derivationInput: {derivationInputString}"
-                    + Environment.NewLine
-                    + string.Join(Environment.NewLine, checks.Select(c => $"  {c.name} -> {c.value}")));
-            }
-
-            return result;
-        }
-
         public string GenerateKey(string providerSignature,
                                   string? providerKind = "A",
                                   string? reserved = null)

@@ -179,53 +179,6 @@ public static class Cask
         return CaskKey.Encode(key);
     }
 
-    public static CaskKey GenerateHash(string derivationInput, CaskKey secret)
-    {
-        return GenerateHash(derivationInput.AsSpan(), secret);
-    }
-
-    public static CaskKey GenerateHash(ReadOnlySpan<char> derivationInput, CaskKey secret)
-    {
-        ThrowIfNotPrimary(secret);
-        int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
-        Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        return GenerateHash(derivationInputBytes, secret);
-    }
-
-    public static CaskKey GenerateHash(ReadOnlySpan<byte> derivationInput, CaskKey secret)
-    {
-        ThrowIfNotPrimary(secret);
-        int nonSensitiveSecretSize = secret.SizeInBytes - RoundUpTo3ByteAlignment(secret.SensitiveSizeInBytes);
-        int hashLengthInBytes = GetHashLengthInBytes(nonSensitiveSecretSize);
-        Debug.Assert(hashLengthInBytes <= MaxKeyLengthInBytes);
-        Span<byte> hash = stackalloc byte[hashLengthInBytes];
-        GenerateHashBytes(derivationInput, secret, hash);
-        return CaskKey.Encode(hash);
-    }
-
-    private static void GenerateHashBytes(ReadOnlySpan<byte> derivationInput,
-                                          CaskKey secret,
-                                          Span<byte> hash)
-    {
-
-        Debug.Assert(secret.SizeInBytes <= MaxKeyLengthInBytes);
-        Span<byte> secretBytes = stackalloc byte[secret.SizeInBytes];
-        secret.Decode(secretBytes);
-
-        // 32-byte hash.
-        HMACSHA256.HashData(secretBytes, derivationInput, hash);
-
-        // Copy all non-sensitive data from secret.
-        secretBytes[SensitiveDataSizeByteIndex..].CopyTo(hash[SensitiveDataSizeByteIndex..]);
-
-        // Specify our hash size.
-        hash[HMACSHA256.HashSizeInBytes] = (byte)SensitiveDataSize.Bits256;
-
-        // Set the CASK key kind.
-        hash[CaskKindByteIndex] = KindToByte(CaskKeyKind.HMAC);
-    }
-
     private static ReadOnlySpan<byte> UseCurrentTime => [];
 
     private static void FinalizeKey(Span<byte> key, ReadOnlySpan<byte> timestampAndExpiry, ReadOnlySpan<char> providerData)
@@ -265,50 +218,6 @@ public static class Cask
         Debug.Assert(Is4CharAligned(providerData.Length));
         bytesWritten = Base64Url.DecodeFromChars(providerData, key[OptionalDataByteRange]);
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
-    }
-
-    public static bool CompareHash(CaskKey candidateHash, string derivationInput, CaskKey secret)
-    {
-        ThrowIfNotInitialized(candidateHash);
-        return CompareHash(candidateHash, derivationInput.AsSpan(), secret);
-    }
-
-    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<char> derivationInput, CaskKey secret)
-    {
-        ThrowIfNotInitialized(candidateHash);
-        int byteCount = Encoding.UTF8.GetByteCount(derivationInput);
-        Span<byte> derivationInputBytes = byteCount <= MaxStackAlloc ? stackalloc byte[byteCount] : new byte[byteCount];
-        Encoding.UTF8.GetBytes(derivationInput, derivationInputBytes);
-        return CompareHash(candidateHash, derivationInputBytes, secret);
-    }
-
-    public static bool CompareHash(CaskKey candidateHash, ReadOnlySpan<byte> derivationInput, CaskKey secret)
-    {
-        ThrowIfNotInitialized(candidateHash);
-        ThrowIfNotHash(candidateHash);
-        ThrowIfNotInitialized(secret);
-        ThrowIfNotPrimary(secret);
-
-        // Check if sizes match.
-        int length = GetHashLengthInBytes(secret.SizeInBytes);
-        if (candidateHash.SizeInBytes != length)
-        {
-            return false;
-        }
-
-        // Decode candidate hash.
-        Debug.Assert(length <= MaxKeyLengthInBytes);
-        Span<byte> candidateBytes = stackalloc byte[length];
-        candidateHash.Decode(candidateBytes);
-
-        // Compute hash with candidate timestamp.
-        ReadOnlySpan<byte> candidateTimestamp = candidateBytes[YearMonthHoursDaysTimestampByteRange];
-        Debug.Assert(length <= MaxKeyLengthInBytes);
-        Span<byte> computedBytes = stackalloc byte[length];
-        GenerateHashBytes(derivationInput, secret, computedBytes);
-
-        // Compare.
-        return CryptographicOperations.FixedTimeEquals(candidateBytes, computedBytes);
     }
 
     private static void FillRandom(Span<byte> buffer)

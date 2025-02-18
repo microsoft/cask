@@ -23,7 +23,8 @@ public enum SensitiveDataSize : byte
     /// </summary>
     Bits384 = ('B' - 'A'), // Base64: index 0 == 'B'
 
-    /// Specifies a computed value with 384 bits of data
+    /// <summary>
+    /// Specifies a computed value with 512 bits of data
     /// (64 bytes) comprising random bytes or a SHA-384 hash.
     /// </summary>
     Bits512 = ('C' - 'A'), // Base64: index 0 == 'V'
