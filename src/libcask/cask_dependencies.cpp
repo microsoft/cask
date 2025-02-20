@@ -14,7 +14,7 @@ string Cask::Base64UrlEncode(const span<uint8_t>& bytes)
     return "";
 }
 
-int32_t Cask::ComputeCrc32(const span<uint8_t>& bytes)
+void Cask::FillBytes(const span<uint8_t>& bytes)
 {
-    return 0;
+    return;
 }

@@ -13,6 +13,7 @@
 namespace Cask {
 
 std::string Base64UrlEncode(const std::span<uint8_t>& bytes);
-int32_t ComputeCrc32(const std::span<uint8_t>& bytes);
+
+void FillBytes(const std::span<uint8_t>& bytes);
 
 } // namespace Cask
