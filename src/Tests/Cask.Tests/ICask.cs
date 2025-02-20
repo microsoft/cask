@@ -23,7 +23,10 @@ public interface ICask
 
     bool IsCaskBytes(byte[] keyOrHash);
 
-    string GenerateKey(string providerSignature, string? providerKeyKind, string? providerData);
+    string GenerateKey(string providerSignature,
+                       string providerKeyKind,
+                       int expiryInFiveMinuteIncrements,
+                       string? providerData);
 
     internal Mock MockUtcNow(UtcNowFunc getUtcNow);
 

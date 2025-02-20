@@ -136,7 +136,10 @@ public static class Cask
         return true;
     }
 
-    public static CaskKey GenerateKey(string providerSignature, string? providerKeyKind = null, string? providerData = null)
+    public static CaskKey GenerateKey(string providerSignature,
+                                      string providerKeyKind,
+                                      int expiryInFiveMinuteIncrements = 0,
+                                      string? providerData = null)
     {
         providerKeyKind ??= "A"; // 'A' comprises index 0 of base64-encoded characters.
         providerData ??= string.Empty;
@@ -175,13 +178,16 @@ public static class Cask
         // Entropy comprising the non-sensitive correlating id of the key.
         FillRandom(key[CorrelatingIdByteRange]);
 
-        FinalizeKey(key, UseCurrentTime, providerData.AsSpan());
+        FinalizeKey(key, UseCurrentTime, expiryInFiveMinuteIncrements, providerData.AsSpan());
         return CaskKey.Encode(key);
     }
 
     private static ReadOnlySpan<byte> UseCurrentTime => [];
 
-    private static void FinalizeKey(Span<byte> key, ReadOnlySpan<byte> timestampAndExpiry, ReadOnlySpan<char> providerData)
+    private static void FinalizeKey(Span<byte> key,
+                                    ReadOnlySpan<byte> timestampAndExpiry,
+                                    int expiryInFiveMinuteIncrements,
+                                    ReadOnlySpan<char> providerData)
     {
         int bytesWritten;
 
@@ -199,11 +205,22 @@ public static class Cask
             bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
             Debug.Assert(bytesWritten == 3);
 
+            Span<byte> expiryBytes = BitConverter.IsLittleEndian
+                ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
+                : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
+
+            if (BitConverter.IsLittleEndian)
+            {
+                expiryBytes.Reverse();
+            }
+
+            string expiryText = Base64Url.EncodeToString(expiryBytes[..3]);
+
             chars = [
                 Base64UrlChars[now.Minute],    // Zero-indexed minute.
-                'A',   // TBD expiry part 1.
-                'A',   // TBD expiry part 2.
-                'A',   // TBD expiry part 2.
+                expiryText[0],
+                expiryText[1],
+                expiryText[2],
             ];
 
             bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);

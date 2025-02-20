@@ -39,7 +39,10 @@ public class CppCaskTests : CaskTestsBase
 
     private sealed class Implementation : ICask
     {
-        public string GenerateKey(string providerSignature, string? providerKeyKind = null, string? providerData = null)
+        public string GenerateKey(string providerSignature,
+                                  string providerKeyKind,
+                                  int expiryInFiveMinuteIncrements = 0,
+                                  string? providerData = null)
         {
             int size = NativeMethods.Cask_GenerateKey(providerSignature, providerKeyKind, providerData, null, 0);
             byte[] bytes = new byte[size];

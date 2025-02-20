@@ -27,6 +27,7 @@ public abstract class CaskTestsBase
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: "M",
+                                      expiryInFiveMinuteIncrements: 12 * 24, // 1 day.
                                       providerData: "_NG_");
 
         IsCaskValidate(key);
@@ -43,7 +44,10 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey()
     {
-        string key = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "B", providerData: "----");
+        string key = Cask.GenerateKey(providerSignature: "TEST",
+                                      providerKeyKind: "B",
+                                      expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
+                                      providerData: "----");
         TestEncodedMatchedDecoded(key, CaskKeyKind.PrimaryKey);
     }
 
@@ -129,7 +133,10 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
-        string key = Cask.GenerateKey("TEST", providerKeyKind: "X", providerData: "UNALIGN_") + "-";
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: "X",
+                                      expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                      providerData: "UNALIGN_") + "-";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that was not aligned to 4 chars: {key}");
     }
@@ -139,7 +146,10 @@ public abstract class CaskTestsBase
     {
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
-        string key = $"    {Cask.GenerateKey("TEST", "X", providerData: null)[4..]}";
+        string key = $"    {Cask.GenerateKey("TEST",
+                            "X",
+                            expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
+                            providerData: null)[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
     }
@@ -147,7 +157,10 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
-        string key = Cask.GenerateKey("TEST", "-", providerData: null);
+        string key = Cask.GenerateKey(providerSignature: "TEST",
+                                      providerKeyKind:"-",
+                                      expiryInFiveMinuteIncrements: 262143, // 910 days, the maximal expiry.
+                                      providerData: null);
         key = '?' + key[1..];
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"IsCask' unexpectedly succeeded with key that was not valid URL-Safe Base64: {key}");
@@ -158,6 +171,7 @@ public abstract class CaskTestsBase
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: "Q",
+                                      expiryInFiveMinuteIncrements: 0, // No expiry specified.
                                       providerData: "ABCD");
 
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
@@ -175,7 +189,7 @@ public abstract class CaskTestsBase
     [InlineData("    ")]  // Whitespace.
     public void CaskSecrets_GenerateKey_InvalidProviderSignature(string? providerSignature)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A", providerData: null));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A", 0, providerData: null));
         Assert.IsType(providerSignature == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerSignature), ex.ParamName);
     }
@@ -188,7 +202,7 @@ public abstract class CaskTestsBase
     [InlineData("THIS_IS_TOO_MUCH_PROVIDER_DATA_SERIOUSLY_IT_IS_VERY_VERY_LONG_AND_THAT_IS_NOT_OKAY")]
     public void CaskSecrets_GenerateKey_InvalidProviderData(string providerData)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", providerData));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", 0, providerData));
         Assert.IsType(providerData == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerData), ex.ParamName);
     }
@@ -201,8 +215,8 @@ public abstract class CaskTestsBase
         // RNG that left all the entropy bytes zeroed out, so at least cover that
         // in the meantime. :)
 
-        string key = Cask.GenerateKey("TEST", "M", "ABCD");
-        string key2 = Cask.GenerateKey("TEST", "M", "ABCD");
+        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
+        string key2 = Cask.GenerateKey("TEST", "M", 0, "ABCD");
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
@@ -213,7 +227,7 @@ public abstract class CaskTestsBase
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(1));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        string key = Cask.GenerateKey("TEST", "M", "ABCD");
+        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
         Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAJQQJTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
     }
 
@@ -231,7 +245,10 @@ public abstract class CaskTestsBase
             () => new DateTimeOffset(invalidYear, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         Exception ex = Assert.Throws<InvalidOperationException>(
-            () => Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "y", providerData: "ABCD"));
+            () => Cask.GenerateKey(providerSignature: "TEST",
+                                   providerKeyKind: "y",
+                                   expiryInFiveMinuteIncrements: 1, // Five minutes.
+                                   providerData: "ABCD"));
 
         Assert.Contains("2024", ex.Message, StringComparison.Ordinal);
     }
@@ -252,7 +269,10 @@ public abstract class CaskTestsBase
             var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute, second: 0, TimeSpan.Zero);
             using Mock mock = Cask.MockUtcNow(() => timestamp);
 
-            string key = Cask.GenerateKey(providerSignature: "TEST", providerKeyKind: "Z", providerData: "ABCD");
+            string key = Cask.GenerateKey(providerSignature: "TEST",
+                                          providerKeyKind: "Z",
+                                          expiryInFiveMinuteIncrements: 12 * 24 * 180, // 6 months.
+                                          providerData: "ABCD");
             IsCaskValidate(key);
 
             string b = Base64UrlChars;

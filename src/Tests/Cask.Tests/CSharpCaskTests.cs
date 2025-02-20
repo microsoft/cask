@@ -16,10 +16,14 @@ public class CSharpCaskTests : CaskTestsBase
     private sealed class Implementation : ICask
     {
         public string GenerateKey(string providerSignature,
-                                  string? providerKind = "A",
+                                  string providerKind = "A",
+                                  int expiryInFiveMinuteIncrements = 0,
                                   string? reserved = null)
         {
-            CaskKey key = CSharpCask.GenerateKey(providerSignature, providerKind, reserved);
+            CaskKey key = CSharpCask.GenerateKey(providerSignature,
+                                                 providerKind,
+                                                 expiryInFiveMinuteIncrements,
+                                                 reserved);
             return key.ToString();
         }
 
