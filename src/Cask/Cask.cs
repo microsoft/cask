@@ -203,7 +203,7 @@ public static class Cask
         bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
         Debug.Assert(bytesWritten == 3);
 
-        Span<char> expiryChars = stackalloc char[4];
+        Span<char> expiryChars = stackalloc char[3];
         ComputeExpiryChars(expiryInFiveMinuteIncrements, expiryChars);
 
         chars = [
@@ -222,12 +222,17 @@ public static class Cask
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
     }
 
-    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> expiryChars)
+    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
     {
+        ThrowIfDestinationTooSmall(destination, 3);
         ValidateExpiry(expiryInFiveMinuteIncrements);
+
+        Span<char> expiryChars = stackalloc char[4];
         Span<byte> expiryBytes = stackalloc byte[4];
         BinaryPrimitives.WriteInt32BigEndian(expiryBytes, expiryInFiveMinuteIncrements);
         Base64Url.EncodeToChars(expiryBytes[1..], expiryChars);
+
+        expiryChars[..3].CopyTo(destination);
     }
 
     private static void FillRandom(Span<byte> buffer)

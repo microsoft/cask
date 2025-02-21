@@ -185,6 +185,14 @@ internal static class Helpers
         }
     }
 
+    public static void ThrowIfEmpty<T>(Span<T> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        if (value.IsEmpty)
+        {
+            ThrowEmpty(paramName);
+        }
+    }
+
     [DoesNotReturn]
     private static void ThrowArgumentNotInitialized(string? paramName)
     {

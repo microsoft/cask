@@ -404,14 +404,12 @@ public abstract class CaskTestsBase
                 expiryBytes.Reverse();
             }
 
-            string expiryText = Base64Url.EncodeToString(expiryBytes)[..3];
+            expected = Base64Url.EncodeToString(expiryBytes)[..3];
+            actual = key[ExpiryCharRange];
 
-            expected = $"{b[minute]}{expiryText}";
-            actual = key[MinutesAndExpiryCharRange];
-            Assert.True(expected == actual, 
-                        $"Expected key '{key}' to have encoded timestamp '{expected}' representing minutes "+
-                        $"'{b[minute]}' and expiry '{expiryInFiveMinuteIncrements}' but found '{actual}'.");
-
+            Assert.True(expected == actual,
+                        $"Expected key '{key}' to have encoded expiry '{expected}' for expiry " +
+                        $"'{expiryInFiveMinuteIncrements}' but found '{actual}'.");
         }
     }
 

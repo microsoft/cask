@@ -167,12 +167,9 @@ internal static partial class InternalConstants
     public static Range MinutesAndExpiryByteRange => 60..63;
 
     /// <summary>
-    /// The range of chars in a base64-encoded key that contain the
-    /// the 6-bit minute component of the time of secret allocation,
-    /// followed by the 18-bit secret expiry.
+    /// The range of byte indices in a key that, if present,
+    /// comprise additional provider-specific data.
     /// </summary>
-    public static Range MinutesAndExpiryCharRange => 80..84;
-
     public static Range OptionalDataByteRange => 63..;
 
     /// <summary>
