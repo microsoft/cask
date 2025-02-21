@@ -61,10 +61,6 @@ public readonly partial record struct CaskKey : IIsInitialized
         }
     }
 
-    public bool IsPrimary => Kind == CaskKeyKind.PrimaryKey;
-
-    public bool IsHmac => Kind == CaskKeyKind.HMAC;
-
     private CaskKey(string value)
     {
         _key = value;
