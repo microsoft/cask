@@ -226,7 +226,7 @@ public static class Cask
     {
         Span<byte> expiryBytes = stackalloc byte[4];
         BinaryPrimitives.WriteInt32BigEndian(expiryBytes, expiryInFiveMinuteIncrements);
-        Base64Url.EncodeToChars(expiryBytes, expiryChars);
+        Base64Url.EncodeToChars(expiryBytes[..3], expiryChars);
     }
 
     private static void FillRandom(Span<byte> buffer)
