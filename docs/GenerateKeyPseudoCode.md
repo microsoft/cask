@@ -5,6 +5,7 @@
 ## Inputs:
 - Provider signature: string
 - Provider key kind: string
+- Key expiry expressed in five minutes increments: integer
 - Provider data: string
 
 ## Outputs:
