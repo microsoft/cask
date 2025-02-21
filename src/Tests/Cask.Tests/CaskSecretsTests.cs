@@ -363,7 +363,7 @@ public abstract class CaskTestsBase
             ? "must be greater"
             : "must be less";
 
-        Assert.Contains(containsText, ex.Message, StringComparison.Ordinal); ""
+        Assert.Contains(containsText, ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
