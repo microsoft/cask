@@ -60,6 +60,12 @@ internal static class Helpers
         return hashLengthInBytes;
     }
 
+
+    public static SensitiveDataSize CharToSensitiveDataSize(char sensitiveDataSizeChar)
+    {
+        return (SensitiveDataSize)(sensitiveDataSizeChar - 'A'); ;
+    }
+
     public static CaskKeyKind CharToKind(char kindChar)
     {
         Debug.Assert(kindChar == 'P' || kindChar == 'H',
@@ -74,9 +80,7 @@ internal static class Helpers
 
     public static byte ProviderKindToByte(string providerKind)
     {
-        const string base64UrlChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-        int index = base64UrlChars.IndexOf(providerKind, StringComparison.Ordinal);
+        int index = Base64UrlChars.IndexOf(providerKind, StringComparison.Ordinal);
 
         if (index == -1)
         {
@@ -162,22 +166,6 @@ internal static class Helpers
         if (!value.IsInitialized)
         {
             ThrowArgumentNotInitialized(paramName);
-        }
-    }
-
-    public static void ThrowIfNotPrimary(CaskKey value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (!value.IsPrimary)
-        {
-            ThrowNotPrimary(paramName);
-        }
-    }
-
-    public static void ThrowIfNotHash(CaskKey value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (!value.IsHmac)
-        {
-            ThrowNotHash(paramName);
         }
     }
 

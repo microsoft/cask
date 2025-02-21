@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -12,6 +13,7 @@ using Xunit.Sdk;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class TestFilter : XunitTestFramework
 {
     private static readonly bool s_builtWithCppSupport = IsBuiltWithCppSupport();

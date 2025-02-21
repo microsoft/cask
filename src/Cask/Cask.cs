@@ -126,12 +126,13 @@ public static class Cask
         }
 
         // Check that kind is valid.
-        if (!TryByteToKind(keyBytes[CaskKindByteIndex], out CaskKeyKind kind) || kind is not CaskKeyKind.PrimaryKey and not CaskKeyKind.HMAC)
+        if (!TryByteToKind(keyBytes[CaskKindByteIndex], out CaskKeyKind kind) ||
+            kind is not CaskKeyKind.PrimaryKey and not CaskKeyKind.DerivedKey and not CaskKeyKind.HMAC)
         {
             return false;
         }
 
-        // TBD More validation? e.g., we have lots of natural limits on the timestamp data.
+        // TBD: we should author a TryBytesToTimestampAndExpiry method.
 
         return true;
     }
@@ -141,11 +142,12 @@ public static class Cask
                                       int expiryInFiveMinuteIncrements = 0,
                                       string? providerData = null)
     {
-        providerKeyKind ??= "A"; // 'A' comprises index 0 of base64-encoded characters.
+        providerKeyKind ??= $"{Base64UrlChars[0]}"; // "A", i.e., index 0 of all base64-encoded characters.
         providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
         ValidateProviderKeyKind(providerKeyKind);
+        ValidateExpiry(expiryInFiveMinuteIncrements);
         ValidateProviderData(providerData);
 
         // Calculate the length of the key.
@@ -178,63 +180,58 @@ public static class Cask
         // Entropy comprising the non-sensitive correlating id of the key.
         FillRandom(key[CorrelatingIdByteRange]);
 
-        FinalizeKey(key, UseCurrentTime, expiryInFiveMinuteIncrements, providerData.AsSpan());
+        FinalizeKey(key, expiryInFiveMinuteIncrements, providerData.AsSpan());
         return CaskKey.Encode(key);
     }
 
-    private static ReadOnlySpan<byte> UseCurrentTime => [];
-
     private static void FinalizeKey(Span<byte> key,
-                                    ReadOnlySpan<byte> timestampAndExpiry,
                                     int expiryInFiveMinuteIncrements,
                                     ReadOnlySpan<char> providerData)
     {
         int bytesWritten;
 
-        if (timestampAndExpiry.IsEmpty)
-        {
-            DateTimeOffset now = GetUtcNow();
-            ValidateTimestamp(now);
-            ReadOnlySpan<char> chars = [
-                Base64UrlChars[now.Year - 2024], // Years since 2024.
+        DateTimeOffset now = GetUtcNow();
+        ValidateTimestamp(now);
+        ReadOnlySpan<char> chars = [
+            Base64UrlChars[now.Year - 2024], // Years since 2024.
                 Base64UrlChars[now.Month - 1],   // Zero-indexed month.
                 Base64UrlChars[now.Day - 1],     // Zero-indexed day.
                 Base64UrlChars[now.Hour],        // Zero-indexed hour.
             ];
 
-            bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
-            Debug.Assert(bytesWritten == 3);
+        bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
+        Debug.Assert(bytesWritten == 3);
 
-            Span<byte> expiryBytes = BitConverter.IsLittleEndian
-                ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
-                : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
+        ReadOnlySpan<char> expiryChars = ComputeExpiryChars(expiryInFiveMinuteIncrements);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                expiryBytes.Reverse();
-            }
-
-            string expiryText = Base64Url.EncodeToString(expiryBytes[..3]);
-
-            chars = [
-                Base64UrlChars[now.Minute],    // Zero-indexed minute.
-                expiryText[0],
-                expiryText[1],
-                expiryText[2],
+        chars = [
+            Base64UrlChars[now.Minute],    // Zero-indexed minute.
+                expiryChars[0],
+                expiryChars[1],
+                expiryChars[2],
             ];
 
-            bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);
-            Debug.Assert(bytesWritten == 3);
-        }
-        else
-        {
-            timestampAndExpiry.CopyTo(key[YearMonthHoursDaysTimestampByteRange]);
-        }
+        bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);
+        Debug.Assert(bytesWritten == 3);
 
         // Provider data.
         Debug.Assert(Is4CharAligned(providerData.Length));
         bytesWritten = Base64Url.DecodeFromChars(providerData, key[OptionalDataByteRange]);
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
+    }
+
+    public static ReadOnlySpan<char> ComputeExpiryChars(int expiryInFiveMinuteIncrements)
+    {
+        Span<byte> expiryBytes = BitConverter.IsLittleEndian
+            ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
+            : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
+
+        if (BitConverter.IsLittleEndian)
+        {
+            expiryBytes.Reverse();
+        }
+
+        return Base64Url.EncodeToChars(expiryBytes).AsSpan()[..3];
     }
 
     private static void FillRandom(Span<byte> buffer)
@@ -287,18 +284,12 @@ public static class Cask
         }
     }
 
-    private static void ValidateAllocatorCode(string allocatorCode)
+    private static void ValidateExpiry(int expiryInFiveMinuteIncrements)
     {
-        ThrowIfNull(allocatorCode);
-
-        if (allocatorCode.Length != 2)
+        // Expiry is an 18-bit value, so 0-261,143 is valid.
+        if (expiryInFiveMinuteIncrements < 0 || expiryInFiveMinuteIncrements > 262143)
         {
-            ThrowLengthNotEqual(allocatorCode, 2);
-        }
-
-        if (!IsValidForBase64Url(allocatorCode))
-        {
-            ThrowIllegalUrlSafeBase64(allocatorCode);
+            throw new ArgumentOutOfRangeException(nameof(expiryInFiveMinuteIncrements), "Expiry count of five-minute increments must be between 0 and 262143.");
         }
     }
 

@@ -123,6 +123,11 @@ internal static partial class InternalConstants
     public static Index SensitiveDataSizeByteIndex => 32;
 
     /// <summary>
+    /// The index of the byte in a key that contains the key size.
+    /// </summary>
+    public static Index SensitiveDataSizeCharIndex => 44;
+
+    /// <summary>
     /// The range of byte indices in a key for the bytes that contain the CASK signature.
     /// </summary>
     public static Range CaskSignatureByteRange => 33..36;
@@ -160,6 +165,13 @@ internal static partial class InternalConstants
     /// followed by the 18-bit secret expiry.
     /// </summary>
     public static Range MinutesAndExpiryByteRange => 60..63;
+
+    /// <summary>
+    /// The range of chars in a base64-encoded key that contain the
+    /// the 6-bit minute component of the time of secret allocation,
+    /// followed by the 18-bit secret expiry.
+    /// </summary>
+    public static Range MinutesAndExpiryCharRange => 80..84;
 
     public static Range OptionalDataByteRange => 63..;
 

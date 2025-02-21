@@ -291,42 +291,6 @@ namespace CommonAnnotatedSecurityKeys
     }
 }
 
-namespace System.Security.Cryptography
-{
-    internal static class CryptographicOperations
-    {
-        // WARNING: DO NOT MODIFY EXCEPT TO UPDATE TO A LATER VERSION OF THE
-        // CODE FROM THE BCL. THIS IS HARDER THAN IT MAY SEEM TO GET RIGHT!
-        //
-        // Source:
-        // https://github.com/dotnet/runtime/blob/354ec46a63440608bda18e2203bb5538e2f8eae6/src/libraries/System.Security.Cryptography/src/System/Security/Cryptography/CryptographicOperations.cs
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        public static bool FixedTimeEquals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
-        {
-            // NoOptimization because we want this method to be exactly as
-            // non-short-circuiting as written.
-            //
-            // NoInlining because the NoOptimization would get lost if the
-            // method got inlined.
-
-            if (left.Length != right.Length)
-            {
-                return false;
-            }
-
-            int length = left.Length;
-            int accum = 0;
-
-            for (int i = 0; i < length; i++)
-            {
-                accum |= left[i] - right[i];
-            }
-
-            return accum == 0;
-        }
-    }
-}
-
 // We break the following rules intentionally when stubbing out attributes.
 // The compiler doesn't use reflection to read them.
 #pragma warning disable IDE0060 // Remove unused parameter

@@ -33,21 +33,21 @@
 1. Write sensitive data size to next byte, e.g., 0 to indicate 256-bits.
 1. Write CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
 1. Base64url-decode provider signature and store the result in the next 3 bytes.
-1. Base64url-decode provider data and store the result in the next N bytes.
+1. Write 0x00 to the next byte to indicate a 256-bit primary key.
 1. Left-shift the provider key kind by 2 bits and store the result in the next byte.
 1. Left-shift the CASK key key kind by 4 bits and store the result in the next byte.
 1. Generate 128 bits of cryptographically secure random data and store the result in the next 16 bytes.
 1. Let T = current date and time in UTC.
-1. Encode T in 4 characters for YMDH:
+1. Encode T in 4 characters, YMDH:
     - Y = base64url-encoding of (Year - 2024).
     - M = base64url-encoding of zero-based month.
     - D = base64url-encoding of zero-based hour.
     - H = base64url-encoding of zero-based day.
 1. Base64url-decode YMDH and store the result in the next 3 bytes.
-1. Write 0x00 to the next byte (reserved).
-1. Write 0x00 to the next byte to indicate a 256-bit primary key.
-1. Compute the CRC32 of all key bytes written above (everything but the last 4 bytes). Store the result in little-endian byte order in the last 4 bytes.
-1. base64url encode the generated key and return the result.
+1. Base64url-encode T minutes M in a single character
+1. Encode the last 3 bytes of the big-endian representation of the 18-bit expiry.
+1. Base64url-decode M and the 3-character expiry and store the result in the next 3 bytes.
+1. Base64url-decode provider data and store the result in the next N bytes.
 
 ## References
-- base64url: https://datatracker.ietf.org/doc/html/rfc4648#section-5
+- Base64url: https://datatracker.ietf.org/doc/html/rfc4648#section-5

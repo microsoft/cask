@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 /*
  * When these tests are run on .NET Framework, our polyfill implementations are
  * used. When run on modern .NET, the real BCL API are used. Running on both
@@ -22,8 +21,8 @@
 #pragma warning disable CA1846 // Prefer AsSpan over substring: not applicable on .NET Framework
 #pragma warning disable CA1872 // Prefer ToHexString over BitConverter: not applicable on .NET Framework
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -31,6 +30,7 @@ using Xunit;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
+[ExcludeFromCodeCoverage]
 public class PolyfillTests
 {
     [Fact]
@@ -288,12 +288,31 @@ public class PolyfillTests
     }
 
     [Fact]
+    public void Encoding_GetByteCount_Basic()
+    {
+        string basic = nameof(basic);
+        ReadOnlySpan<char> text = basic.AsSpan();
+        int byteCount = Encoding.UTF8.GetByteCount(text);
+        Assert.Equal(basic.Length, byteCount);
+    }
+
+    [Fact]
     public void Encoding_GetBytes_Empty()
     {
         ReadOnlySpan<char> text = "".AsSpan();
         Span<byte> bytes = [];
         int bytesWritten = Encoding.UTF8.GetBytes(text, bytes);
         Assert.Equal(0, bytesWritten);
+    }
+
+    [Fact]
+    public void Encoding_GetBytes_Basic()
+    {
+        string basic = nameof(basic);
+        ReadOnlySpan<char> text = basic.AsSpan();
+        Span<byte> bytes = new byte[basic.Length];
+        int bytesWritten = Encoding.UTF8.GetBytes(text, bytes);
+        Assert.Equal(basic.Length, bytesWritten);
     }
 
 #if NETFRAMEWORK // We don't need to stress test the modern BCL :)
@@ -303,9 +322,9 @@ public class PolyfillTests
         const int maxMilliseconds = 500;
         const int testsQueuedPerIteration = 64;
 
-        IEnumerable<MethodInfo> methods = GetType()
-            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .Where(m => m.IsDefined(typeof(FactAttribute)) && m.ReturnType == typeof(void));
+        IEnumerable<System.Reflection.MethodInfo> methods = GetType()
+            .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(m => m.IsDefined(typeof(FactAttribute), false) && m.ReturnType == typeof(void));
 
         Action[] tests = [.. methods.Select(m => (Action)m.CreateDelegate(typeof(Action), this))];
         var tasks = new Task[testsQueuedPerIteration];

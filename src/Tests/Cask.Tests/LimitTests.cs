@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using Xunit;
@@ -7,6 +8,7 @@ using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
+[ExcludeFromCodeCoverage]
 public class LimitTests
 {
     [Fact]

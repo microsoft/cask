@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Buffers.Text;
-using System.IO.Hashing;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using Xunit;
@@ -13,6 +14,7 @@ using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
+[ExcludeFromCodeCoverage]
 public abstract class CaskTestsBase
 {
     protected CaskTestsBase(ICask cask)
@@ -30,7 +32,7 @@ public abstract class CaskTestsBase
                                       expiryInFiveMinuteIncrements: 12 * 24, // 1 day.
                                       providerData: "_NG_");
 
-        IsCaskValidate(key);
+        IsCaskVerifySuccess(key);
     }
 
     [Theory]
@@ -51,7 +53,9 @@ public abstract class CaskTestsBase
         TestEncodedMatchedDecoded(key, CaskKeyKind.PrimaryKey);
     }
 
-    private void TestEncodedMatchedDecoded(string encodedKey, CaskKeyKind expectedKind, string expectedC2id = "")
+    private void TestEncodedMatchedDecoded(string encodedKey,
+                                           CaskKeyKind expectedCaskKeyKind,
+                                           string expectedC2id = "")
     {
         // The purpose of this test is to actually produce useful notes in documentation
         // as far as decomposing a CASK key, both from its url-safe base64 form and from
@@ -61,23 +65,23 @@ public abstract class CaskTestsBase
         // end of the key, obtaining size information from the key kind enum, and
         // based on that data isolating the randomized component from the optional data.
 
-        IsCaskValidate(encodedKey);
+        IsCaskVerifySuccess(encodedKey);
 
         byte[] keyBytes = Base64Url.DecodeFromUtf8(Encoding.UTF8.GetBytes(encodedKey));
+
+        string encodedSignature = encodedKey[44..48];
+        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[33..36];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseCaskSignature), encodedSignature);
+
+        string encodedProviderId = encodedKey[48..52];
+        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[36..39];
+        Assert.Equal(Base64Url.EncodeToString(bytewiseProviderId), encodedProviderId);
 
         if (!string.IsNullOrEmpty(expectedC2id))
         {
             string encodedC2Id = encodedKey[54..76];
             Assert.Equal(expectedC2id, encodedC2Id);
         }
-
-        string encodedCaskSignature = encodedKey[44..48];
-        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[33..36];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseCaskSignature), encodedCaskSignature);
-
-        string encodedProviderId = encodedKey[48..52];
-        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[36..39];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseProviderId), encodedProviderId);
 
         string encodedYearMonthDay = encodedKey[76..80];
         Span<byte> bytewiseYearMonthDay = keyBytes.AsSpan()[57..60];
@@ -94,10 +98,7 @@ public abstract class CaskTestsBase
         // This follow-on demonstrates how to get the key kind
         // byte from the bytewise form.
         var kind = (CaskKeyKind)(keyBytes[40] >> CaskKindReservedBits);
-        Assert.Equal(expectedKind, kind);
-
-        byte reservedForVersion = keyBytes[^5];
-        Assert.Equal(0, reservedForVersion);
+        Assert.Equal(expectedCaskKeyKind, kind);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public abstract class CaskTestsBase
         // example of this IsKeyValidate where we put back a valid checksum
         // after modifiying a key, but it needs to be easier to reuse in more
         // specific tests. It's hard because the IsValid check has a lot of
-        // redunancy (not a bad thing!). For example, if you change the length
+        // redundancy (not a bad thing!). For example, if you change the length
         // it can fail alignment, not just checksum. This test and similar
         // trivial tests below were stepped through to check code coverage of
         // current implementation, but they are susceptible to starting to pass
@@ -129,6 +130,100 @@ public abstract class CaskTestsBase
         new string('-', MinKeyLengthInChars - 1),
         new string('-', MaxKeyLengthInChars + 1),
      ];
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature()
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: "G",
+                                      expiryInFiveMinuteIncrements: 12 * 6, // 6 hours.
+                                      providerData: "-__-");
+        Span<char> keyChars = key.ToCharArray().AsSpan();
+        Span<char> caskSignatureBytes = "JQQJ".ToCharArray().AsSpan();
+
+        bool valid;
+
+        for (int i = 0; i < 4; i++)
+        {
+            // Reset the CASK fixed signature.
+            caskSignatureBytes.CopyTo(keyChars[CaskSignatureCharRange]);
+
+            // Ensure our starting key is valid.
+            key = keyChars.ToString();
+            IsCaskVerifySuccess(key);
+
+            // Change one byte of the CASK fixed signature.
+            keyChars[CaskSignatureCharRange][i] = '-';
+
+            // Ensure our invalidated key fails the IsCask check.
+            key = keyChars.ToString();
+            valid = Cask.IsCask(key);
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying CASK signature range: {key}");
+
+            IsCaskVerifyFailure(key);
+        }
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize()
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: "_",
+                                      expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                      providerData: "oOOo");
+
+        IsCaskVerifySuccess(key);
+
+        Span<char> keyChars = key.ToCharArray().AsSpan();
+        keyChars[SensitiveDataSizeCharIndex] = '_';
+
+        key = keyChars.ToString();
+        bool valid = Cask.IsCask(key);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with invalid size: {key}");
+
+        IsCaskVerifyFailure(key);
+    }
+
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidCaskKind()
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: "F",
+                                      expiryInFiveMinuteIncrements: 2, // 10 minutes.
+                                      providerData: "OooOOooOOooO");
+
+        IsCaskVerifySuccess(key);
+
+        Span<char> keyChars = key.ToCharArray().AsSpan();
+        keyChars[CaskKindCharIndex] = '9';
+
+        key = keyChars.ToString();
+        bool valid = Cask.IsCask(key);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with invalid CASK key kind: {key}");
+
+        IsCaskVerifyFailure(key);
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidProviderKindLength()
+    {
+        Assert.Throws<ArgumentException>(
+            () => Cask.GenerateKey("TEST",
+                                   providerKeyKind: "TOOLONG",
+                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
+                                   providerData: "OooOOooOOooO"));
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidForBase64ProviderKind()
+    {
+        Assert.Throws<ArgumentException>(
+            () => Cask.GenerateKey("TEST",
+                                   providerKeyKind: "?",
+                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
+                                   providerData: null));
+    }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
@@ -166,6 +261,20 @@ public abstract class CaskTestsBase
         Assert.False(valid, $"IsCask' unexpectedly succeeded with key that was not valid URL-Safe Base64: {key}");
     }
 
+    [Theory]
+    [InlineData(int.MinValue)]
+    [InlineData(-1)]
+    [InlineData(262144)] // 64 ^ 3, exceeds legal maximum by 1.
+    [InlineData(int.MaxValue)]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidExpiry(int expiryInFiveMinuteIncrements)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => Cask.GenerateKey(providerSignature: "TEST",
+                                   providerKeyKind: "-",
+                                   expiryInFiveMinuteIncrements,
+                                   providerData: null));
+    }
+
     [Fact]
     public void CaskSecrets_GenerateKey_Basic()
     {
@@ -177,7 +286,7 @@ public abstract class CaskTestsBase
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
         Assert.True(keyBytes.Length % 3 == 0, "'GenerateKey' output wasn't aligned on a 3-byte boundary.");
 
-        IsCaskValidate(key);
+        IsCaskVerifySuccess(key);
     }
 
     [Theory]
@@ -269,27 +378,75 @@ public abstract class CaskTestsBase
             var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute, second: 0, TimeSpan.Zero);
             using Mock mock = Cask.MockUtcNow(() => timestamp);
 
+            int expiryInFiveMinuteIncrements = 12 * 24 * 180; // 6 months.
+
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: "Z",
-                                          expiryInFiveMinuteIncrements: 12 * 24 * 180, // 6 months.
+                                          expiryInFiveMinuteIncrements,
                                           providerData: "ABCD");
-            IsCaskValidate(key);
+            IsCaskVerifySuccess(key);
 
             string b = Base64UrlChars;
             string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}{b[minute]}";
             string actual = key[TimestampCharRange];
             Assert.True(expected == actual, $"Expected key '{key}' to have encoded timestamp '{expected}' representing '{timestamp}' but found '{actual}'.");
+            
+            Span<byte> expiryBytes = BitConverter.IsLittleEndian
+                ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
+                : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
+
+            if (BitConverter.IsLittleEndian)
+            {
+                expiryBytes.Reverse();
+            }
+
+            string expiryText = Base64Url.EncodeToString(expiryBytes)[..3];
+
+            expected = $"{b[minute]}{expiryText}";
+            actual = key[MinutesAndExpiryCharRange];
+            Assert.True(expected == actual, 
+                        $"Expected key '{key}' to have encoded timestamp '{expected}' representing minutes "+
+                        $"'{b[minute]}' and expiry '{expiryInFiveMinuteIncrements}' but found '{actual}'.");
+
         }
     }
 
-    private void IsCaskValidate(string key)
+    private void IsCaskVerifySuccess(string key)
     {
         // Positive test cases.
-        Assert.True(Cask.IsCask(key), $"'GenerateKey' output failed 'IsCask(string)': {key}");
+        Assert.True(Cask.IsCask(key), $"'IsCask(string)' failed for: {key}");
+        Assert.True(CaskKey.Regex.IsMatch(key), $"'CaskKey.Regex.IsMatch' failed for: {key}");
 
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
-        Assert.True(Cask.IsCaskBytes(keyBytes), $"'GenerateKey' output failed 'IsCask(byte[]): {key}'.");
+        Assert.True(Cask.IsCaskBytes(keyBytes), $"'IsCask(byte[])' failed for: {key}'.");
+   }
 
-        Assert.True(CaskKey.Regex.IsMatch(key), $"'GenerateKey' output failed 'CaskKey.Regex match': {key}");
+    private void IsCaskVerifyFailure(string key)
+    {
+        // Negative test cases.
+        Assert.False(Cask.IsCask(key), $"'IsCask(string)' unexpectedly succeeded for: {key}");
+        Assert.False(CaskKey.Regex.IsMatch(key), $"'CaskKey.Regex.IsMatch' unexpectedly succeeded for: {key}");
+
+        byte[] keyBytes;
+
+        try
+        {
+            keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
+        }
+        catch (FormatException)
+        {
+            // On receiving this exception, we have invalid base64
+            // input. As a result, we will change test expections.
+            return;
+        }
+
+        if (keyBytes != null)
+        {
+            Assert.False(Cask.IsCaskBytes(keyBytes), $"'IsCask(byte[])' unexpectedly succeeded for: {key}'.");
+        }
+        else
+        {
+            Assert.Throws<FormatException>(() => Cask.IsCaskBytes(keyBytes!));
+        }
     }
 }

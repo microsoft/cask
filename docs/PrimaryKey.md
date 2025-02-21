@@ -1,38 +1,36 @@
 # CASK 256-bit Primary Keys
 ## Standard Backus-Naur Form (BNF)
 ```
-<key> ::= <random-data> <key-size> <cask-signature> <provider-signature> <provider-kind> <cask-kind> <correlating-id> <timestamp> <expiry> [<optional-fields>] 
+<key> ::= <random-data> <sensitive-data-size> <cask-signature> <provider-signature> <provider-kind> <cask-kind> <correlating-id> <timestamp> <expiry> [<optional-fields>]
 <random-data> ::= 42 * <base64url> <base64-two-zeros-suffix> ; The total random data comprises 256 bits encoded as 42
                                                              ; characters x 6 bit bits of random data = 252 bits and
                                                              ; 1 character providing 4 bits of random data padded with 00b.
-<key-size> ::= 'A' ; 'A' indicates a 256-bit key.
-<cask-signature> ::= 'JQQJ' ; Fixed signature identifying the CASK key
-<provider-signature> ::= 4 * <base64url> ; Provider identifier (24 bits)
-<provider-kind> ::= <base64url> ; Optionally populated provider key kind.
-<cask-kind> ::= <256-bit-key> |  <256-bit-hash> | <384-bit-hash>
-<256-bit-key> ::= 'A'
-<256-bit-hash> ::= 'H'
-<384-bit-hash> ::= 'I'
-<correlating-id> ::= <four-bits-prefixed-base64url> 21 * <base64url> ; 0000b + prefix 22 character correlating id (128 bits)
-<timestamp> ::= <year> <month> <day> <hour> <minute>; Timestamp components
+<sensitive-data-size> ::= 'A' ; 'A' indicates a 256-bit key.
+<cask-signature> ::= 'JQQJ' ; Fixed signature identifying the CASK key.
+<provider-signature> ::= 4 * <base64url> ; Provider identifier (24 bits).
+<provider-kind> ::= <base64url> ; Provider-defined key kind.
+<cask-kind> ::= <primary-key> |  <derived-key> | <hmac>
+<primary-key> ::= 'P'
+<derived-key> ::= 'D'
+<hmac> ::= 'H'
+<correlating-id> ::= <four-bits-prefixed-base64url> 21 * <base64url> ; 0000b prefix + 22-character correlating id (128 bits)
+<timestamp> ::= <year> <month> <day> <hour> <minute>; Timestamp components.
 <year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
 <month> ::= 'A'..'L' ; For months January to December
 <day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'e' = day 31
 <hour> ::= 'A'..'X' ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
 <minute> ::= 'A'..'7' ; Represents minutes 0-59.
 <expiry> ::= 3 * <base64url> ; 18 bits expiry data, comprising a count of 5 minute values.
-                             ; 64^3 = 262,144 possible values, allowing for a maximum
-                             ; expiry of 5 * 262,143 minutes (~910 days).
+                             ; 64^3 = 0 - 262,143 possible values, allowing for a
+                             ; maximum expiry of 5 * 262,143 minutes (~910 days).
                              <base64url> ::= 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_'
-<optional-fields> ::= { <optional-field> } ; Zero or more 4-character (24 bit) sequences of optional data.
-<optional-field> ::= 4 * <base64url> ; Each optional field is 4 characters (24 bits). This keeps
-                                     ; data cleanly aligned along 3-byte/4-encoded character boundaries
+<optional-fields> ::= { <optional-field> } ; Zero or more 4-character (24-bit) sequences of optional data.
+<optional-field> ::= 4 * <base64url> ; Each optional field is 4 characters (24 bits). This keeps data
+                                     ; cleanly aligned along 3-byte/4-encoded character boundaries,
                                      ; facilitating readability of encoded form as well as byte-wise use.
 <four-bits-prefixed-base64url> ::= 'A' | 'B' | 'C' | 'D'; Base64 indices that begin with 0000b.
-<base64-two-zeros-suffix> ::= 'A' | 'E' | 'I' | 'M' | 'Q' | 'U' | 'Y' | 'c' ; Base64 characters ending in 00b. These indices are all
-                            | 'g' | 'k' | 'o' | 's' | 'w' | '0' | '4' | '8' ; multiple of 4 (or the value of 0b), a fact that may be
-                                                                            ; useful in some contexts.
 ```
+
 ## Byte-wise Rendering
 |Byte Range|Decimal|Hex|Binary|Description|
 |-|-|-|-|-|
@@ -66,5 +64,4 @@
 |encodedKey[80]|'A'...'7'| Represents the minute of allocation time.
 |encodedKey[81..84]|'A'...'_'| 18-bit value comprising an expiry.
 |encodedKey[84..]|'A'...'_'|0 or more 4-character sequences comprising provider optional data, of arbitrary interpretation.
-
 ```

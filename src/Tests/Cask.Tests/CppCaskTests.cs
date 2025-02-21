@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -31,6 +32,8 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 //      To enable them, flip the return value of IsSupportedTestClass in
 //      TestFilter.cs.
 
+
+[ExcludeFromCodeCoverage]
 public class CppCaskTests : CaskTestsBase
 {
     public CppCaskTests() : base(new Implementation())
