@@ -16,6 +16,7 @@
     - Provider signature is exactly 4 characters long.
     - Provider signature consists entirely of characters that are valid in base64url encoding.
     - Provider key kind is a single, printable (i.e., non-padding) base64url character.
+    - Expiry in five minutes increments is a non-negative integer less than 262,144.
     - Provider data (if non-empty) has a length that is a multiple of 4 characters and no more than 32 characters.
     - Provider data (if non-empty) consists entirely of base64url printable characters.
 1. Let N = the length of the base64url-decoded provider data.
