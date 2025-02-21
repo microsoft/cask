@@ -1,5 +1,7 @@
 # GenerateKey Pseudo-Code
 
+*NOTE*: all references to `base64url` in this document refer to the 'printable' (i.e., exclusive of the padding or `=` character) base64url alphabet characters as defined in [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648#section-5).`
+
 ## Inputs:
 - Provider signature: string
 - Provider key kind: string
@@ -12,9 +14,9 @@
 1. Validate input. Return an error if any of the following are NOT true:
     - Provider signature is exactly 4 characters long.
     - Provider signature consists entirely of characters that are valid in base64url encoding.
-    - Provider key kind is a single, valid base64url character.
+    - Provider key kind is a single, printable (i.e., non-padding) base64url character.
     - Provider data (if non-empty) has a length that is a multiple of 4 characters and no more than 32 characters.
-    - Provider data (if non-empty) consists entirely of characters that are valid in base64url encoding.
+    - Provider data (if non-empty) consists entirely of base64url printable characters.
 1. Let N = the length of the base64url-decoded provider data.
     - Number of characters in provider data divided by 4, times 3.
 1. Allocate storage for the generated key:
