@@ -224,9 +224,10 @@ public static class Cask
 
     public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> expiryChars)
     {
+        ValidateExpiry(expiryInFiveMinuteIncrements);
         Span<byte> expiryBytes = stackalloc byte[4];
         BinaryPrimitives.WriteInt32BigEndian(expiryBytes, expiryInFiveMinuteIncrements);
-        Base64Url.EncodeToChars(expiryBytes[..3], expiryChars);
+        Base64Url.EncodeToChars(expiryBytes[1..], expiryChars);
     }
 
     private static void FillRandom(Span<byte> buffer)
