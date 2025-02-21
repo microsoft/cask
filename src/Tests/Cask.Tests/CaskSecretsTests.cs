@@ -360,8 +360,8 @@ public abstract class CaskTestsBase
                                    providerData: "ABCD"));
 
         string containsText = invalidYear > 2087
-            ? "must be greater"
-            : "must be less";
+            ? "must be less"
+            : "must be greater";
 
         Assert.Contains(containsText, ex.Message, StringComparison.Ordinal);
     }
