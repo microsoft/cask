@@ -359,7 +359,11 @@ public abstract class CaskTestsBase
                                    expiryInFiveMinuteIncrements: 1, // Five minutes.
                                    providerData: "ABCD"));
 
-        Assert.Contains("must be greater than or", ex.Message, StringComparison.Ordinal);
+        string containsText = invalidYear > 2087
+            ? "must be greater"
+            : "must be less";
+
+        Assert.Contains(containsText, ex.Message, StringComparison.Ordinal); ""
     }
 
     [Fact]
