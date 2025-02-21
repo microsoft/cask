@@ -54,7 +54,7 @@
 |encodedKey[44..48]|'JQQJ'| Fixed CASK signature.
 |encodedKey[48..52]|('A'...'Z'-\_)\|('a'...'z'-\_)| | The provider signature. Optionally, this data can be encoded to distinguish user- vs. service-managed keys.
 |encodedKey[52]|'A'...'_'|Provider key kind or 'A' if not populated|
-|encodedKey[53]|'A', 'H'|CASK key kind|
+|encodedKey[53]|'P'|CASK key kind, a primary key. |
 |encodedKey[54]|'A', 'Q', 'g', 'w'|The first character of the correlating id|
 |encodedKey[55..76]|'A'...'_'|The remaining 21 characters of the correlating id|
 |encodedKey[76]|'A'...'_'|Represents the year of allocation time, 'A' (2024) to '_' (2087)|

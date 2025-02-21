@@ -313,6 +313,7 @@ public class PolyfillTests
         Span<byte> bytes = new byte[basic.Length];
         int bytesWritten = Encoding.UTF8.GetBytes(text, bytes);
         Assert.Equal(basic.Length, bytesWritten);
+        Assert.Equal(basic, Encoding.UTF8.GetString(bytes));
     }
 
 #if NETFRAMEWORK // We don't need to stress test the modern BCL :)
