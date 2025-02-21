@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -202,7 +203,8 @@ public static class Cask
         bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
         Debug.Assert(bytesWritten == 3);
 
-        ReadOnlySpan<char> expiryChars = ComputeExpiryChars(expiryInFiveMinuteIncrements);
+        Span<char> expiryChars = stackalloc char[4];
+        ComputeExpiryChars(expiryInFiveMinuteIncrements, expiryChars);
 
         chars = [
             Base64UrlChars[now.Minute],    // Zero-indexed minute.
@@ -220,18 +222,11 @@ public static class Cask
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
     }
 
-    public static ReadOnlySpan<char> ComputeExpiryChars(int expiryInFiveMinuteIncrements)
+    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> expiryChars)
     {
-        Span<byte> expiryBytes = BitConverter.IsLittleEndian
-            ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
-            : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
-
-        if (BitConverter.IsLittleEndian)
-        {
-            expiryBytes.Reverse();
-        }
-
-        return Base64Url.EncodeToChars(expiryBytes).AsSpan()[..3];
+        Span<byte> expiryBytes = stackalloc byte[4];
+        BinaryPrimitives.WriteInt32BigEndian(expiryBytes, expiryInFiveMinuteIncrements);
+        Base64Url.EncodeToChars(expiryBytes, expiryChars);
     }
 
     private static void FillRandom(Span<byte> buffer)
