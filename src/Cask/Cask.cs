@@ -281,19 +281,14 @@ public static class Cask
 
     private static void ValidateExpiry(int expiryInFiveMinuteIncrements)
     {
-        // Expiry is an 18-bit value, so 0-261,143 is valid.
-        if (expiryInFiveMinuteIncrements < 0 || expiryInFiveMinuteIncrements > 262143)
-        {
-            throw new ArgumentOutOfRangeException(nameof(expiryInFiveMinuteIncrements), "Expiry count of five-minute increments must be between 0 and 262143.");
-        }
+        ThrowIfLessThan(expiryInFiveMinuteIncrements, 0);
+        ThrowIfGreaterThan(expiryInFiveMinuteIncrements, MaxExpiryInFiveMinuteIncrements);
     }
 
     private static void ValidateTimestamp(DateTimeOffset now)
     {
-        if (now.Year < 2024 || now.Year > 2087)
-        {
-            ThrowInvalidYear();
-        }
+        ThrowIfLessThan(now.Year, 2024);
+        ThrowIfGreaterThan(now.Year, 2087);
     }
 
     private static void ValidateProviderData(string providerData)

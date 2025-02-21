@@ -44,4 +44,9 @@ public static class Limits
     /// The maximum length of a Cask key in characters.
     /// </summary>
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
+
+    /// <summary>
+    /// The maximum expiry, an 18-bit count of five minute increments (0-261,143).
+    /// </summary>
+    public static int MaxExpiryInFiveMinuteIncrements { get; } = (1 << 18) - 1;
 }
