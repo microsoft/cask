@@ -11,6 +11,7 @@ using CSharpCask = CommonAnnotatedSecurityKeys.Cask;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
+[ExcludeFromCodeCoverage]
 public class CSharpCaskTests : CaskTestsBase
 {
     public CSharpCaskTests() : base(new Implementation()) { }

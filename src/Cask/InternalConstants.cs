@@ -125,7 +125,7 @@ internal static partial class InternalConstants
     /// <summary>
     /// The index of the byte in a key that contains the key size.
     /// </summary>
-    public static Index SensitiveDataSizeCharIndex => 44;
+    public static Index SensitiveDataSizeCharIndex => 43;
 
     /// <summary>
     /// The range of byte indices in a key for the bytes that contain the CASK signature.

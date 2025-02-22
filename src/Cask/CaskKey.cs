@@ -41,7 +41,7 @@ public readonly partial record struct CaskKey : IIsInitialized
         get
         {
             ThrowIfNotInitialized();
-            SensitiveDataSize sensitiveDataSize = CharToSensitiveDataSize(_key[SensitiveDataSizeByteIndex]);
+            SensitiveDataSize sensitiveDataSize = CharToSensitiveDataSize(_key[SensitiveDataSizeCharIndex]);
             return sensitiveDataSize switch
             {
                 SensitiveDataSize.Bits256 => 32,
