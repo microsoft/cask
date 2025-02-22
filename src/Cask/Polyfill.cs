@@ -107,16 +107,6 @@ namespace Polyfill
                 return encoding.GetBytes(charPtr, chars.Length, bytePtr, bytes.Length);
             }
         }
-
-        public static int GetHashCode(this string s, StringComparison comparison)
-        {
-            return comparison switch
-            {
-                StringComparison.Ordinal => StringComparer.Ordinal.GetHashCode(s),
-                StringComparison.OrdinalIgnoreCase => StringComparer.OrdinalIgnoreCase.GetHashCode(s),
-                _ => throw new NotSupportedException(),
-            };
-        }
     }
 
     internal static class ArgumentValidation
