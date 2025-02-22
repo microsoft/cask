@@ -3,6 +3,8 @@
 
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 using Xunit;
 
@@ -98,5 +100,101 @@ public class CaskKeyTests
             Assert.Equal(expected, key.SensitiveDateSizeInBytes);
         }
     }
-}
+    [Fact]
+    public void CaskKey_CreateOverloadsAreEquivalent()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: "J",
+                                       expiryInFiveMinuteIncrements: 12 * 72, // 3 days.
+                                       providerData: "MSFT");
 
+        byte[] actual = new byte[Limits.MaxKeyLengthInBytes];
+        byte[] expected = new byte[Limits.MaxKeyLengthInBytes];
+        key.Decode(expected);
+
+        string keyText = key.ToString();
+        CaskKey.Create(keyText).Decode(actual);
+        Assert.Equal(expected, actual);
+
+        CaskKey.Create(keyText.AsSpan()).Decode(actual);
+        Assert.Equal(expected, actual);
+
+        CaskKey.CreateUtf8(Encoding.UTF8.GetBytes(keyText)).Decode(actual);
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void CaskKey_DecodeBasic()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: "l",
+                                       expiryInFiveMinuteIncrements: 5, // 25 minutes.
+                                       providerData: "010101010101");
+
+        byte[] decoded = new byte[key.SizeInBytes];
+        key.Decode(decoded);
+
+        string expected = key.ToString();
+        string actual = Base64Url.EncodeToString(decoded);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void CaskKey_TryEncodeInvalidKey()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: "l",
+                                       expiryInFiveMinuteIncrements: 5, // 25 minutes.
+                                       providerData: "010101010101");
+
+        Span<byte> decoded = stackalloc byte[key.SizeInBytes];
+        Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
+
+        const int caskSignatureByteIndex = 33;
+        Assert.Equal(0x25, decoded[caskSignatureByteIndex]);
+        
+        // Break the key by invaliding the CASK signature.
+        decoded[caskSignatureByteIndex] = (byte)'X';
+
+        bool succeeded = CaskKey.TryEncode(decoded, out CaskKey newCaskKey);
+        Assert.False(succeeded);
+    }
+
+    [Fact]
+    public void CaskKey_TryEncodeBasic()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: "J",
+                                       expiryInFiveMinuteIncrements: 0, // 3 days.
+                                       providerData: null);
+
+        Span<byte> decoded = stackalloc byte[key.SizeInBytes];
+        Base64Url.TryDecodeFromChars(key.ToString().AsSpan(), decoded, out int bytesWritten);
+
+        var newKey = CaskKey.Encode(decoded);
+
+        Assert.Equal(key, newKey);
+    }
+
+    [Fact]
+    public void CaskKey_CreateOverloadsThrowOnInvalidKey()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: "R",
+                                       expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
+                                       providerData: "ROSS");
+
+        Span<char> keyChars = key.ToString().ToCharArray();
+
+        const int sensitiveDateCharIndex = 43;
+        keyChars[sensitiveDateCharIndex] = '_';
+
+        string invalidKeyText = keyChars.ToString();
+        byte[] invalidKeyUtf8Bytes = Encoding.UTF8.GetBytes(invalidKeyText);
+
+        Assert.Throws<FormatException>(() => CaskKey.Create(invalidKeyText));
+        Assert.Throws<FormatException>(() => CaskKey.Create(invalidKeyText.AsSpan()));
+        Assert.Throws<FormatException>(() => CaskKey.CreateUtf8(invalidKeyUtf8Bytes));
+    }
+}
