@@ -26,22 +26,22 @@ public static class Limits
     public static int MaxProviderDataLengthInChars { get; } = BytesToBase64Chars(MaxProviderDataLengthInBytes);
 
     /// <summary>
-    /// The minimum length of a Cask key or hash when decoded to bytes.
+    /// The minimum length of a Cask secret when decoded to bytes.
     /// </summary>
     public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0);
 
     /// <summary>
-    /// The maximum length of a Cask key or hash when decoded to bytes.
+    /// The maximum length of a Cask secret when decoded to bytes.
     /// </summary>
-    public static int MaxKeyLengthInBytes { get; } = GetHashLengthInBytes(GetKeyLengthInBytes(MaxProviderDataLengthInBytes) - 33);
+    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes);
 
     /// <summary>
-    /// The minimum length of a Cask key in characters.
+    /// The minimum length of a Cask secret in characters.
     /// </summary>
     public static int MinKeyLengthInChars { get; } = BytesToBase64Chars(MinKeyLengthInBytes);
 
     /// <summary>
-    /// The maximum length of a Cask key in characters.
+    /// The maximum length of a Cask secret in characters.
     /// </summary>
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
 

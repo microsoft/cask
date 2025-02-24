@@ -194,10 +194,10 @@ public static class Cask
         ValidateTimestamp(now);
         ReadOnlySpan<char> chars = [
             Base64UrlChars[now.Year - 2024], // Years since 2024.
-                Base64UrlChars[now.Month - 1],   // Zero-indexed month.
-                Base64UrlChars[now.Day - 1],     // Zero-indexed day.
-                Base64UrlChars[now.Hour],        // Zero-indexed hour.
-            ];
+            Base64UrlChars[now.Month - 1],   // Zero-indexed month.
+            Base64UrlChars[now.Day - 1],     // Zero-indexed day.
+            Base64UrlChars[now.Hour],        // Zero-indexed hour.
+        ];
 
         bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
         Debug.Assert(bytesWritten == 3);
@@ -207,10 +207,10 @@ public static class Cask
 
         chars = [
             Base64UrlChars[now.Minute],    // Zero-indexed minute.
-                expiryChars[0],
-                expiryChars[1],
-                expiryChars[2],
-            ];
+            expiryChars[0],
+            expiryChars[1],
+            expiryChars[2],
+        ];
 
         bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);
         Debug.Assert(bytesWritten == 3);

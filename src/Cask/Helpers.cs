@@ -53,15 +53,6 @@ internal static class Helpers
         return keyLengthInBytes;
     }
 
-    public static int GetHashLengthInBytes(int secretSizeInBytes)
-    {
-        int hashLengthInBytes = PaddedHmacSha256SizeInBytes + secretSizeInBytes;
-        Debug.Assert(Is3ByteAligned(secretSizeInBytes));
-        Debug.Assert(Is3ByteAligned(hashLengthInBytes));
-        return hashLengthInBytes;
-    }
-
-
     public static SensitiveDataSize CharToSensitiveDataSize(char sensitiveDataSizeChar)
     {
         return (SensitiveDataSize)(sensitiveDataSizeChar - 'A'); ;
