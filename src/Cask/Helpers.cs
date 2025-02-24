@@ -176,15 +176,6 @@ internal static class Helpers
         return (value + multiple - 1) / multiple * multiple;
     }
 
-    public static void ThrowIfNotInitialized<T>(T value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        where T : struct, IIsInitialized
-    {
-        if (!value.IsInitialized)
-        {
-            ThrowArgumentNotInitialized(paramName);
-        }
-    }
-
     public static void ThrowIfDestinationTooSmall<T>(Span<T> destination, int requiredSize, [CallerArgumentExpression(nameof(destination))] string? paramName = null)
     {
         if (destination.Length < requiredSize)
@@ -193,27 +184,6 @@ internal static class Helpers
         }
     }
 
-    public static void ThrowIfEmpty<T>(ReadOnlySpan<T> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (value.IsEmpty)
-        {
-            ThrowEmpty(paramName);
-        }
-    }
-
-    public static void ThrowIfEmpty<T>(Span<T> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        if (value.IsEmpty)
-        {
-            ThrowEmpty(paramName);
-        }
-    }
-
-    [DoesNotReturn]
-    private static void ThrowArgumentNotInitialized(string? paramName)
-    {
-        throw new ArgumentException("Value cannot be the default uninitialized struct value.", paramName);
-    }
 
     [DoesNotReturn]
     public static void ThrowOperationOnUninitializedInstance()
@@ -225,24 +195,6 @@ internal static class Helpers
     private static void ThrowDestinationTooSmall(string? paramName)
     {
         throw new ArgumentException("Destination buffer is too small.", paramName);
-    }
-
-    [DoesNotReturn]
-    private static void ThrowEmpty(string? paramName)
-    {
-        throw new ArgumentException("Value cannot be empty.", paramName);
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotPrimary(string? paramName)
-    {
-        throw new ArgumentException("Key is not a primary key.", paramName);
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotHash(string? paramName)
-    {
-        throw new ArgumentException("Key is not a hash.", paramName);
     }
 }
 

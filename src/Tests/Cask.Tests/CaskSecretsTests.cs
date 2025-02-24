@@ -66,7 +66,7 @@ public abstract class CaskTestsBase
 
         IsCaskVerifySuccess(encodedKey);
 
-        byte[] keyBytes = Base64Url.DecodeFromUtf8(Encoding.UTF8.GetBytes(encodedKey));
+        byte[] keyBytes = Base64Url.DecodeFromChars(encodedKey.AsSpan());
 
         string encodedSignature = encodedKey[44..48];
         Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[33..36];
