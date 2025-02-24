@@ -119,14 +119,6 @@ namespace Polyfill
             }
         }
 
-        public static void ThrowIfNullOrEmpty([NotNull] string? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
-        {
-            if (string.IsNullOrEmpty(argument))
-            {
-                ThrowNullOrEmpty(argument, paramName);
-            }
-        }
-
         public static void ThrowIfGreaterThan(int value, int max, [CallerArgumentExpression(nameof(value))] string? paramName = null)
         {
             if (value > max)
@@ -160,26 +152,6 @@ namespace Polyfill
         {
             throw new ArgumentOutOfRangeException(paramName, value, $"Value must be greater than or equal to {min}.");
         }
-
-        [DoesNotReturn]
-        private static void ThrowNullOrEmpty(string? argument, string? paramName)
-        {
-            ThrowIfNull(argument, paramName);
-            throw new ArgumentException("Value cannot be empty.", paramName);
-        }
-    }
-
-    internal static class Convert
-    {
-        public static string ToBase64String(ReadOnlySpan<byte> bytes)
-        {
-            return Bcl_Convert.ToBase64String(bytes.ToArray());
-        }
-
-        public static byte[] FromBase64String(string base64)
-        {
-            return Bcl_Convert.FromBase64String(base64);
-        }
     }
 
     internal static class RandomNumberGenerator
@@ -198,71 +170,6 @@ namespace Polyfill
             byte[] bytes = new byte[buffer.Length];
             s_rng.GetBytes(bytes);
             bytes.CopyTo(buffer);
-        }
-    }
-
-    internal static class Hash
-    {
-        private const int StreamBufferSizeInBytes = 4096;
-
-        public static void Compute(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
-        {
-            if (data.Length > StreamBufferSizeInBytes)
-            {
-                ComputeWithStream(algorithm, data, destination);
-                return;
-            }
-
-            byte[] hash = algorithm.ComputeHash(data.ToArray(), 0, data.Length);
-            hash.CopyTo(destination);
-        }
-
-        private static unsafe void ComputeWithStream(HashAlgorithm algorithm, ReadOnlySpan<byte> data, Span<byte> destination)
-        {
-            byte[] hash;
-
-            fixed (byte* dataPtr = data)
-            {
-                using var stream = new UnmanagedMemoryStream(dataPtr, data.Length);
-                hash = algorithm.ComputeHash(stream);
-            }
-
-            hash.CopyTo(destination);
-        }
-    }
-
-    internal static class HMACSHA256
-    {
-        public const int HashSizeInBits = 256;
-        public const int HashSizeInBytes = HashSizeInBits / 8;
-
-        public static int HashData(ReadOnlySpan<byte> key, ReadOnlySpan<byte> source, Span<byte> destination)
-        {
-            ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
-            using var hmac = new Bcl_HMACSHA256(key.ToArray());
-            Hash.Compute(hmac, source, destination);
-            return HashSizeInBytes;
-        }
-    }
-
-    internal static class SHA256
-    {
-        public const int HashSizeInBits = 256;
-        public const int HashSizeInBytes = HashSizeInBits / 8;
-
-        public static int HashData(ReadOnlySpan<byte> source, Span<byte> destination)
-        {
-            ThrowIfDestinationTooSmall(destination, HashSizeInBytes);
-            using var sha = Bcl_SHA256.Create();
-            Hash.Compute(sha, source, destination);
-            return HashSizeInBytes;
-        }
-
-        public static byte[] HashData(ReadOnlySpan<byte> source)
-        {
-            byte[] hash = new byte[HashSizeInBytes];
-            HashData(source, hash);
-            return hash;
         }
     }
 }

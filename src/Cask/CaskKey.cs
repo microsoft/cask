@@ -48,7 +48,7 @@ public readonly partial record struct CaskKey : IIsInitialized
                 SensitiveDataSize.Bits384 => 48,
                 SensitiveDataSize.Bits512 => 64,
                 _ => ThrowUnrecognizedSensitiveDataSize(sensitiveDataSize),
-            }; 
+            };
         }
     }
 

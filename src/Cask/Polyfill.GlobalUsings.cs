@@ -5,10 +5,5 @@
 // only necessary when polyfilling static members of types that exist on .NET Framework.
 
 global using Polyfill;
-
 global using static Polyfill.ArgumentValidation;
-
-global using Convert = Polyfill.Convert;
-global using HMACSHA256 = Polyfill.HMACSHA256;
 global using RandomNumberGenerator = Polyfill.RandomNumberGenerator;
-global using SHA256 = Polyfill.SHA256;

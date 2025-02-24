@@ -83,11 +83,6 @@ internal static partial class InternalConstants
     public static int PaddedSecretEntropyInBytes { get; } = RoundUpTo3ByteAlignment(SecretEntropyInBytes);
 
     /// <summary>
-    /// The size of the HMAC-SHA256 hash after padding to 3-byte alignment.
-    /// </summary>
-    public static int PaddedHmacSha256SizeInBytes { get; } = RoundUpTo3ByteAlignment(HMACSHA256.HashSizeInBytes);
-
-    /// <summary>
     /// The maximum amount of bytes that the implementation will stackalloc.
     /// </summary>
     public const int MaxStackAlloc = 256;

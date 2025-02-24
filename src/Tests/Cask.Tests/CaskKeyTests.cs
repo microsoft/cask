@@ -127,7 +127,7 @@ public class CaskKeyTests
     public void CaskKey_DecodeBasic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "l",
+                                       providerKeyKind: "9",
                                        expiryInFiveMinuteIncrements: 5, // 25 minutes.
                                        providerData: "010101010101");
 
