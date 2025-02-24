@@ -292,7 +292,7 @@ public static class Cask
 
     private static void ValidateTimestamp(DateTimeOffset now)
     {
-        if (now.Year < 2024 || now.Year > 2087)
+        if (now.Year < 2025 || now.Year > 2088)
         {
             ThrowInvalidYear();
         }
@@ -343,7 +343,7 @@ public static class Cask
     [DoesNotReturn]
     private static void ThrowInvalidYear()
     {
-        throw new InvalidOperationException("CASK requires the current year to be between 2024 and 2087.");
+        throw new InvalidOperationException("CASK requires the current year to be between 2025 and 2088.");
     }
 
     internal static Mock MockUtcNow(UtcNowFunc getUtcNow)

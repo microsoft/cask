@@ -15,7 +15,7 @@
 <hmac> ::= 'H'
 <correlating-id> ::= <four-bits-prefixed-base64url> 21 * <base64url> ; 0000b prefix + 22-character correlating id (128 bits)
 <timestamp> ::= <year> <month> <day> <hour> <minute>; Timestamp components.
-<year> ::= <base64url> ; Represents the year, 'A' (2024) to '_' (2087)
+<year> ::= <base64url> ; Represents the year, 'A' (2025) to '_' (2088)
 <month> ::= 'A'..'L' ; For months January to December
 <day> ::= 'A'..'Z' | 'a'..'e' ; 'A' = day 1, 'B' = day 2, ... 'e' = day 31
 <hour> ::= 'A'..'X' ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
@@ -57,7 +57,7 @@
 |encodedKey[53]|'P'|CASK key kind, a primary key. |
 |encodedKey[54]|'A', 'Q', 'g', 'w'|The first character of the correlating id|
 |encodedKey[55..76]|'A'...'_'|The remaining 21 characters of the correlating id|
-|encodedKey[76]|'A'...'_'|Represents the year of allocation time, 'A' (2024) to '_' (2087)|
+|encodedKey[76]|'A'...'_'|Represents the year of allocation time, 'A' (2025) to '_' (2088)|
 |encodedKey[77|'A'...'L'|Represents the month of allocation time, 'A' (January) to 'L' (December)|
 |encodedKey[78]|'A'...'Z'\|'a'..'e'|Represents the day of allocation time, 'A' (0) to 'e' (31)|
 |encodedKey[79]|'A'...'X'|Represents the hour of allocation time, 'A' (hour 0 or midnight) to 'X' (hour 23).

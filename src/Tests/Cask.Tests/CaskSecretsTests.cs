@@ -35,8 +35,8 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData("Y7G_WqVrIxJ9y3kqLdX6OOhTwC1kTF0eWQidLckLqfEAJQQJTESTMPAlrkxagZHvE1rmbBnVwEHZBBRVnAAA_NG_", CaskKeyKind.PrimaryKey)]
-    [InlineData("V5ja_SGw4_eyqKw-mBfx8DlqjJfea4Qs5B6AR3HjlgwAJQQJTESTMPCK8K_4JYG3ppYTmdnSS4TcBBQXDAAA_NG_", CaskKeyKind.PrimaryKey, "CK8K_4JYG3ppYTmdnSS4Tc")]
+    [InlineData("Y7G_WqVrIxJ9y3kqLdX6OOhTwC1kTF0eWQidLckLqfEAQJJQTESTMPAlrkxagZHvE1rmbBnVwEHZBBRVnAAA_NG_", CaskKeyKind.PrimaryKey)]
+    [InlineData("V5ja_SGw4_eyqKw-mBfx8DlqjJfea4Qs5B6AR3HjlgwAQJJQTESTMPCK8K_4JYG3ppYTmdnSS4TcBBQXDAAA_NG_", CaskKeyKind.PrimaryKey, "CK8K_4JYG3ppYTmdnSS4Tc")]
     public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, CaskKeyKind expectedKeyKind, string expectedC2Id = "")
     {
         TestEncodedMatchedDecoded(encodedKey, expectedKeyKind, expectedC2Id);
@@ -138,7 +138,7 @@ public abstract class CaskTestsBase
                                       expiryInFiveMinuteIncrements: 12 * 6, // 6 hours.
                                       providerData: "-__-");
         Span<char> keyChars = key.ToCharArray().AsSpan();
-        Span<char> caskSignatureBytes = "JQQJ".ToCharArray().AsSpan();
+        Span<char> caskSignatureBytes = "QJJQ".ToCharArray().AsSpan();
 
         bool valid;
 
@@ -336,16 +336,16 @@ public abstract class CaskTestsBase
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
-        Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAJQQJTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
+        Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQJJQTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
     }
 
     [Theory]
-    [InlineData(2023), InlineData(2088)]
+    [InlineData(2024), InlineData(2089)]
     public void CaskSecrets_GenerateKey_InvalidTimestamps(int invalidYear)
     {
-        // The CASK standard timestamp is only valid from 2024 - 2087
-        // (where the base64-encoded character 'A' indicates 2024, and
-        // the last valid base64 character '_' indicates 2087.
+        // The CASK standard timestamp is only valid from 2025 - 2088
+        // (where the base64-encoded character 'A' indicates 2025, and
+        // the last valid base64 character '_' indicates 2088.
 
         // It is unnecessary to test every month since the code is dirt simple
         // and correctly only checks the year.
@@ -358,14 +358,14 @@ public abstract class CaskTestsBase
                                    expiryInFiveMinuteIncrements: 1, // Five minutes.
                                    providerData: "ABCD"));
 
-        Assert.Contains("2087", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("2088", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
     public void CaskSecrets_GenerateKey_ValidTimestamps()
     {
-        // Every year from 2024 - 2087 should produce a valid key. We trust that
-        // the CASK standard will be long dead by 2087 or perhaps simply all or
+        // Every year from 2025 - 2088 should produce a valid key. We trust that
+        // the CASK standard will be long dead by 2088 or perhaps simply all or
         // most programmers will be.
         for (int year = 0; year < 64; year++)
         {
