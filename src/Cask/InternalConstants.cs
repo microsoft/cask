@@ -14,19 +14,19 @@ namespace CommonAnnotatedSecurityKeys;
 internal static partial class InternalConstants
 {
     /// <summary>
-    /// The base64-encoded CASK signature "JQQJ" in UTF-16.)
+    /// The base64-encoded CASK signature "QJJQ" in UTF-16.)
     /// </summary>
-    public static ReadOnlySpan<char> CaskSignature => "JQQJ".AsSpan();
+    public static ReadOnlySpan<char> CaskSignature => "QJJQ".AsSpan();
 
     /// <summary>
-    /// The base64-encoded CASK signature "JQQJ" in UTF-8.
+    /// The base64-encoded CASK signature "QJJQ" in UTF-8.
     /// </summary>
-    public static ReadOnlySpan<byte> CaskSignatureUtf8 => "JQQJ"u8;
+    public static ReadOnlySpan<byte> CaskSignatureUtf8 => "QJJQ"u8;
 
     /// <summary>
-    /// The base64-decoded CASK signature "JQQJ" in bytes.
+    /// The base64-decoded CASK signature "QJJQ" in bytes.
     /// </summary>
-    public static ReadOnlySpan<byte> CaskSignatureBytes => [0x25, 0x04, 0x09];
+    public static ReadOnlySpan<byte> CaskSignatureBytes => [0x40, 0x92, 0x50];
 
     /// <summary>
     /// The number of bytes in a CASK signature

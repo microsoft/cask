@@ -33,7 +33,7 @@ public static class Cask
             return false;
         }
 
-        // Check for CASK signature, "JQQJ".
+        // Check for CASK signature, "QJJQ".
         if (!key[CaskSignatureCharRange].SequenceEqual(CaskSignature))
         {
             return false;
@@ -73,7 +73,7 @@ public static class Cask
             return false;
         }
 
-        // Check for CASK signature, "JQQJ" UTF-8 encoded.
+        // Check for CASK signature, "QJJQ" UTF-8 encoded.
         if (!keyUtf8[CaskSignatureCharRange].SequenceEqual(CaskSignatureUtf8))
         {
             return false;
@@ -119,7 +119,7 @@ public static class Cask
             return false;
         }
 
-        // Check for CASK signature. "JQQJ" base64-decoded.
+        // Check for CASK signature. "QJJQ" base64-decoded.
         if (!keyBytes[CaskSignatureByteRange].SequenceEqual(CaskSignatureBytes))
         {
             return false;
