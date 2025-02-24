@@ -47,8 +47,8 @@ public readonly partial record struct CaskKey : IIsInitialized
                 SensitiveDataSize.Bits256 => 32,
                 SensitiveDataSize.Bits384 => 48,
                 SensitiveDataSize.Bits512 => 64,
-                _ => throw new InvalidOperationException($"Unexpected sensitive data size: {sensitiveDataSize}."),
-            };
+                _ => ThrowUnrecognizedSensitiveDataSize(sensitiveDataSize),
+            }; 
         }
     }
 
@@ -198,5 +198,11 @@ public readonly partial record struct CaskKey : IIsInitialized
     private static void ThrowFormat()
     {
         throw new FormatException("Input is not a valid Cask key.");
+    }
+
+    [DoesNotReturn]
+    private static int ThrowUnrecognizedSensitiveDataSize(SensitiveDataSize sensitiveDataSize)
+    {
+        throw new InvalidOperationException($"Unexpected sensitive data size: {sensitiveDataSize}.");
     }
 }

@@ -3,6 +3,7 @@
 
 global using static CommonAnnotatedSecurityKeys.Helpers;
 
+using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -80,14 +81,38 @@ internal static class Helpers
 
     public static byte ProviderKindToByte(string providerKind)
     {
-        int index = Base64UrlChars.IndexOf(providerKind, StringComparison.Ordinal);
+        Debug.Assert(providerKind?.Length == 1, "Provider kind should be a single character.");
 
-        if (index == -1)
+        int base64Index;
+
+        const int uppercaseZIndex = 25; // 'Z' - 'A';
+        const int lowercaseZIndex = 51; // 'z' - 'a';
+
+
+        char providerKindChar = providerKind[0];
+        if (providerKindChar >= 'A' && providerKindChar <= 'Z')
         {
-            throw new ArgumentException($"Character '{providerKind}' is not a valid URL-safe base64 character.", nameof(providerKind));
+            base64Index = providerKindChar - 'A';
+        } 
+        else if (providerKindChar >= 'a' && providerKindChar <= 'z')
+        {
+            base64Index = providerKindChar - 'a' + uppercaseZIndex;
+        }
+        else if (providerKindChar >= '0' && providerKindChar <= '9')
+        {
+            base64Index = providerKindChar - '0' + lowercaseZIndex;
+        }
+        else if (providerKindChar == '-')
+        {
+            base64Index = 62;
+        }
+        else
+        {
+            Debug.Assert(providerKindChar == '_', "Provider kind should be a valid Base64Url char.");
+            base64Index = 63;
         }
 
-        return (byte)(index << ProviderKindReservedBits);
+        return (byte)(base64Index << ProviderKindReservedBits);
     }
 
     /// <summary>
