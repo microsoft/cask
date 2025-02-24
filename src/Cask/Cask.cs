@@ -113,7 +113,7 @@ public static class Cask
             return false;
         }
 
-        // We have not yet implemented a key or HMAC that exceeds 256 bits in size.
+        // We have not yet implemented a key that exceeds 256 bits in size.
         if (!TryByteToSensitiveDataSize(keyBytes[SensitiveDataSizeByteIndex], out SensitiveDataSize size) || size is not SensitiveDataSize.Bits256)
         {
             return false;
@@ -292,8 +292,10 @@ public static class Cask
 
     private static void ValidateTimestamp(DateTimeOffset now)
     {
-        ThrowIfLessThan(now.Year, 2024);
-        ThrowIfGreaterThan(now.Year, 2087);
+        if (now.Year < 2024 || now.Year > 2087)
+        {
+            ThrowInvalidYear();
+        }
     }
 
     private static void ValidateProviderData(string providerData)

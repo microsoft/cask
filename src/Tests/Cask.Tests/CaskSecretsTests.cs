@@ -352,17 +352,13 @@ public abstract class CaskTestsBase
         using Mock mock = Cask.MockUtcNow(
             () => new DateTimeOffset(invalidYear, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        Exception ex = Assert.Throws<ArgumentOutOfRangeException>(
+        Exception ex = Assert.Throws<InvalidOperationException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
                                    providerKeyKind: "y",
                                    expiryInFiveMinuteIncrements: 1, // Five minutes.
                                    providerData: "ABCD"));
 
-        string containsText = invalidYear > 2087
-            ? "must be less"
-            : "must be greater";
-
-        Assert.Contains(containsText, ex.Message, StringComparison.Ordinal);
+        Assert.Contains("2087", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

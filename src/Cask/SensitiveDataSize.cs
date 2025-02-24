@@ -7,9 +7,7 @@ namespace CommonAnnotatedSecurityKeys;
 /// The CASK-specific, general key kind. This kind value is distinct
 /// from the separate, provider-specific, provider-defined key kind.
 /// </summary>
-#pragma warning disable CA1028 // Enum Storage should be Int32
-public enum SensitiveDataSize : byte
-#pragma warning restore CA1028 // Enum Storage should be Int32
+public enum SensitiveDataSize 
 {
     /// <summary>
     /// Specifies a computed value with 256 bits of data
