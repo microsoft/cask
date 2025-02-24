@@ -84,7 +84,7 @@ internal static class Helpers
         if (providerKindChar >= 'A' && providerKindChar <= 'Z')
         {
             base64Index = providerKindChar - 'A';
-        } 
+        }
         else if (providerKindChar >= 'a' && providerKindChar <= 'z')
         {
             base64Index = providerKindChar - 'a' + uppercaseZIndex;

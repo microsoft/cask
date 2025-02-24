@@ -252,7 +252,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind:"-",
+                                      providerKeyKind: "-",
                                       expiryInFiveMinuteIncrements: 262143, // 910 days, the maximal expiry.
                                       providerData: null);
         key = '?' + key[1..];
@@ -389,7 +389,7 @@ public abstract class CaskTestsBase
             string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}{b[minute]}";
             string actual = key[TimestampCharRange];
             Assert.True(expected == actual, $"Expected key '{key}' to have encoded timestamp '{expected}' representing '{timestamp}' but found '{actual}'.");
-            
+
             Span<byte> expiryBytes = BitConverter.IsLittleEndian
                 ? BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[..3]
                 : BitConverter.GetBytes(expiryInFiveMinuteIncrements).AsSpan()[1..];
@@ -416,7 +416,7 @@ public abstract class CaskTestsBase
 
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
         Assert.True(Cask.IsCaskBytes(keyBytes), $"'IsCask(byte[])' failed for: {key}'.");
-   }
+    }
 
     private void IsCaskVerifyFailure(string key)
     {

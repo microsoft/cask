@@ -7,7 +7,7 @@ namespace CommonAnnotatedSecurityKeys;
 /// The CASK-specific, general key kind. This kind value is distinct
 /// from the separate, provider-specific, provider-defined key kind.
 /// </summary>
-public enum SensitiveDataSize 
+public enum SensitiveDataSize
 {
     /// <summary>
     /// Specifies a computed value with 256 bits of data

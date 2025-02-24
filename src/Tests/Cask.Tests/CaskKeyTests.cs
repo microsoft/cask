@@ -153,7 +153,7 @@ public class CaskKeyTests
 
         const int caskSignatureByteIndex = 33;
         Assert.Equal(0x25, decoded[caskSignatureByteIndex]);
-        
+
         // Break the key by invaliding the CASK signature.
         decoded[caskSignatureByteIndex] = (byte)'X';
 
