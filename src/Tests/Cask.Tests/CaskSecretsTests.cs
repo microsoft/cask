@@ -3,8 +3,6 @@
 
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
 
 using Xunit;
 
