@@ -193,7 +193,7 @@ public static class Cask
         DateTimeOffset now = GetUtcNow();
         ValidateTimestamp(now);
         ReadOnlySpan<char> chars = [
-            Base64UrlChars[now.Year - 2024], // Years since 2024.
+            Base64UrlChars[now.Year - 2025], // Years since 2025.
             Base64UrlChars[now.Month - 1],   // Zero-indexed month.
             Base64UrlChars[now.Day - 1],     // Zero-indexed day.
             Base64UrlChars[now.Hour],        // Zero-indexed hour.

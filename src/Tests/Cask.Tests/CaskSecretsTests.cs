@@ -333,7 +333,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateKey_DeterministicUsingMocks()
     {
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(1));
-        using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
         Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQJJQTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
@@ -374,7 +374,7 @@ public abstract class CaskTestsBase
             int hour = year % 24;
             int minute = year % 60;
 
-            var timestamp = new DateTimeOffset(2024 + year, 1 + month, 1 + day, hour, minute, second: 0, TimeSpan.Zero);
+            var timestamp = new DateTimeOffset(2025 + year, 1 + month, 1 + day, hour, minute, second: 0, TimeSpan.Zero);
             using Mock mock = Cask.MockUtcNow(() => timestamp);
 
             int expiryInFiveMinuteIncrements = 12 * 24 * 180; // 6 months.

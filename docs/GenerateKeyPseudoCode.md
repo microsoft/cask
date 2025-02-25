@@ -43,7 +43,7 @@
 1. Generate 128 bits of cryptographically secure random data and store the result in the next 16 bytes.
 1. Let T = current date and time in UTC.
 1. Encode T in 4 characters, YMDH:
-    - Y = base64url-encoding of (Year - 2024).
+    - Y = base64url-encoding of (Year - 2025).
     - M = base64url-encoding of zero-based month.
     - D = base64url-encoding of zero-based hour.
     - H = base64url-encoding of zero-based day.
