@@ -107,16 +107,13 @@ public readonly partial record struct CaskKey : IIsInitialized
 
     public static bool TryEncode(ReadOnlySpan<byte> bytes, out CaskKey key)
     {
-        key = default;
-
-
         if (!Cask.IsCaskBytes(bytes))
         {
+            key = default;
             return false;
         }
 
         key = new CaskKey(Base64Url.EncodeToString(bytes));
-
         return true;
     }
 
