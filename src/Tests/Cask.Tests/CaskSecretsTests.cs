@@ -3,6 +3,7 @@
 
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 using Xunit;
@@ -27,7 +28,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "M",
+                                      providerKeyKind: 'M',
                                       expiryInFiveMinuteIncrements: 12 * 24, // 1 day.
                                       providerData: "_NG_");
 
@@ -46,7 +47,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "B",
+                                      providerKeyKind: 'B',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
                                       providerData: "----");
         TestEncodedMatchedDecoded(key, CaskKeyKind.PrimaryKey);
@@ -134,7 +135,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "G",
+                                      providerKeyKind: 'G',
                                       expiryInFiveMinuteIncrements: 12 * 6, // 6 hours.
                                       providerData: "-__-");
         Span<char> keyChars = key.ToCharArray().AsSpan();
@@ -167,7 +168,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "_",
+                                      providerKeyKind: '_',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
                                       providerData: "oOOo");
 
@@ -188,7 +189,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskKind()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "F",
+                                      providerKeyKind: 'F',
                                       expiryInFiveMinuteIncrements: 2, // 10 minutes.
                                       providerData: "OooOOooOOooO");
 
@@ -205,30 +206,27 @@ public abstract class CaskTestsBase
     }
 
     [Fact]
-    public void CaskSecrets_IsCask_InvalidKey_InvalidProviderKindLength()
-    {
-        Assert.Throws<ArgumentException>(
-            () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "TOOLONG",
-                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
-                                   providerData: "OooOOooOOooO"));
-    }
-
-    [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidForBase64ProviderKind()
     {
-        Assert.Throws<ArgumentException>(
-            () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "?",
-                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
-                                   providerData: null));
+        for (int i = 0; i < 256; i++)
+        {
+            char providerKeyKind = (char)i;
+
+            if (IsValidForBase64Url(providerKeyKind)) { continue; }
+
+            Assert.Throws<ArgumentException>(
+                () => Cask.GenerateKey("TEST",
+                                       providerKeyKind,
+                                       expiryInFiveMinuteIncrements: 2, // 10 minutes.
+                                       providerData: null));
+        }
     }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "X",
+                                      providerKeyKind: 'X',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
                                       providerData: "UNALIGN_") + "-";
         bool valid = Cask.IsCask(key);
@@ -241,9 +239,9 @@ public abstract class CaskTestsBase
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
         string key = $"    {Cask.GenerateKey("TEST",
-                            "X",
-                            expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
-                            providerData: null)[4..]}";
+                                             'X',
+                                             expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
+                                             providerData: null)[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
     }
@@ -252,7 +250,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "-",
+                                      providerKeyKind: '-',
                                       expiryInFiveMinuteIncrements: 262143, // 910 days, the maximal expiry.
                                       providerData: null);
         key = '?' + key[1..];
@@ -269,7 +267,7 @@ public abstract class CaskTestsBase
     {
         Assert.Throws<ArgumentOutOfRangeException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
-                                   providerKeyKind: "-",
+                                   providerKeyKind: '-',
                                    expiryInFiveMinuteIncrements,
                                    providerData: null));
     }
@@ -278,7 +276,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateKey_Basic()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "Q",
+                                      providerKeyKind: 'Q',
                                       expiryInFiveMinuteIncrements: 0, // No expiry specified.
                                       providerData: "ABCD");
 
@@ -297,7 +295,7 @@ public abstract class CaskTestsBase
     [InlineData("    ")]  // Whitespace.
     public void CaskSecrets_GenerateKey_InvalidProviderSignature(string? providerSignature)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A", 0, providerData: null));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, 'A', 0, providerData: null));
         Assert.IsType(providerSignature == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerSignature), ex.ParamName);
     }
@@ -310,7 +308,7 @@ public abstract class CaskTestsBase
     [InlineData("THIS_IS_TOO_MUCH_PROVIDER_DATA_SERIOUSLY_IT_IS_VERY_VERY_LONG_AND_THAT_IS_NOT_OKAY")]
     public void CaskSecrets_GenerateKey_InvalidProviderData(string providerData)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", 0, providerData));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", 'X', 0, providerData));
         Assert.IsType(providerData == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerData), ex.ParamName);
     }
@@ -323,8 +321,8 @@ public abstract class CaskTestsBase
         // RNG that left all the entropy bytes zeroed out, so at least cover that
         // in the meantime. :)
 
-        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
-        string key2 = Cask.GenerateKey("TEST", "M", 0, "ABCD");
+        string key = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
+        string key2 = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
@@ -335,7 +333,7 @@ public abstract class CaskTestsBase
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(1));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
+        string key = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
         Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQJJQTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
     }
 
@@ -354,7 +352,7 @@ public abstract class CaskTestsBase
 
         Exception ex = Assert.Throws<InvalidOperationException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
-                                   providerKeyKind: "y",
+                                   providerKeyKind: 'y',
                                    expiryInFiveMinuteIncrements: 1, // Five minutes.
                                    providerData: "ABCD"));
 
@@ -380,7 +378,7 @@ public abstract class CaskTestsBase
             int expiryInFiveMinuteIncrements = 12 * 24 * 180; // 6 months.
 
             string key = Cask.GenerateKey(providerSignature: "TEST",
-                                          providerKeyKind: "Z",
+                                          providerKeyKind: 'Z',
                                           expiryInFiveMinuteIncrements,
                                           providerData: "ABCD");
             IsCaskVerifySuccess(key);
@@ -445,5 +443,26 @@ public abstract class CaskTestsBase
         {
             Assert.Throws<FormatException>(() => Cask.IsCaskBytes(keyBytes!));
         }
+    }
+
+    private static bool IsValidForBase64Url(char c)
+    {
+        if (c > 0x7F)
+        {
+            return false; // Non-ASCII char
+        }
+
+        if ((c >= '0' && c <= '9') || c == '-' || c == '_')
+        {
+            return true;
+        }
+
+        c |= (char)0x20; // Convert to lowercase
+        if (c >= 'a' && c <= 'z')
+        {
+            return true;
+        }
+
+        return false;
     }
 }

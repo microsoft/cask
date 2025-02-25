@@ -19,7 +19,7 @@ public class CSharpCaskTests : CaskTestsBase
     private sealed class Implementation : ICask
     {
         public string GenerateKey(string providerSignature,
-                                  string providerKind = "A",
+                                  char providerKind,
                                   int expiryInFiveMinuteIncrements = 0,
                                   string? reserved = null)
         {

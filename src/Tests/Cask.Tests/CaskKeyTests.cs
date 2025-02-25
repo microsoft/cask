@@ -24,7 +24,7 @@ public class CaskKeyTests
     public void CaskKey_KindIsPrimaryKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "_",
+                                       providerKeyKind: '_',
                                        expiryInFiveMinuteIncrements: 12 * 2, // 2 hours.
                                        providerData: "AaaA");
 
@@ -49,7 +49,7 @@ public class CaskKeyTests
         providerData ??= string.Empty;
 
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "O",
+                                       providerKeyKind: 'O',
                                        expiryInFiveMinuteIncrements: 0, // No expiry.
                                        providerData);
 
@@ -70,7 +70,7 @@ public class CaskKeyTests
     public void CaskKey_SensitiveDataSizeInBytes()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "_",
+                                       providerKeyKind: '_',
                                        expiryInFiveMinuteIncrements: (1 << 18) - 1, // 18-bit max value.
                                        providerData: "aBBa");
 
@@ -104,7 +104,7 @@ public class CaskKeyTests
     public void CaskKey_CreateOverloadsAreEquivalent()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "J",
+                                       providerKeyKind: 'J',
                                        expiryInFiveMinuteIncrements: 12 * 72, // 3 days.
                                        providerData: "MSFT");
 
@@ -127,7 +127,7 @@ public class CaskKeyTests
     public void CaskKey_DecodeBasic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "9",
+                                       providerKeyKind: '9',
                                        expiryInFiveMinuteIncrements: 5, // 25 minutes.
                                        providerData: "010101010101");
 
@@ -144,7 +144,7 @@ public class CaskKeyTests
     public void CaskKey_TryEncodeInvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "l",
+                                       providerKeyKind: 'l',
                                        expiryInFiveMinuteIncrements: 5, // 25 minutes.
                                        providerData: "010101010101");
 
@@ -165,7 +165,7 @@ public class CaskKeyTests
     public void CaskKey_TryEncodeBasic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "J",
+                                       providerKeyKind: 'J',
                                        expiryInFiveMinuteIncrements: 0, // 3 days.
                                        providerData: null);
 
@@ -181,7 +181,7 @@ public class CaskKeyTests
     public void CaskKey_CreateOverloadsThrowOnInvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "R",
+                                       providerKeyKind: 'R',
                                        expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
                                        providerData: "ROSS");
 
