@@ -3,14 +3,12 @@
 
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 using Xunit;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public class CaskKeyTests
 {
     [Fact]
@@ -141,7 +139,34 @@ public class CaskKeyTests
     }
 
     [Fact]
-    public void CaskKey_TryEncodeInvalidKey()
+    public void CaskKey_Encode_InvalidKey()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: 'l',
+                                       expiryInFiveMinuteIncrements: 5, // 25 minutes.
+                                       providerData: "010101010101");
+
+        byte[] decoded = new byte[key.SizeInBytes];
+        byte[] tooSmall = new byte[key.SizeInBytes - 1];
+
+        Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
+        Array.Copy(decoded, tooSmall, tooSmall.Length);
+
+        // Break the key by creating an invalid length for decoding.
+        Assert.Throws<FormatException>(() => CaskKey.Encode(tooSmall));
+
+        decoded = new byte[key.SizeInBytes];
+        const int caskSignatureByteIndex = 33;
+        Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
+        Assert.Equal(0x40, decoded[caskSignatureByteIndex]);
+
+        // Break the key by invalidating the CASK signature.
+        decoded[caskSignatureByteIndex] = (byte)'X';
+        Assert.Throws<FormatException>(() => CaskKey.Encode(decoded));
+    }
+
+    [Fact]
+    public void CaskKey_TryEncode_InvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'l',
@@ -151,18 +176,73 @@ public class CaskKeyTests
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
         Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
 
+        // Break the key by creating an invalid length for decoding.
+        bool succeeded = CaskKey.TryEncode(decoded[1..], out CaskKey newCaskKey);
+        Assert.False(succeeded);
+
         const int caskSignatureByteIndex = 33;
         Assert.Equal(0x40, decoded[caskSignatureByteIndex]);
 
-        // Break the key by invaliding the CASK signature.
+        // Break the key by invalidating the CASK signature.
         decoded[caskSignatureByteIndex] = (byte)'X';
 
-        bool succeeded = CaskKey.TryEncode(decoded, out CaskKey newCaskKey);
+        succeeded = CaskKey.TryEncode(decoded, out newCaskKey);
         Assert.False(succeeded);
     }
 
+
     [Fact]
-    public void CaskKey_TryEncodeBasic()
+    public void CaskKey_TryEncode_InvalidCaskKeyKind()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: '4',
+                                       expiryInFiveMinuteIncrements: 50, // 250 minutes.
+                                       providerData: "l33t");
+
+        Span<byte> decoded = stackalloc byte[key.SizeInBytes];
+        Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
+
+        const int caskKindByteIndex = 40;
+        const int caskKindReservedBits = 4;
+        const int caskKindMask = (1 << caskKindReservedBits) - 1;
+
+        for (byte i = byte.MinValue; i < byte.MaxValue; i++)
+        {
+            // This operation ensures that every possible byte
+            // value is populated and tested in encoding.
+            decoded[caskKindByteIndex] = i;
+
+            // Only the most significant 4 bits are valid to store key kind.
+            int iMasked = i & ~caskKindMask;
+
+            // Right-shifting by 4 bits gives us the literal key kind enum value;
+            var current = (CaskKeyKind)(iMasked >> caskKindReservedBits);
+
+            bool succeeded = CaskKey.TryEncode(decoded, out CaskKey newCaskKey);
+
+            // To test our API behavior, we first need to ensure that no bits
+            // were masked away from the input byte. This would indicate someone
+            // stepped on reserved padding, resulting in an invalid key. Next,
+            // we ensure that any bits stored in the proper place but which are
+            // not valid defined key kinds are also invalid.
+            bool isValidEncodedByte =
+                iMasked == i &&
+                current is CaskKeyKind.PrimaryKey or
+                           CaskKeyKind.DerivedKey or
+                           CaskKeyKind.HMAC;
+
+            if (isValidEncodedByte)
+            { 
+                Assert.True(succeeded, $"Valid CaskKeyKind '{current}' failed 'CaskKey.TryEncode'");
+                continue;
+            }
+
+            Assert.False(succeeded, $"Invalid CaskKeyKind value '{current}' passed 'CaskKey.TryEncode' check");
+        }
+    }
+
+    [Fact]
+    public void CaskKey_TryEncode_Basic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'J',
@@ -178,7 +258,7 @@ public class CaskKeyTests
     }
 
     [Fact]
-    public void CaskKey_CreateOverloadsThrowOnInvalidKey()
+    public void CaskKey_CreateOverloads_ThrowOnInvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'R',
@@ -196,5 +276,20 @@ public class CaskKeyTests
         Assert.Throws<FormatException>(() => CaskKey.Create(invalidKeyText));
         Assert.Throws<FormatException>(() => CaskKey.Create(invalidKeyText.AsSpan()));
         Assert.Throws<FormatException>(() => CaskKey.CreateUtf8(invalidKeyUtf8Bytes));
+    }
+
+    [Fact]
+    public void CaskKey_Decode_DestinationTooSmall()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: 'W',
+                                       expiryInFiveMinuteIncrements: 12 * 24 * 365 * 2, // 2 years.
+                                       providerData: "WOLL");
+
+        byte[] destination = new byte[key.SizeInBytes];
+        key.Decode(destination);
+
+        destination = new byte[key.SizeInBytes - 1];
+        Assert.Throws<ArgumentException>(() => key.Decode(destination));
     }
 }

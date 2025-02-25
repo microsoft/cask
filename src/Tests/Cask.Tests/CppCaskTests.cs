@@ -32,8 +32,6 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 //      To enable them, flip the return value of IsSupportedTestClass in
 //      TestFilter.cs.
 
-
-[ExcludeFromCodeCoverage]
 public class CppCaskTests : CaskTestsBase
 {
     public CppCaskTests() : base(new Implementation())

@@ -11,8 +11,6 @@ using static CommonAnnotatedSecurityKeys.InternalConstants;
 using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
-
-[ExcludeFromCodeCoverage]
 public abstract class CaskTestsBase
 {
     protected CaskTestsBase(ICask cask)
@@ -182,6 +180,34 @@ public abstract class CaskTestsBase
         IsCaskVerifyFailure(key);
     }
 
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_ProviderKeyKind()
+    {
+        for (char providerKeyKind = char.MinValue; providerKeyKind < char.MaxValue; providerKeyKind++)
+        {
+            if (IsValidForBase64Url(providerKeyKind))
+            {
+                string key = Cask.GenerateKey("TEST",
+                                              providerKeyKind,
+                                              expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                              providerData: "oOOo");
+
+                IsCaskVerifySuccess(key);
+
+                Span<char> invalidKeyChars = key.ToCharArray();
+                invalidKeyChars[ProviderKindCharIndex] = '=';
+                
+                IsCaskVerifyFailure(invalidKeyChars.ToString());
+
+                continue;
+            }
+
+            Assert.Throws<ArgumentException>(() => Cask.GenerateKey("TEST",
+                                                                    providerKeyKind,
+                                                                    expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                                                    providerData: "oOOo"));
+        }
+    }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskKind()
