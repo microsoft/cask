@@ -35,7 +35,7 @@
 
 1. Generate 256 bits of cryptographically secure random data. Store the result at the beginning of the generated key.
 1. Write sensitive data size to next byte, e.g., 0 to indicate 256-bits.
-1. Write CASK signature [0x25, 0x04, 0x09] ("JQQJ", base64-decoded) to the next 3 bytes.
+1. Write CASK signature [0x40, 0x92, 0x50] ("QJJQ", base64-decoded) to the next 3 bytes.
 1. Base64url-decode provider signature and store the result in the next 3 bytes.
 1. Write 0x00 to the next byte to indicate a CASK primary key kind.
 1. Left-shift the provider key kind by 2 bits and store the result in the next byte.

@@ -152,7 +152,7 @@ public class CaskKeyTests
         Base64Url.DecodeFromChars(key.ToString().AsSpan(), decoded);
 
         const int caskSignatureByteIndex = 33;
-        Assert.Equal(0x25, decoded[caskSignatureByteIndex]);
+        Assert.Equal(0x40, decoded[caskSignatureByteIndex]);
 
         // Break the key by invaliding the CASK signature.
         decoded[caskSignatureByteIndex] = (byte)'X';
