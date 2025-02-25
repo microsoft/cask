@@ -220,9 +220,9 @@ public static class Cask
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
     }
 
-    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
+    private static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
     {
-        ThrowIfDestinationTooSmall(destination, 3);
+        Debug.Assert(destination.Length == 3);
         ValidateExpiry(expiryInFiveMinuteIncrements);
 
         Span<char> expiryChars = stackalloc char[4];

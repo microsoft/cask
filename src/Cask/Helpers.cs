@@ -59,7 +59,7 @@ internal static class Helpers
 
     public static CaskKeyKind CharToKind(char kindChar)
     {
-        Debug.Assert(kindChar == 'P' || kindChar == 'H',
+        Debug.Assert(kindChar == 'D' || kindChar == 'H' || kindChar == 'P',
                      "This is only meant to be called using the kind char of a known valid key.");
         return (CaskKeyKind)(kindChar - 'A');
     }
@@ -130,7 +130,7 @@ internal static class Helpers
         }
 
         kind = (CaskKeyKind)(value >> CaskKindReservedBits);
-        return true;
+        return kind is CaskKeyKind.DerivedKey or CaskKeyKind.HMAC or CaskKeyKind.PrimaryKey;
     }
 
     public static bool IsValidForBase64Url(string value)
