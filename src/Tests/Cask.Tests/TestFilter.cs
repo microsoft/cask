@@ -13,7 +13,6 @@ using Xunit.Sdk;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public sealed class TestFilter : XunitTestFramework
 {
     private static readonly bool s_builtWithCppSupport = IsBuiltWithCppSupport();

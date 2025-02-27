@@ -32,8 +32,6 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 //      To enable them, flip the return value of IsSupportedTestClass in
 //      TestFilter.cs.
 
-
-[ExcludeFromCodeCoverage]
 public class CppCaskTests : CaskTestsBase
 {
     public CppCaskTests() : base(new Implementation())
@@ -43,7 +41,7 @@ public class CppCaskTests : CaskTestsBase
     private sealed class Implementation : ICask
     {
         public string GenerateKey(string providerSignature,
-                                  string providerKeyKind,
+                                  char providerKeyKind,
                                   int expiryInFiveMinuteIncrements = 0,
                                   string? providerData = null)
         {
@@ -87,7 +85,7 @@ public class CppCaskTests : CaskTestsBase
 
             [DllImport("libcask")]
             public static extern int Cask_GenerateKey([MarshalAs(LPUTF8Str)] string providerSignature,
-                                                      [MarshalAs(LPUTF8Str)] string? providerKeyKind,
+                                                      char providerKeyKind,
                                                       [MarshalAs(LPUTF8Str)] string? providerData,
                                                       byte[]? output,
                                                       int outputCapacity);

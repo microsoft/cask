@@ -138,11 +138,10 @@ public static class Cask
     }
 
     public static CaskKey GenerateKey(string providerSignature,
-                                      string providerKeyKind,
+                                      char providerKeyKind,
                                       int expiryInFiveMinuteIncrements = 0,
                                       string? providerData = null)
     {
-        providerKeyKind ??= $"{Base64UrlChars[0]}"; // "A", i.e., index 0 of all base64-encoded characters.
         providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
@@ -221,9 +220,9 @@ public static class Cask
         Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
     }
 
-    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
+    private static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
     {
-        ThrowIfDestinationTooSmall(destination, 3);
+        Debug.Assert(destination.Length == 3);
         ValidateExpiry(expiryInFiveMinuteIncrements);
 
         Span<char> expiryChars = stackalloc char[4];
@@ -269,18 +268,11 @@ public static class Cask
             ThrowIllegalUrlSafeBase64(providerSignature);
         }
     }
-    private static void ValidateProviderKeyKind(string providerKeyKind)
+    private static void ValidateProviderKeyKind(char providerKeyKind)
     {
-        ThrowIfNull(providerKeyKind);
-
-        if (providerKeyKind.Length != 1)
-        {
-            ThrowLengthNotEqual(providerKeyKind, 1);
-        }
-
         if (!IsValidForBase64Url(providerKeyKind))
         {
-            ThrowIllegalUrlSafeBase64(providerKeyKind);
+            ThrowIllegalUrlSafeBase64(providerKeyKind.ToString());
         }
     }
 

@@ -21,7 +21,7 @@ CASK_API bool Cask_IsCaskBytes(const uint8_t* keyOrHashBytes,
 }
 
 CASK_API int32_t Cask_GenerateKey(const char* providerSignature,
-                                  const char* providerKeyKind,
+                                  const char providerKeyKind,
                                   const char* providerData,
                                   char* output,
                                   int32_t outputSizeInBytes)

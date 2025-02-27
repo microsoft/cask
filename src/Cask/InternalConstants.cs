@@ -88,12 +88,12 @@ internal static partial class InternalConstants
     public const int MaxStackAlloc = 256;
 
     /// <summary>
-    /// The number of most significant bits reserved in the key kind byte.
+    /// The number of least significant bits reserved in the key kind byte.
     /// </summary>
     public const int CaskKindReservedBits = 4;
 
     /// <summary>
-    /// The number of most significant bits reserved in the key kind byte.
+    /// The number of least significant bits reserved in the sensitive key kind byte.
     /// </summary>
     public const int SensitiveDataSizeReservedBits = 6;
 

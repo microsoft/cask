@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers.Text;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 using Xunit;
 
@@ -12,10 +10,11 @@ using static CommonAnnotatedSecurityKeys.InternalConstants;
 using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
-
-[ExcludeFromCodeCoverage]
 public abstract class CaskTestsBase
 {
+    private protected static new HashSet<char> s_validBase64Url =
+        [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
+
     protected CaskTestsBase(ICask cask)
     {
         Cask = cask;
@@ -27,7 +26,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "M",
+                                      providerKeyKind: 'M',
                                       expiryInFiveMinuteIncrements: 12 * 24, // 1 day.
                                       providerData: "_NG_");
 
@@ -46,7 +45,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "B",
+                                      providerKeyKind: 'B',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
                                       providerData: "----");
         TestEncodedMatchedDecoded(key, CaskKeyKind.PrimaryKey);
@@ -134,7 +133,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "G",
+                                      providerKeyKind: 'G',
                                       expiryInFiveMinuteIncrements: 12 * 6, // 6 hours.
                                       providerData: "-__-");
         Span<char> keyChars = key.ToCharArray().AsSpan();
@@ -167,7 +166,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "_",
+                                      providerKeyKind: '_',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
                                       providerData: "oOOo");
 
@@ -183,12 +182,40 @@ public abstract class CaskTestsBase
         IsCaskVerifyFailure(key);
     }
 
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_ProviderKeyKind()
+    {
+        for (char providerKeyKind = char.MinValue; providerKeyKind < char.MaxValue; providerKeyKind++)
+        {
+            if (s_validBase64Url.Contains(providerKeyKind))
+            {
+                string key = Cask.GenerateKey("TEST",
+                                              providerKeyKind,
+                                              expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                              providerData: "oOOo");
+
+                IsCaskVerifySuccess(key);
+
+                Span<char> invalidKeyChars = key.ToCharArray();
+                invalidKeyChars[ProviderKindCharIndex] = '=';
+                
+                IsCaskVerifyFailure(invalidKeyChars.ToString());
+
+                continue;
+            }
+
+            Assert.Throws<ArgumentException>(() => Cask.GenerateKey("TEST",
+                                                                    providerKeyKind,
+                                                                    expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
+                                                                    providerData: "oOOo"));
+        }
+    }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskKind()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "F",
+                                      providerKeyKind: 'F',
                                       expiryInFiveMinuteIncrements: 2, // 10 minutes.
                                       providerData: "OooOOooOOooO");
 
@@ -205,30 +232,27 @@ public abstract class CaskTestsBase
     }
 
     [Fact]
-    public void CaskSecrets_IsCask_InvalidKey_InvalidProviderKindLength()
-    {
-        Assert.Throws<ArgumentException>(
-            () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "TOOLONG",
-                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
-                                   providerData: "OooOOooOOooO"));
-    }
-
-    [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidForBase64ProviderKind()
     {
-        Assert.Throws<ArgumentException>(
-            () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "?",
-                                   expiryInFiveMinuteIncrements: 2, // 10 minutes.
-                                   providerData: null));
+        for (int i = 0; i < 256; i++)
+        {
+            char providerKeyKind = (char)i;
+
+            if (s_validBase64Url.Contains(providerKeyKind)) { continue; }
+
+            Assert.Throws<ArgumentException>(
+                () => Cask.GenerateKey("TEST",
+                                       providerKeyKind,
+                                       expiryInFiveMinuteIncrements: 2, // 10 minutes.
+                                       providerData: null));
+        }
     }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "X",
+                                      providerKeyKind: 'X',
                                       expiryInFiveMinuteIncrements: 12 * 24 * 30, // 30 days.
                                       providerData: "UNALIGN_") + "-";
         bool valid = Cask.IsCask(key);
@@ -240,19 +264,84 @@ public abstract class CaskTestsBase
     {
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
-        string key = $"    {Cask.GenerateKey("TEST",
-                            "X",
-                            expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
-                            providerData: null)[4..]}";
-        bool valid = Cask.IsCask(key);
-        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
+        string key = Cask.GenerateKey("TEST",
+                                      'X',
+                                      expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
+                                      providerData: null);
+
+        string modifiedKey = $"    {key[4..]}";
+        bool valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with whitespace replacing leading chars: '{modifiedKey}'");
+
+        modifiedKey = $"{key[..^4]}    ";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with whitespace replacing trailing chars: '{modifiedKey}'");
+
+        // We will test leading and trailing whitespaces that both do and do
+        // not align to 4 chars (which is a core expectation of the format).
+        string oneSpace = new(' ', 1);
+        string fourSpaces = new(' ', 4);
+
+        modifiedKey = $"{oneSpace}{key}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with a leading space: '{modifiedKey}'");
+
+        modifiedKey = $"{key}{oneSpace}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with a trailing space: '{modifiedKey}'");
+
+        modifiedKey = $"{fourSpaces}{key}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with 4 leading spaces: '{modifiedKey}'");
+
+        modifiedKey = $"{key}{fourSpaces}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with 4 trailing spaces: '{modifiedKey}'");
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_Padding()
+    {
+        // Replace final characters of secret with padding. Padding is
+        // allowed in otherwise valid base64 patterns but never in CASK. 
+        string key = Cask.GenerateKey("TEST",
+                                      'S',
+                                      expiryInFiveMinuteIncrements: 3, // 15 minutes.
+                                      providerData: "ACLU");
+
+        // NOTE: strictly speaking neither of the modified strings below comprise
+        // valid base64 because the final encoded character is not legal for the
+        // pattern length (the index of '_' spills over into the next decoded byte).
+        // .NET's APIs is not permissive for this condition and will throw
+        // 'FormatException' for this pattern. Other API implementations are more
+        // permissive and will generate all the bytes that can be produced, ignoring
+        // any trailing bits.
+        string modifiedKey = $"{key[..^2]}_=";
+        bool valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with trailing equal sign: '{modifiedKey}'");
+
+        modifiedKey = $"{key[..^3]}_==";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with two trailing equal signs: '{modifiedKey}'");
+
+        // The base64 index for '8' has two trailing zero bits, preventing spillover into
+        // the final padding byte. This pattern should decode in all base64 API.
+        modifiedKey = $"{key[..^2]}8=";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with trailing equal sign: '{modifiedKey}'");
+
+        // The base64 index for '4' has four trailing zero bits, preventing spillover into
+        // the final padding byte. This pattern should decode in all base64 API.
+        modifiedKey = $"{key[..^3]}w==";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with two trailing equal signs: '{modifiedKey}'");
     }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "-",
+                                      providerKeyKind: '-',
                                       expiryInFiveMinuteIncrements: 262143, // 910 days, the maximal expiry.
                                       providerData: null);
         key = '?' + key[1..];
@@ -269,7 +358,7 @@ public abstract class CaskTestsBase
     {
         Assert.Throws<ArgumentOutOfRangeException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
-                                   providerKeyKind: "-",
+                                   providerKeyKind: '-',
                                    expiryInFiveMinuteIncrements,
                                    providerData: null));
     }
@@ -278,7 +367,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateKey_Basic()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "Q",
+                                      providerKeyKind: 'Q',
                                       expiryInFiveMinuteIncrements: 0, // No expiry specified.
                                       providerData: "ABCD");
 
@@ -297,7 +386,7 @@ public abstract class CaskTestsBase
     [InlineData("    ")]  // Whitespace.
     public void CaskSecrets_GenerateKey_InvalidProviderSignature(string? providerSignature)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A", 0, providerData: null));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, 'A', 0, providerData: null));
         Assert.IsType(providerSignature == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerSignature), ex.ParamName);
     }
@@ -310,7 +399,7 @@ public abstract class CaskTestsBase
     [InlineData("THIS_IS_TOO_MUCH_PROVIDER_DATA_SERIOUSLY_IT_IS_VERY_VERY_LONG_AND_THAT_IS_NOT_OKAY")]
     public void CaskSecrets_GenerateKey_InvalidProviderData(string providerData)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", 0, providerData));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", 'X', 0, providerData));
         Assert.IsType(providerData == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerData), ex.ParamName);
     }
@@ -323,8 +412,8 @@ public abstract class CaskTestsBase
         // RNG that left all the entropy bytes zeroed out, so at least cover that
         // in the meantime. :)
 
-        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
-        string key2 = Cask.GenerateKey("TEST", "M", 0, "ABCD");
+        string key = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
+        string key2 = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
@@ -335,7 +424,7 @@ public abstract class CaskTestsBase
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(1));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        string key = Cask.GenerateKey("TEST", "M", 0, "ABCD");
+        string key = Cask.GenerateKey("TEST", 'M', 0, "ABCD");
         Assert.Equal("AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQJJQTESTMPABAQEBAQEBAQEBAQEBAQEBAAAAAAAAABCD", key);
     }
 
@@ -354,7 +443,7 @@ public abstract class CaskTestsBase
 
         Exception ex = Assert.Throws<InvalidOperationException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
-                                   providerKeyKind: "y",
+                                   providerKeyKind: 'y',
                                    expiryInFiveMinuteIncrements: 1, // Five minutes.
                                    providerData: "ABCD"));
 
@@ -380,7 +469,7 @@ public abstract class CaskTestsBase
             int expiryInFiveMinuteIncrements = 12 * 24 * 180; // 6 months.
 
             string key = Cask.GenerateKey(providerSignature: "TEST",
-                                          providerKeyKind: "Z",
+                                          providerKeyKind: 'Z',
                                           expiryInFiveMinuteIncrements,
                                           providerData: "ABCD");
             IsCaskVerifySuccess(key);

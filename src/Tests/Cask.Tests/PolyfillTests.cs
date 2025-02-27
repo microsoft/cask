@@ -30,7 +30,6 @@ using Xunit;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public class PolyfillTests
 {
     [Fact]

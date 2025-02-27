@@ -3,7 +3,6 @@
 
 global using static CommonAnnotatedSecurityKeys.Helpers;
 
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -60,7 +59,7 @@ internal static class Helpers
 
     public static CaskKeyKind CharToKind(char kindChar)
     {
-        Debug.Assert(kindChar == 'P' || kindChar == 'H',
+        Debug.Assert(kindChar == 'D' || kindChar == 'H' || kindChar == 'P',
                      "This is only meant to be called using the kind char of a known valid key.");
         return (CaskKeyKind)(kindChar - 'A');
     }
@@ -70,36 +69,32 @@ internal static class Helpers
         return (byte)((int)kind << CaskKindReservedBits);
     }
 
-    public static byte ProviderKindToByte(string providerKind)
+    public static byte ProviderKindToByte(char providerKind)
     {
-        Debug.Assert(providerKind?.Length == 1, "Provider kind should be a single character.");
-
         int base64Index;
 
-        const int uppercaseZIndex = 25; // 'Z' - 'A';
-        const int lowercaseZIndex = 51; // 'z' - 'a';
+        const int uppercaseZIndex = 'Z' - 'A';
+        const int lowercaseZIndex = 'z' - 'a';
 
-
-        char providerKindChar = providerKind[0];
-        if (providerKindChar >= 'A' && providerKindChar <= 'Z')
+        if (providerKind >= 'A' && providerKind <= 'Z')
         {
-            base64Index = providerKindChar - 'A';
+            base64Index = providerKind - 'A';
         }
-        else if (providerKindChar >= 'a' && providerKindChar <= 'z')
+        else if (providerKind >= 'a' && providerKind <= 'z')
         {
-            base64Index = providerKindChar - 'a' + uppercaseZIndex;
+            base64Index = providerKind - 'a' + uppercaseZIndex;
         }
-        else if (providerKindChar >= '0' && providerKindChar <= '9')
+        else if (providerKind >= '0' && providerKind <= '9')
         {
-            base64Index = providerKindChar - '0' + lowercaseZIndex;
+            base64Index = providerKind - '0' + lowercaseZIndex;
         }
-        else if (providerKindChar == '-')
+        else if (providerKind == '-')
         {
             base64Index = 62;
         }
         else
         {
-            Debug.Assert(providerKindChar == '_', "Provider kind should be a valid Base64Url char.");
+            Debug.Assert(providerKind == '_', "Provider kind should be a valid Base64Url char.");
             base64Index = 63;
         }
 
@@ -135,7 +130,7 @@ internal static class Helpers
         }
 
         kind = (CaskKeyKind)(value >> CaskKindReservedBits);
-        return true;
+        return kind is CaskKeyKind.DerivedKey or CaskKeyKind.HMAC or CaskKeyKind.PrimaryKey;
     }
 
     public static bool IsValidForBase64Url(string value)
