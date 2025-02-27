@@ -73,8 +73,8 @@ internal static class Helpers
     {
         int base64Index;
 
-        const int uppercaseZIndex = 25; // 'Z' - 'A';
-        const int lowercaseZIndex = 51; // 'z' - 'a';
+        const int uppercaseZIndex = 'Z' - 'A';
+        const int lowercaseZIndex = 'z' - 'a';
 
         if (providerKind >= 'A' && providerKind <= 'Z')
         {

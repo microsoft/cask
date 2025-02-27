@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers.Text;
-using System.Diagnostics.CodeAnalysis;
 
 using Xunit;
 
@@ -13,6 +12,9 @@ using static CommonAnnotatedSecurityKeys.Limits;
 namespace CommonAnnotatedSecurityKeys.Tests;
 public abstract class CaskTestsBase
 {
+    private protected static new HashSet<char> s_validBase64Url =
+        [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
+
     protected CaskTestsBase(ICask cask)
     {
         Cask = cask;
@@ -185,7 +187,7 @@ public abstract class CaskTestsBase
     {
         for (char providerKeyKind = char.MinValue; providerKeyKind < char.MaxValue; providerKeyKind++)
         {
-            if (IsValidForBase64Url(providerKeyKind))
+            if (s_validBase64Url.Contains(providerKeyKind))
             {
                 string key = Cask.GenerateKey("TEST",
                                               providerKeyKind,
@@ -236,7 +238,7 @@ public abstract class CaskTestsBase
         {
             char providerKeyKind = (char)i;
 
-            if (IsValidForBase64Url(providerKeyKind)) { continue; }
+            if (s_validBase64Url.Contains(providerKeyKind)) { continue; }
 
             Assert.Throws<ArgumentException>(
                 () => Cask.GenerateKey("TEST",
@@ -262,12 +264,77 @@ public abstract class CaskTestsBase
     {
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
-        string key = $"    {Cask.GenerateKey("TEST",
-                                             'X',
-                                             expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
-                                             providerData: null)[4..]}";
-        bool valid = Cask.IsCask(key);
-        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
+        string key = Cask.GenerateKey("TEST",
+                                      'X',
+                                      expiryInFiveMinuteIncrements: 12 * 24 * 90, // 90 days.
+                                      providerData: null);
+
+        string modifiedKey = $"    {key[4..]}";
+        bool valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with whitespace replacing leading chars: '{modifiedKey}'");
+
+        modifiedKey = $"{key[..^4]}    ";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with whitespace replacing trailing chars: '{modifiedKey}'");
+
+        // We will test leading and trailing whitespaces that both do and do
+        // not align to 4 chars (which is a core expectation of the format).
+        string oneSpace = new(' ', 1);
+        string fourSpaces = new(' ', 4);
+
+        modifiedKey = $"{oneSpace}{key}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with a leading space: '{modifiedKey}'");
+
+        modifiedKey = $"{key}{oneSpace}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with a trailing space: '{modifiedKey}'");
+
+        modifiedKey = $"{fourSpaces}{key}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with 4 leading spaces: '{modifiedKey}'");
+
+        modifiedKey = $"{key}{fourSpaces}";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with 4 trailing spaces: '{modifiedKey}'");
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_Padding()
+    {
+        // Replace final characters of secret with padding. Padding is
+        // allowed in otherwise valid base64 patterns but never in CASK. 
+        string key = Cask.GenerateKey("TEST",
+                                      'S',
+                                      expiryInFiveMinuteIncrements: 3, // 15 minutes.
+                                      providerData: "ACLU");
+
+        // NOTE: strictly speaking neither of the modified strings below comprise
+        // valid base64 because the final encoded character is not legal for the
+        // pattern length (the index of '_' spills over into the next decoded byte).
+        // .NET's APIs is not permissive for this condition and will throw
+        // 'FormatException' for this pattern. Other API implementations are more
+        // permissive and will generate all the bytes that can be produced, ignoring
+        // any trailing bits.
+        string modifiedKey = $"{key[..^2]}_=";
+        bool valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with trailing equal sign: '{modifiedKey}'");
+
+        modifiedKey = $"{key[..^3]}_==";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with two trailing equal signs: '{modifiedKey}'");
+
+        // The base64 index for '8' has two trailing zero bits, preventing spillover into
+        // the final padding byte. This pattern should decode in all base64 API.
+        modifiedKey = $"{key[..^2]}8=";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with trailing equal sign: '{modifiedKey}'");
+
+        // The base64 index for '4' has four trailing zero bits, preventing spillover into
+        // the final padding byte. This pattern should decode in all base64 API.
+        modifiedKey = $"{key[..^3]}w==";
+        valid = Cask.IsCask(modifiedKey);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key with two trailing equal signs: '{modifiedKey}'");
     }
 
     [Fact]
@@ -467,26 +534,5 @@ public abstract class CaskTestsBase
         {
             Assert.Throws<FormatException>(() => Cask.IsCaskBytes(keyBytes!));
         }
-    }
-
-    private static bool IsValidForBase64Url(char c)
-    {
-        if (c > 0x7F)
-        {
-            return false; // Non-ASCII char
-        }
-
-        if ((c >= '0' && c <= '9') || c == '-' || c == '_')
-        {
-            return true;
-        }
-
-        c |= (char)0x20; // Convert to lowercase
-        if (c >= 'a' && c <= 'z')
-        {
-            return true;
-        }
-
-        return false;
     }
 }
