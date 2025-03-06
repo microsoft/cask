@@ -1,4 +1,4 @@
-# CASK 256-bit Primary Keys
+# CASK Secrets
 ## Standard Backus-Naur Form (BNF)
 ```
 <key> ::= <sensitive-data> <cask-signature> <timestamp> <sensitive-data-size> <optional-data-size> <provider-kind> [<optional-fields>] <provider-signature> <correlating-id>
