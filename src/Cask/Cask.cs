@@ -278,56 +278,6 @@ public static class Cask
         return CaskKey.Encode(key);
     }
 
-    private static void FinalizeKey(Span<byte> key,
-                                    int expiryInFiveMinuteIncrements,
-                                    ReadOnlySpan<char> providerData)
-    {
-        int bytesWritten;
-
-        DateTimeOffset now = GetUtcNow();
-        ValidateTimestamp(now);
-        ReadOnlySpan<char> chars = [
-            Base64UrlChars[now.Year - 2025], // Years since 2025.
-            Base64UrlChars[now.Month - 1],   // Zero-indexed month.
-            Base64UrlChars[now.Day - 1],     // Zero-indexed day.
-            Base64UrlChars[now.Hour],        // Zero-indexed hour.
-        ];
-
-        bytesWritten = Base64Url.DecodeFromChars(chars, key[YearMonthHoursDaysTimestampByteRange]);
-        Debug.Assert(bytesWritten == 3);
-
-        Span<char> expiryChars = stackalloc char[3];
-        ComputeExpiryChars(expiryInFiveMinuteIncrements, expiryChars);
-
-        chars = [
-            Base64UrlChars[now.Minute],    // Zero-indexed minute.
-            expiryChars[0],
-            expiryChars[1],
-            expiryChars[2],
-        ];
-
-        bytesWritten = Base64Url.DecodeFromChars(chars, key[MinutesAndExpiryByteRange]);
-        Debug.Assert(bytesWritten == 3);
-
-        // Provider data.
-        Debug.Assert(Is4CharAligned(providerData.Length));
-        bytesWritten = Base64Url.DecodeFromChars(providerData, key[OptionalDataByteRange]);
-        Debug.Assert(bytesWritten == providerData.Length / 4 * 3);
-    }
-
-    public static void ComputeExpiryChars(int expiryInFiveMinuteIncrements, Span<char> destination)
-    {
-        ThrowIfDestinationTooSmall(destination, 3);
-        //ValidateExpiry(expiryInFiveMinuteIncrements);
-
-        Span<char> expiryChars = stackalloc char[4];
-        Span<byte> expiryBytes = stackalloc byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(expiryBytes, expiryInFiveMinuteIncrements);
-        Base64Url.EncodeToChars(expiryBytes[1..], expiryChars);
-
-        expiryChars[..3].CopyTo(destination);
-    }
-
     private static void FillRandom(Span<byte> buffer)
     {
         if (t_mockedFillRandom != null)

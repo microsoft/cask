@@ -108,78 +108,12 @@ internal static partial class InternalConstants
     /// <summary>
     /// The index of the byte in a key that contains the key size.
     /// </summary>
-    public static Index SensitiveDataSizeByteIndex => 32;
-
-    /// <summary>
-    /// The index of the byte in a key that contains the key size.
-    /// </summary>
     public static Index SensitiveDataSizeCharIndex => 43;
-
-    /// <summary>
-    /// The range of byte indices in a key for the bytes that contain the provider signature.
-    /// </summary>
-    public static Range ProviderSignatureByteRange => 36..39;
-
-    /// <summary>
-    /// The index of the byte in a key that contains the key kind.
-    /// </summary>
-    public static Index ProviderKindByteIndex => 39;
-
-    /// <summary>
-    /// The index of the byte in a key that contains the key kind.
-    /// </summary>
-    public static Index CaskKindByteIndex => 40;
-
-    /// <summary>
-    /// The range of byte indices in a hash for the bytes that contain
-    /// the non-sensitive, unique id of the generated secret.
-    /// </summary>
-    public static Range CorrelatingIdByteRange => 41..57;
-
-    /// <summary>
-    /// The range of byte indices in a key for the bytes that contain
-    /// the year, month, hour, and day of the time of secret allocation.
-    /// </summary>
-    public static Range YearMonthHoursDaysTimestampByteRange => 57..60;
-
-    /// <summary>
-    /// The range of byte indices in a key for the bytes that contain the
-    /// the 6-bit minute component of the time of secret allocation,
-    /// followed by the 18-bit secret expiry.
-    /// </summary>
-    public static Range MinutesAndExpiryByteRange => 60..63;
-
-    /// <summary>
-    /// The range of byte indices in a key that, if present,
-    /// comprise additional provider-specific data.
-    /// </summary>
-    public static Range OptionalDataByteRange => 63..;
-
-    /// <summary>
-    /// The offset in the smallest (128-bit) base64-encoded key
-    /// that encodes the Cask signature.
-    /// </summary>
-    public static Index CaskSignatureCharIndex => 24;
 
     /// <summary>
     /// The range of chars in a base64-encoded key that hold the Cask signature.
     /// </summary>
     public static Range CaskSignatureCharRange => 44..48;
-
-    /// <summary>
-    /// The range of chars in a base64-encoded key that hold the timestamp.
-    /// </summary>
-    public static Range TimestampCharRange => 76..81;
-
-    /// <summary>
-    /// The range of chars in a base64-encoded key that hold the expiry.
-    /// </summary>
-    public static Range ExpiryCharRange => 81..84;
-
-    /// <summary>
-    /// The index of the provider-specific kind char in a base64-encoded key.
-    /// </summary>
-    public static Index ProviderKindCharIndex => 52;
 
     /// <summary>
     /// The integer offset of the sensitive data size relative to the

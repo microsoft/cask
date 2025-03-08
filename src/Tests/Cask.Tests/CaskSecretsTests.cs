@@ -37,31 +37,26 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-
-    
-
-    [InlineData("wMogFlFjZ8hwscMhey01gwAAQJJQACHApBBM_NG_TESThAeRMzD7hjQTtTRWBHeT", SensitiveDataSize.Bits128, "hAeRMzD7hjQTtTRWBHeT")]
-    [InlineData("0JCVQ2JHeaWkKTav1pLacOzCV1Xyp9WV8hm77XlRiHAAQJJQACHAoCBM_NG_TESToTXbhEzzLn8y98c9InxI", SensitiveDataSize.Bits256, "oTXbhEzzLn8y98c9InxI")]
-    [InlineData("waK9j3ZggRlW615qD5Wgozl_XUvBWg2ivqoQXWWOCW0qWzXeAP1eww9O8NjRf1DVQJJQACHBFDBM_NG_TEST4kWjSsSWJ7cbKR04UfPm", SensitiveDataSize.Bits384, "4kWjSsSWJ7cbKR04UfPm")]
-    [InlineData("Zw-OcOy5JMreuHi9CdiXkg3FvCY7ZPzYmfkEwYERY7ZC6fyAHqXPp-OIOW_z9cRmSIJiUTVzsW_-JAyR7URF-gAAQJJQACHBIEBM_NG_TESTg72QxGNa6Y6bwsDn702x", SensitiveDataSize.Bits512, "g72QxGNa6Y6bwsDn702x")]
-    public void CaskSecrets_EncodedMatchesDecoded(string encodedKey, SensitiveDataSize expectedSensitiveDataSize, string expectedC2Id)
-    {
-        TestEncodedMatchedDecoded(encodedKey, expectedSensitiveDataSize, expectedC2Id);
-    }
-
-    [Fact]
-    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey()
+    [InlineData("", SensitiveDataSize.Bits128), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits128)]
+    [InlineData("", SensitiveDataSize.Bits256), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits256)]
+    [InlineData("", SensitiveDataSize.Bits384), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits384)]
+    [InlineData("", SensitiveDataSize.Bits512), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits512)]
+    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SensitiveDataSize sensitiveDataSize)
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: "B",
-                                      providerData: "----");
-        TestEncodedMatchedDecoded(key, SensitiveDataSize.Bits256);
+                                      providerData,
+                                      sensitiveDataSize);
+
+        TestEncodedMatchedDecoded(key, providerData, sensitiveDataSize);
     }
 
     private void TestEncodedMatchedDecoded(string encodedKey,
-                                           SensitiveDataSize expectedSensitiveDataKind,
-                                           string expectedC2id = "")
+                                           string providerData,
+                                           SensitiveDataSize sensitiveDataSize)
     {
+        providerData ??= string.Empty;
+
         // The purpose of this test is to actually produce useful notes in documentation
         // as far as decomposing a CASK key, both from its url-safe base64 form and from
         // the raw bytes.
@@ -72,38 +67,168 @@ public abstract class CaskTestsBase
 
         IsCaskVerifySuccess(encodedKey);
 
-        byte[] keyBytes = Base64Url.DecodeFromChars(encodedKey.AsSpan());
+        Span<byte> keyBytes = Base64Url.DecodeFromChars(encodedKey.AsSpan());
 
-        string encodedSignature = encodedKey[44..48];
-        Span<byte> bytewiseCaskSignature = keyBytes.AsSpan()[33..36];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseCaskSignature), encodedSignature);
+        // A CASK secret may encode 128, 256, 384, or 512 bits of entropy and its
+        // length will differ accordingly. CASK also allows for optional data to
+        // be included by a secret provider. Because CASK limits optional data to
+        // 12 bytes at most, a CASK secret of particular sensitive data size will
+        // always be smaller than a key of the next larger sensitive data size.
+        // Examining the key length, therefore, is a simple way to determine
+        // the encoded sensitive data size, after which the size of the optional
+        // data is clear.
 
-        string encodedProviderId = encodedKey[48..52];
-        Span<byte> bytewiseProviderId = keyBytes.AsSpan()[36..39];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseProviderId), encodedProviderId);
-
-        if (!string.IsNullOrEmpty(expectedC2id))
+        if (encodedKey.Length >= 120 && keyBytes.Length >= 90)
         {
-            string encodedC2Id = encodedKey[^20..];
-            Assert.Equal(expectedC2id, encodedC2Id);
+            Assert.Equal(SensitiveDataSize.Bits512, sensitiveDataSize);
+        }
+        else if (encodedKey.Length >= 100 && keyBytes.Length >= 75)
+        {
+            Assert.Equal(SensitiveDataSize.Bits384, sensitiveDataSize);
+        }
+        else if (encodedKey.Length >= 80 && keyBytes.Length >= 60)
+        {
+            Assert.Equal(SensitiveDataSize.Bits256, sensitiveDataSize);
+        }
+        else
+        {
+            Assert.Equal(SensitiveDataSize.Bits128, sensitiveDataSize);
         }
 
-        string encodedYearMonthDay = encodedKey[76..80];
-        Span<byte> bytewiseYearMonthDay = keyBytes.AsSpan()[57..60];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseYearMonthDay), encodedYearMonthDay);
+        // The sensitive data size encoding is simply a count of 16-byte
+        // segments of entropy. The CASK standard allows for 1-4 segments.
+        int entropyInBytes = (int)sensitiveDataSize * 16;
 
-        string encodedMinuteAndExpiry = encodedKey[80..84];
-        Span<byte> bytewiseMinuteAndExpiry = keyBytes.AsSpan()[60..63];
-        Assert.Equal(Base64Url.EncodeToString(bytewiseMinuteAndExpiry), encodedMinuteAndExpiry);
+        // Because CASK enforces 3-byte aligment to allow for fixed readability
+        // in encoded form and convenient bytewise access, the number of bytes of
+        // entropy in a CASK key must be padded for 16-, 32- and 64-byte secrets.
+        int sensitiveDataSizeInBytes = (entropyInBytes + 3 - 1) / 3 * 3;
 
-        string encodedOptionalData = encodedKey[84..];
-        Span<byte> optionalData = keyBytes.AsSpan()[63..];
-        Assert.Equal(Base64Url.EncodeToString(optionalData), encodedOptionalData);
+        // A 384-bit secret will have not padding. For other sizes, it may be
+        // useful to ensure that the zero padding is present, for example, to
+        // avoid false positives. This is easily accomplished in the bytewise
+        // form.
+        int paddingInBytes = sensitiveDataSizeInBytes - entropyInBytes;
+        for (int i = 0; i < paddingInBytes; i++)
+        {
+            Assert.Equal(0, keyBytes[entropyInBytes + i]);
+        }
 
-        // This follow-on demonstrates how to get the key kind
-        // byte from the bytewise form.
-        //var kind = (CaskKeyKind)(keyBytes[40] >> CaskKindReservedBits);
-        //Assert.Equal(expectedCaskKeyKind, kind);
+        int sensitiveDataSizeInChar = (sensitiveDataSizeInBytes / 3) * 4;
+        string encodedSensitiveData = encodedKey[..sensitiveDataSizeInChar];
+
+        // If we have non-zero padding bytes, there will be an encoded character
+        // with either two or four bits of trailing zeros, which bring the data
+        // into bytewise alignment.
+        if (paddingInBytes > 0)
+        {
+            // In the encoded key, we should observe an encoded character of 'A'
+            // zero for every padding byte. i.e., this test looks for either 0,
+            // 6, or 12 bits of trailing zeros in the encoded sensitive data.
+            Assert.Equal('A', encodedSensitiveData[^paddingInBytes]);
+            Assert.EndsWith(new string('A', paddingInBytes), encodedSensitiveData, StringComparison.Ordinal);
+
+            char partlyZeroedChar = encodedSensitiveData[^(paddingInBytes + 1)];
+
+            if (paddingInBytes == 1)
+            {
+                var base64IndicesWithTwoTrailingZeroBits = new HashSet<char> 
+                {                 
+                    'A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c',
+                    'g', 'k', 'o', 's', 'w', '0', '4', '8'
+                };
+                Assert.Contains(partlyZeroedChar, base64IndicesWithTwoTrailingZeroBits);
+            }
+            else
+            {
+                var base64IndicesWithFourTrailingZeroBits = new HashSet<char> { 'A', 'Q', 'g', 'w' };
+                Assert.Contains(partlyZeroedChar, base64IndicesWithFourTrailingZeroBits);
+            }
+        }
+
+        // From here, the computed sensitive data size as bytes or encoded chars
+        // becomes the base offset to us to examine and/or validate other data.
+
+        string caskSignature = "QJJQ";
+        Span<byte> caskSignatureBytes = stackalloc byte[3];
+        Base64Url.DecodeFromChars(caskSignature.AsSpan(), caskSignatureBytes);
+
+        Range caskSignatureRangeInBytes = sensitiveDataSizeInBytes..(sensitiveDataSizeInBytes + 3);
+        Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual(caskSignatureBytes));
+        Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual([(byte)0x40, (byte)0x92, (byte)0x50]));
+
+        Range caskSignatureRangeInChars = sensitiveDataSizeInChar..(sensitiveDataSizeInChar + 4);
+        Assert.Equal(caskSignature, encodedKey[caskSignatureRangeInChars]);
+
+        // The timestamp, sensitive data size, optional data size, and provider key kind
+        // data is expressed as 8 distinct 6-bit encoded characters and so the bytewise
+        // interpretation of this data is less straightforward. For this segment, it may
+        // be easiest to base64-encode key bytes and process the encoded form,
+        // particularly if the timestamp will be validated.
+
+        Range timestampSizesAndKindRangeInBytes = caskSignatureRangeInBytes.End..(caskSignatureRangeInBytes.End.Value + 6);
+        Span<byte> timestampSizesAndKindBytes = keyBytes[timestampSizesAndKindRangeInBytes];
+        Span<char> timestampSizesAndKindChars = stackalloc char[8];
+        Base64Url.EncodeToChars(timestampSizesAndKindBytes, timestampSizesAndKindChars);
+
+        Range timestampSizesAndKindRangeInChars = caskSignatureRangeInChars.End..(caskSignatureRangeInChars.End.Value + 8);
+        string encodedTimestampSizesAndKindChars = encodedKey[timestampSizesAndKindRangeInChars];
+        Assert.Equal(encodedTimestampSizesAndKindChars, timestampSizesAndKindChars.ToString());
+
+        // Outside of the timestamp, the remaining CASK 6-bit components are intended to be
+        // easily processed when converted into their base64 printable character index.
+        var base64UrlPrintableCharIndices = new Dictionary<char, int>
+        {
+            ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,  ['E'] = 4,  ['F'] = 5,  ['G'] = 6,  ['H'] = 7,
+            ['I'] = 8,  ['J'] = 9,  ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15,
+            ['Q'] = 16, ['R'] = 17, ['S'] = 18, ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
+            ['Y'] = 24, ['Z'] = 25, ['a'] = 26, ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31,
+            ['g'] = 32, ['h'] = 33, ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38, ['n'] = 39,
+            ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47,
+            ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51, ['0'] = 52, ['1'] = 53, ['2'] = 54, ['3'] = 55,
+            ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59, ['8'] = 60, ['9'] = 61, ['-'] = 62, ['_'] = 63
+        };
+
+        char encodedYearChar = encodedTimestampSizesAndKindChars[0];
+        char encodedMonthChar = encodedTimestampSizesAndKindChars[1];
+        char encodedDayChar = encodedTimestampSizesAndKindChars[2];
+        char encodedHourChar = encodedTimestampSizesAndKindChars[3];
+        char encodedMinuteChar = encodedTimestampSizesAndKindChars[4];
+
+        int year = base64UrlPrintableCharIndices[encodedYearChar];
+        int month = base64UrlPrintableCharIndices[encodedMonthChar];
+        int day = base64UrlPrintableCharIndices[encodedDayChar];
+        int hour = base64UrlPrintableCharIndices[encodedHourChar];
+        int minute = base64UrlPrintableCharIndices[encodedMinuteChar];
+
+        // All encoded year values are legal.
+        Assert.True(month >= 0 && month < 12, $"Month value '{month}' is out of range.");
+        Assert.True(day >= 0 && day < 31, $"Day value '{day}' is out of range.");
+        Assert.True(hour >= 0 && hour < 24, $"Hour value '{hour}' is out of range.");
+        Assert.True(minute >= 0 && minute < 60, $"Minute value '{minute}' is out of range.");
+
+        var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second: 0, TimeSpan.Zero);
+
+        char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];        
+        var encodedSensitiveDataSize = (SensitiveDataSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
+        Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
+
+        char encodedOptionalDataSizeChar = encodedTimestampSizesAndKindChars[6];
+        int optionalDataSizeInBytes = base64UrlPrintableCharIndices[encodedOptionalDataSizeChar] * 3;
+        Assert.Equal(sensitiveDataSizeInBytes + 27 + optionalDataSizeInBytes, keyBytes.Length);
+
+        Range optionalDataRangeInBytes = timestampSizesAndKindRangeInBytes.End..(timestampSizesAndKindRangeInBytes.End.Value + optionalDataSizeInBytes);
+        Span<byte> optionalDataBytes = keyBytes[optionalDataRangeInBytes];
+        Assert.Equal(providerData, Base64Url.EncodeToString(optionalDataBytes));
+
+        int optionalDataSizeInChars = (optionalDataSizeInBytes / 3) * 4;
+        Range optionalDataRangeInChars = timestampSizesAndKindRangeInChars.End..(timestampSizesAndKindRangeInChars.End.Value + optionalDataSizeInChars);
+        string optionalDataInChars = encodedKey[optionalDataRangeInChars];
+        Assert.Equal(providerData, optionalDataInChars);
+
+
+        // The provider key kind is provider-defined. Any value is legal.
+        char encodedProviderKeyKind = encodedTimestampSizesAndKindChars[6];
     }
 
     [Fact]
