@@ -20,13 +20,13 @@ public class CSharpCaskTests : CaskTestsBase
     {
         public string GenerateKey(string providerSignature,
                                   string providerKind = "A",
-                                  int expiryInFiveMinuteIncrements = 0,
-                                  string? reserved = null)
+                                  string? reserved = null,
+                                  SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256)
         {
             CaskKey key = CSharpCask.GenerateKey(providerSignature,
                                                  providerKind,
-                                                 expiryInFiveMinuteIncrements,
-                                                 reserved);
+                                                 reserved,
+                                                 sensitiveDataSize);
             return key.ToString();
         }
 

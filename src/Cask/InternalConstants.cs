@@ -51,22 +51,23 @@ internal static partial class InternalConstants
     /// <summary>
     /// The number of bytes for the non-sensitive, unique correlating id of the secret.
     /// </summary>
-    public const int CorrelatingIdSizeInBytes = 16;
+    public const int CorrelatingIdSizeInBytes = 15;
 
     /// <summary>
-    /// The number of bytes for time-of-allocation and validity lifetime of the secret.
+    /// The number of bytes for time-of-allocation (year, month, day, hour, minute),
+    /// the size of the sensitive component, the size of optional data, and the
+    /// provider-defined key kind.
     /// </summary>
-    public const int TimestampAndExpirySizeInBytes = 6;
+    public const int TimestampSizesAndProviderKind = 6;
 
     /// <summary>
     /// The number of bytes in the fixed components of a primary key,
     /// from the CASK signature to the end of the key.
     /// </summary>
     public const int FixedKeyComponentSizeInBytes = CaskSignatureSizeInBytes +
+                                                    TimestampSizesAndProviderKind +
                                                     ProviderSignatureSizeInBytes +
-                                                    CaskAndProviderKeyKindSizeInBytes +
-                                                    CorrelatingIdSizeInBytes +
-                                                    TimestampAndExpirySizeInBytes;
+                                                    CorrelatingIdSizeInBytes;
 
     /// <summary>
     /// The number of bytes of entropy in a primary key. 32-bytes (256 bits) of
@@ -77,10 +78,6 @@ internal static partial class InternalConstants
     /// </summary>
     public const int SecretEntropyInBytes = 32;
 
-    /// <summary>
-    /// The size of the entropy in a primary after padding to 3-byte alignment.
-    /// </summary>
-    public static int PaddedSecretEntropyInBytes { get; } = RoundUpTo3ByteAlignment(SecretEntropyInBytes);
 
     /// <summary>
     /// The maximum amount of bytes that the implementation will stackalloc.
@@ -88,9 +85,10 @@ internal static partial class InternalConstants
     public const int MaxStackAlloc = 256;
 
     /// <summary>
-    /// The number of most significant bits reserved in the key kind byte.
+    /// The number of bits to right-shift the byte that contains the
+    /// sensitive data size.
     /// </summary>
-    public const int CaskKindReservedBits = 4;
+    public const int SensitiveDataSizeByteRightShiftOffset = 2;
 
     /// <summary>
     /// The number of most significant bits reserved in the key kind byte.
@@ -101,11 +99,6 @@ internal static partial class InternalConstants
     /// The number of least significant bits reserved in the provider key kind byte.
     /// </summary>
     public const int ProviderKindReservedBits = 2;
-
-    /// <summary>
-    /// A bit mask to obtain the reserved bits from the key kind.
-    /// </summary>
-    public const int CaskKindReservedMask = (1 << CaskKindReservedBits) - 1;
 
     /// <summary>
     /// A bit mask to obtain the reserved bits from the key kind.
@@ -121,11 +114,6 @@ internal static partial class InternalConstants
     /// The index of the byte in a key that contains the key size.
     /// </summary>
     public static Index SensitiveDataSizeCharIndex => 43;
-
-    /// <summary>
-    /// The range of byte indices in a key for the bytes that contain the CASK signature.
-    /// </summary>
-    public static Range CaskSignatureByteRange => 33..36;
 
     /// <summary>
     /// The range of byte indices in a key for the bytes that contain the provider signature.
@@ -168,6 +156,12 @@ internal static partial class InternalConstants
     public static Range OptionalDataByteRange => 63..;
 
     /// <summary>
+    /// The offset in the smallest (128-bit) base64-encoded key
+    /// that encodes the Cask signature.
+    /// </summary>
+    public static Index CaskSignatureCharIndex => 24;
+
+    /// <summary>
     /// The range of chars in a base64-encoded key that hold the Cask signature.
     /// </summary>
     public static Range CaskSignatureCharRange => 44..48;
@@ -188,7 +182,8 @@ internal static partial class InternalConstants
     public static Index ProviderKindCharIndex => 52;
 
     /// <summary>
-    /// The index of the CASK kind char in a base64-encoded key.
+    /// The integer offset of the sensitive data size relative to the
+    /// Cask signature in a base64-encoded secret.
     /// </summary>
-    public static Index CaskKindCharIndex => 53;
+    public static int SensitiveDataSizeOffsetFromCaskSignatureChar => 5;
 }

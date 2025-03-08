@@ -44,30 +44,25 @@ internal static class Helpers
         return charLength % 4 == 0;
     }
 
-    public static int GetKeyLengthInBytes(int providerDataLengthInBytes)
+    public static int GetKeyLengthInBytes(int providerDataLengthInBytes, SensitiveDataSize sensitiveDataSize)
     {
         Debug.Assert(Is3ByteAligned(providerDataLengthInBytes),
                      $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
-        int keyLengthInBytes = PaddedSecretEntropyInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+
+        int keyLengthInBytes = providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
+
+        int entropyInBytes = (int)sensitiveDataSize * 16;
+        int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
+
+        keyLengthInBytes += sensitiveDataSizeInBytes;
         Debug.Assert(Is3ByteAligned(keyLengthInBytes));
+
         return keyLengthInBytes;
     }
 
     public static SensitiveDataSize CharToSensitiveDataSize(char sensitiveDataSizeChar)
     {
         return (SensitiveDataSize)(sensitiveDataSizeChar - 'A'); ;
-    }
-
-    public static CaskKeyKind CharToKind(char kindChar)
-    {
-        Debug.Assert(kindChar == 'P' || kindChar == 'H',
-                     "This is only meant to be called using the kind char of a known valid key.");
-        return (CaskKeyKind)(kindChar - 'A');
-    }
-
-    public static byte KindToByte(CaskKeyKind kind)
-    {
-        return (byte)((int)kind << CaskKindReservedBits);
     }
 
     public static byte ProviderKindToByte(string providerKind)
@@ -112,29 +107,16 @@ internal static class Helpers
     /// </summary>
     public static bool TryByteToSensitiveDataSize(byte value, out SensitiveDataSize size)
     {
-        if ((value & SensitiveDataReservedMask) != 0)
+        int sensitiveDataSizeValue = value >> SensitiveDataSizeByteRightShiftOffset;
+
+        if (sensitiveDataSizeValue < (int)SensitiveDataSize.Bits128 ||
+            sensitiveDataSizeValue < (int)SensitiveDataSize.Bits512)
         {
             size = default;
             return false;
         }
 
-        size = (SensitiveDataSize)(value);
-        return true;
-    }
-
-    /// <summary>
-    /// Converts a byte that encodeds the key kind to the KeyKind enum.
-    /// Returns false if the reserved bits in that byte are non-zero.
-    /// </summary>
-    public static bool TryByteToKind(byte value, out CaskKeyKind kind)
-    {
-        if ((value & CaskKindReservedMask) != 0)
-        {
-            kind = default;
-            return false;
-        }
-
-        kind = (CaskKeyKind)(value >> CaskKindReservedBits);
+        size = (SensitiveDataSize)value;
         return true;
     }
 

@@ -18,7 +18,7 @@ public static class Limits
     /// <summary>
     /// The maximum length of provider-reserved data when base64-encoded.
     /// </summary>
-    public static int MaxProviderDataLengthInBytes { get; } = RoundUpTo3ByteAlignment(24);
+    public static int MaxProviderDataLengthInBytes { get; } = 12;
 
     /// <summary>
     /// The maximum length of provider-reserved data when base64-encoded.
@@ -28,12 +28,12 @@ public static class Limits
     /// <summary>
     /// The minimum length of a Cask secret when decoded to bytes.
     /// </summary>
-    public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0);
+    public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SensitiveDataSize.Bits128);
 
     /// <summary>
     /// The maximum length of a Cask secret when decoded to bytes.
     /// </summary>
-    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes);
+    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SensitiveDataSize.Bits512);
 
     /// <summary>
     /// The minimum length of a Cask secret in characters.

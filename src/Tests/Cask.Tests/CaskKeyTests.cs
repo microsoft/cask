@@ -3,8 +3,10 @@
 
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
+
+using static CommonAnnotatedSecurityKeys.Helpers;
+using static CommonAnnotatedSecurityKeys.InternalConstants;
 
 using Xunit;
 
@@ -13,22 +15,22 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 [ExcludeFromCodeCoverage]
 public class CaskKeyTests
 {
-    [Fact]
-    public void CaskKey_UninitializedKindAccessThrows()
-    {
-        CaskKey key = default;
-        Assert.Throws<InvalidOperationException>(() => key.Kind);
-    }
+    internal static SensitiveDataSize[] AllSensitiveDataSizes =>[
+        SensitiveDataSize.Bits128, SensitiveDataSize.Bits256,
+        SensitiveDataSize.Bits384, SensitiveDataSize.Bits512];
 
     [Fact]
     public void CaskKey_KindIsPrimaryKey()
     {
-        CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "_",
-                                       expiryInFiveMinuteIncrements: 12 * 2, // 2 hours.
-                                       providerData: "AaaA");
+        foreach (SensitiveDataSize sensitiveDataSize in AllSensitiveDataSizes)
+        {
+            CaskKey key = Cask.GenerateKey("TEST",
+                                           providerKeyKind: "O",
+                                           providerData: "XXXX",
+                                           sensitiveDataSize);
 
-        Assert.Equal(CaskKeyKind.PrimaryKey, key.Kind);
+            Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
+        }
     }
 
     [Fact]
@@ -48,15 +50,21 @@ public class CaskKeyTests
     {
         providerData ??= string.Empty;
 
-        CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "O",
-                                       expiryInFiveMinuteIncrements: 0, // No expiry.
-                                       providerData);
+        foreach (SensitiveDataSize sensitiveDataSize in AllSensitiveDataSizes)
+        {
+            int entropyInBytes = (int)sensitiveDataSize * 16;
+            int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
 
-        const int minimumSizeInBytes = 63;
+            CaskKey key = Cask.GenerateKey("TEST",
+                                           providerKeyKind: "O",
+                                           providerData,
+                                           sensitiveDataSize);
 
-        int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
-        Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
+            int minimumSizeInBytes = sensitiveDataSizeInBytes + FixedKeyComponentSizeInBytes;
+
+            int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
+            Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
+        }
     }
 
     [Fact]
@@ -71,7 +79,6 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "_",
-                                       expiryInFiveMinuteIncrements: (1 << 18) - 1, // 18-bit max value.
                                        providerData: "aBBa");
 
         Span<char> keyChars = key.ToString().ToCharArray();
@@ -105,7 +112,6 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "J",
-                                       expiryInFiveMinuteIncrements: 12 * 72, // 3 days.
                                        providerData: "MSFT");
 
         byte[] actual = new byte[Limits.MaxKeyLengthInBytes];
@@ -128,7 +134,6 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "9",
-                                       expiryInFiveMinuteIncrements: 5, // 25 minutes.
                                        providerData: "010101010101");
 
         byte[] decoded = new byte[key.SizeInBytes];
@@ -145,7 +150,6 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "l",
-                                       expiryInFiveMinuteIncrements: 5, // 25 minutes.
                                        providerData: "010101010101");
 
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
@@ -166,7 +170,6 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "J",
-                                       expiryInFiveMinuteIncrements: 0, // 3 days.
                                        providerData: null);
 
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
@@ -182,13 +185,12 @@ public class CaskKeyTests
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: "R",
-                                       expiryInFiveMinuteIncrements: 12 * 24 * 365, // 1 year.
                                        providerData: "ROSS");
 
         Span<char> keyChars = key.ToString().ToCharArray();
 
         const int sensitiveDateCharIndex = 43;
-        keyChars[sensitiveDateCharIndex] = '_';
+        keyChars[sensitiveDateCharIndex] = '?';
 
         string invalidKeyText = keyChars.ToString();
         byte[] invalidKeyUtf8Bytes = Encoding.UTF8.GetBytes(invalidKeyText);

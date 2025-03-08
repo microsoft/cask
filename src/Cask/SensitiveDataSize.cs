@@ -9,21 +9,29 @@ namespace CommonAnnotatedSecurityKeys;
 /// </summary>
 public enum SensitiveDataSize
 {
-    /// <summary>
-    /// Specifies a computed value with 256 bits of data
-    /// (32 bytes) comprising random bytes or a SHA-256 hash.
-    /// </summary>
-    Bits256 = ('A' - 'A'), // Base64: index 0 == 'A'
+    None = 0,
 
     /// <summary>
-    /// Specifies a computed value with 384 bits of data
-    /// (48 bytes) comprising random bytes or a SHA-384 hash.
+    /// Specifies a computed value with one 16-byte
+    /// (128 bit) segment of entropy.
     /// </summary>
-    Bits384 = ('B' - 'A'), // Base64: index 0 == 'B'
+    Bits128 = 1, // Base64: index 1 == 'B'
 
     /// <summary>
-    /// Specifies a computed value with 512 bits of data
-    /// (64 bytes) comprising random bytes or a SHA-384 hash.
+    /// Specifies a computed value with two 16-byte
+    /// segments of entropy, comprising 256 bits
     /// </summary>
-    Bits512 = ('C' - 'A'), // Base64: index 0 == 'V'
+    Bits256 = 2, // Base64: index 2 == 'C'
+
+    /// <summary>
+    /// Specifies a computed value with three 16-byte
+    /// segments of entropy, comprising 384 bits
+    /// </summary>
+    Bits384 = 3, // Base64: index 3 == 'D'
+
+    /// <summary>
+    /// Specifies a computed value with four 16-byte
+    /// segments of entropy, comprising 512 bits
+    /// </summary>
+    Bits512 = 4, // Base64: index 4 == 'E'
 }
