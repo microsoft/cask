@@ -12,7 +12,6 @@ using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public abstract class CaskTestsBase
 {
     private protected static readonly HashSet<char> s_printableBase64UrlCharacters =
@@ -33,12 +32,12 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask(SensitiveDataSize sensitiveDataSize)
     {
 
-        string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: 'M',
-                                      providerData: "_NG_",
-                                      sensitiveDataSize);
+            string key = Cask.GenerateKey(providerSignature: "TEST",
+                                          providerKeyKind: 'M',
+                                          providerData: "_NG_",
+                                          sensitiveDataSize);
 
-        IsCaskVerifySuccess(key);
+            IsCaskVerifySuccess(key);        
     }
 
     [Theory]
@@ -137,8 +136,8 @@ public abstract class CaskTestsBase
 
             if (paddingInBytes == 1)
             {
-                var base64IndicesWithTwoTrailingZeroBits = new HashSet<char>
-                {
+                var base64IndicesWithTwoTrailingZeroBits = new HashSet<char> 
+                {                 
                     'A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c',
                     'g', 'k', 'o', 's', 'w', '0', '4', '8'
                 };
@@ -184,70 +183,14 @@ public abstract class CaskTestsBase
         // easily processed when converted into their base64 printable character index.
         var base64UrlPrintableCharIndices = new Dictionary<char, int>
         {
-            ['A'] = 0,
-            ['B'] = 1,
-            ['C'] = 2,
-            ['D'] = 3,
-            ['E'] = 4,
-            ['F'] = 5,
-            ['G'] = 6,
-            ['H'] = 7,
-            ['I'] = 8,
-            ['J'] = 9,
-            ['K'] = 10,
-            ['L'] = 11,
-            ['M'] = 12,
-            ['N'] = 13,
-            ['O'] = 14,
-            ['P'] = 15,
-            ['Q'] = 16,
-            ['R'] = 17,
-            ['S'] = 18,
-            ['T'] = 19,
-            ['U'] = 20,
-            ['V'] = 21,
-            ['W'] = 22,
-            ['X'] = 23,
-            ['Y'] = 24,
-            ['Z'] = 25,
-            ['a'] = 26,
-            ['b'] = 27,
-            ['c'] = 28,
-            ['d'] = 29,
-            ['e'] = 30,
-            ['f'] = 31,
-            ['g'] = 32,
-            ['h'] = 33,
-            ['i'] = 34,
-            ['j'] = 35,
-            ['k'] = 36,
-            ['l'] = 37,
-            ['m'] = 38,
-            ['n'] = 39,
-            ['o'] = 40,
-            ['p'] = 41,
-            ['q'] = 42,
-            ['r'] = 43,
-            ['s'] = 44,
-            ['t'] = 45,
-            ['u'] = 46,
-            ['v'] = 47,
-            ['w'] = 48,
-            ['x'] = 49,
-            ['y'] = 50,
-            ['z'] = 51,
-            ['0'] = 52,
-            ['1'] = 53,
-            ['2'] = 54,
-            ['3'] = 55,
-            ['4'] = 56,
-            ['5'] = 57,
-            ['6'] = 58,
-            ['7'] = 59,
-            ['8'] = 60,
-            ['9'] = 61,
-            ['-'] = 62,
-            ['_'] = 63
+            ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,  ['E'] = 4,  ['F'] = 5,  ['G'] = 6,  ['H'] = 7,
+            ['I'] = 8,  ['J'] = 9,  ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15,
+            ['Q'] = 16, ['R'] = 17, ['S'] = 18, ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
+            ['Y'] = 24, ['Z'] = 25, ['a'] = 26, ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31,
+            ['g'] = 32, ['h'] = 33, ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38, ['n'] = 39,
+            ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47,
+            ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51, ['0'] = 52, ['1'] = 53, ['2'] = 54, ['3'] = 55,
+            ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59, ['8'] = 60, ['9'] = 61, ['-'] = 62, ['_'] = 63
         };
 
         char encodedYearChar = encodedTimestampSizesAndKindChars[0];
@@ -270,7 +213,7 @@ public abstract class CaskTestsBase
 
         var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second: 0, TimeSpan.Zero);
 
-        char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];
+        char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];        
         var encodedSensitiveDataSize = (SensitiveDataSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
         Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
 
