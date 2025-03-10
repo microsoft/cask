@@ -52,7 +52,7 @@ public class CSharpCaskTests : CaskTestsBase
                 // This condition will only occur if the input passed to
                 // `Base64Url.DecodeFromUtf8` included characters (such as 
                 // whitespace) that are not valid ('printable', i.e.,
-                // non-padding) usr-safe base64 characters. Keys that contain
+                // non-padding) base64url characters. Keys that contain
                 // these characters are not valid Cask keys. Stripping them
                 // might actually result in the resulting bytes comprising
                 // a valid Cask key, so we won't test that API in this case.
