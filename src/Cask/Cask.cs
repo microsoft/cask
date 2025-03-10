@@ -90,7 +90,7 @@ public static class Cask
     {
         Debug.Assert(IsValidKeyLengthInChars(lengthInChars));
 
-        int lengthInBytes = lengthInChars/ 4 * 3;
+        int lengthInBytes = lengthInChars / 4 * 3;
         return InferSensitiveDataSizeFromByteLength(lengthInBytes);
     }
 
@@ -200,7 +200,7 @@ public static class Cask
         }
 
         int providerDataLengthInBytes = Base64CharsToBytes(minutesSizesAndKeyKindChars[2] - Base64UrlChars[0]);
-        
+
 
         // TBD: Ensure we have checked all the things we can check.
 
