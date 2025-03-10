@@ -232,7 +232,7 @@ public class CaskKeyTests
                            CaskKeyKind.HMAC;
 
             if (isValidEncodedByte)
-            { 
+            {
                 Assert.True(succeeded, $"Valid CaskKeyKind '{current}' failed 'CaskKey.TryEncode'");
                 continue;
             }

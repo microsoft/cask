@@ -85,9 +85,10 @@ public class CSharpCaskTests : CaskTestsBase
             {
                 // See comment above for more information on this condition.
                 Assert.Fail(
-                    "Expected a failure condition as input key bytes did strictly conforming to input key string."
-                    + Environment.NewLine
-                    + $"key: {key}");
+                $"""
+                Expected a failure condition as input key bytes did strictly conforming to input key string.
+                key: {key}
+                """);
             }
 
             return result;

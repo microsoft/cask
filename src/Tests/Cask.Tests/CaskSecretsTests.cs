@@ -12,7 +12,7 @@ using static CommonAnnotatedSecurityKeys.Limits;
 namespace CommonAnnotatedSecurityKeys.Tests;
 public abstract class CaskTestsBase
 {
-    private protected static new HashSet<char> s_validBase64Url =
+    private protected static HashSet<char> s_validBase64Url =
         [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
 
     protected CaskTestsBase(ICask cask)
@@ -198,7 +198,7 @@ public abstract class CaskTestsBase
 
                 Span<char> invalidKeyChars = key.ToCharArray();
                 invalidKeyChars[ProviderKindCharIndex] = '=';
-                
+
                 IsCaskVerifyFailure(invalidKeyChars.ToString());
 
                 continue;
