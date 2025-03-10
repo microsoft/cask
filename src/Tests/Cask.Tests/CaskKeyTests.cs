@@ -5,17 +5,16 @@ using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-using Xunit;
-
 using static CommonAnnotatedSecurityKeys.Helpers;
 using static CommonAnnotatedSecurityKeys.InternalConstants;
 
+using Xunit;
+
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public class CaskKeyTests
 {
-    internal static SensitiveDataSize[] AllSensitiveDataSizes => [
+    internal static SensitiveDataSize[] AllSensitiveDataSizes =>[
         SensitiveDataSize.Bits128, SensitiveDataSize.Bits256,
         SensitiveDataSize.Bits384, SensitiveDataSize.Bits512];
 
@@ -195,7 +194,7 @@ public class CaskKeyTests
         var sensitiveDataSize = (SensitiveDataSize)(keyChars[sensitiveDataSizeCharOffset] - 'A');
 
         Assert.Equal(SensitiveDataSize.Bits256, sensitiveDataSize);
-
+        
         keyChars[sensitiveDataSizeCharOffset] = (char)('A' + ((int)SensitiveDataSize.Bits512 + 1));
         Base64Url.TryDecodeFromChars(keyChars, decoded, out int _);
 
