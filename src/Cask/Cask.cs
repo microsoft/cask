@@ -357,18 +357,6 @@ public static class Cask
     }
 
     [DoesNotReturn]
-    private static void ThrowInvalidKeyLength(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        throw new ArgumentException($"Encoded key length must be between than {MinKeyLengthInChars} and {MaxKeyLengthInChars}. Value provided as '{value.Length}'.", paramName);
-    }
-
-    [DoesNotReturn]
-    private static void ThrowInvalidKeyLength(ICollection<byte> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        throw new ArgumentException($"Decoded key length must be between than {MinKeyLengthInBytes} and {MaxKeyLengthInBytes}. Value provided as '{value.Count}'.", paramName);
-    }
-
-    [DoesNotReturn]
     private static void ThrowProviderDataUnaligned(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
         throw new ArgumentException($"Provider data must be a multiple of 4 characters long: '{value}'.", paramName);

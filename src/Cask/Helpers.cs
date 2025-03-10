@@ -59,11 +59,6 @@ internal static class Helpers
         return keyLengthInBytes;
     }
 
-    public static SensitiveDataSize CharToSensitiveDataSize(char sensitiveDataSizeChar)
-    {
-        return (SensitiveDataSize)(sensitiveDataSizeChar - 'A'); ;
-    }
-
     public static bool IsValidForBase64Url(string value)
     {
         foreach (char c in value)

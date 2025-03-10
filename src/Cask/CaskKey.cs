@@ -4,7 +4,6 @@
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -38,24 +37,6 @@ public readonly partial record struct CaskKey : IIsInitialized
             Index sensitiveDataSizeCharIndex = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
             return (SensitiveDataSize)(_key[sensitiveDataSizeCharIndex] - 'A');
 
-        }
-    }
-
-    public int SensitiveDateSizeInBytes
-    {
-        get
-        {
-            ThrowIfNotInitialized();
-            ThrowIfInvalidKeyLengthInChars(_key.Length);
-            SensitiveDataSize sensitiveDataSize = CharToSensitiveDataSize(_key[SensitiveDataSizeCharIndex]);
-            return sensitiveDataSize switch
-            {
-                SensitiveDataSize.Bits128 => 16,
-                SensitiveDataSize.Bits256 => 32,
-                SensitiveDataSize.Bits384 => 48,
-                SensitiveDataSize.Bits512 => 64,
-                _ => ThrowUnrecognizedSensitiveDataSize(sensitiveDataSize),
-            };
         }
     }
 
@@ -205,22 +186,5 @@ public readonly partial record struct CaskKey : IIsInitialized
     private static void ThrowFormat()
     {
         throw new FormatException("Input is not a valid Cask key.");
-    }
-
-    [DoesNotReturn]
-    private static int ThrowUnrecognizedSensitiveDataSize(SensitiveDataSize sensitiveDataSize)
-    {
-        throw new InvalidOperationException($"Unexpected sensitive data size: {sensitiveDataSize}.");
-    }
-
-    private static void ThrowIfInvalidKeyLengthInChars(int length)
-    {
-        if (!Cask.IsValidKeyLengthInChars(length))
-        {
-            throw new ArgumentException($"""
-                                        Encoded key length must be between than {MinKeyLengthInChars} and {MaxKeyLengthInChars}
-                                        and a multiple of 4. Value provided was '{length}'.");
-                                        """);
-        }
     }
 }

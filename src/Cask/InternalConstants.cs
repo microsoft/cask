@@ -106,11 +106,6 @@ internal static partial class InternalConstants
     public const int SensitiveDataReservedMask = (1 << SensitiveDataSizeReservedBits) - 1;
 
     /// <summary>
-    /// The index of the byte in a key that contains the key size.
-    /// </summary>
-    public static Index SensitiveDataSizeCharIndex => 43;
-
-    /// <summary>
     /// The range of chars in a base64-encoded key that hold the Cask signature.
     /// </summary>
     public static Range CaskSignatureCharRange => 44..48;

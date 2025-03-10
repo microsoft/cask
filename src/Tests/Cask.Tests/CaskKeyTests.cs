@@ -68,46 +68,29 @@ public class CaskKeyTests
         }
     }
 
-    [Fact]
-    public void CaskKey_UninitializedSensitiveDateSizeInBytesAccessThrows()
-    {
-        CaskKey key = default;
-        Assert.Throws<InvalidOperationException>(() => key.SensitiveDateSizeInBytes);
-    }
-
-    [Fact]
-    public void CaskKey_SensitiveDataSizeInBytes()
+    [Theory]
+    [InlineData(SensitiveDataSize.Bits128)]
+    [InlineData(SensitiveDataSize.Bits256)]
+    [InlineData(SensitiveDataSize.Bits384)]
+    [InlineData(SensitiveDataSize.Bits512)]
+    public void CaskKey_SensitiveDataSize(SensitiveDataSize sensitiveDataSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: '_',
-                                       providerData: "aBBa");
+                                       providerData: "aBBa",
+                                       sensitiveDataSize);
 
-        Span<char> keyChars = key.ToString().ToCharArray();
-
-        const int sensitiveDataSizeCharIndex = 43;
-
-        Span<byte> sizeBytes = stackalloc byte[3];
-        Span<char> sizeChars = stackalloc char[4];
-
-        // We do not validate any keys of size other than 'Bits256', so limiting testing for now.
-        foreach (SensitiveDataSize sensitiveDataSize in new[] { SensitiveDataSize.Bits256 })
-        {
-            sizeBytes[2] = (byte)sensitiveDataSize;
-            Base64Url.EncodeToChars(sizeBytes, sizeChars);
-            keyChars[sensitiveDataSizeCharIndex] = sizeChars[3];
-
-            int expected = sensitiveDataSize switch
-            {
-                SensitiveDataSize.Bits256 => 32,
-                SensitiveDataSize.Bits384 => 48,
-                SensitiveDataSize.Bits512 => 64,
-                _ => throw new InvalidOperationException($"Unexpected sensitive data size: {sensitiveDataSize}."),
-            };
-
-            key = CaskKey.Create(keyChars.ToString());
-            Assert.Equal(expected, key.SensitiveDateSizeInBytes);
-        }
+        key = CaskKey.Create(key.ToString());
+        Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
     }
+
+    [Fact]
+    public void CaskKey_UninitializedSensitiveDateSizeAccessThrows()
+    {
+        CaskKey key = default;
+        Assert.Throws<InvalidOperationException>(() => key.SensitiveDataSize);
+    }
+
     [Fact]
     public void CaskKey_CreateOverloadsAreEquivalent()
     {
@@ -160,7 +143,7 @@ public class CaskKeyTests
     }
 
     [Fact]
-    public void CaskKey_TryEncodeInvalidKey()
+    public void CaskKey_TryEncode_InvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'l',
@@ -172,7 +155,7 @@ public class CaskKeyTests
         const int caskSignatureByteIndex = 33;
         Assert.Equal(0x40, decoded[caskSignatureByteIndex]);
 
-        // Break the key by invaliding the CASK signature.
+        // Break the key by invalidating the CASK signature.
         decoded[caskSignatureByteIndex] = (byte)'X';
 
         bool succeeded = CaskKey.TryEncode(decoded, out CaskKey newCaskKey);
@@ -180,18 +163,43 @@ public class CaskKeyTests
     }
 
     [Fact]
-    public void CaskKey_TryEncodeBasic()
+    public void CaskKey_Encode_Basic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'J',
                                        providerData: null);
 
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
-        Base64Url.TryDecodeFromChars(key.ToString().AsSpan(), decoded, out int bytesWritten);
+        Base64Url.TryDecodeFromChars(key.ToString().AsSpan(), decoded, out int _);
 
         var newKey = CaskKey.Encode(decoded);
 
         Assert.Equal(key, newKey);
+    }
+
+    [Fact]
+    public void CaskKey_Encode_InvalidKey()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: 'J');
+
+        byte[] decoded = new byte[key.SizeInBytes];
+        Base64Url.TryDecodeFromChars(key.ToString().AsSpan(), decoded, out int _);
+
+        var newKey = CaskKey.Encode(decoded);
+        Assert.Equal(key, newKey);
+
+        Span<char> keyChars = key.ToString().ToCharArray().AsSpan();
+
+        int sensitiveDataSizeCharOffset = 53;
+        var sensitiveDataSize = (SensitiveDataSize)(keyChars[sensitiveDataSizeCharOffset] - 'A');
+
+        Assert.Equal(SensitiveDataSize.Bits256, sensitiveDataSize);
+        
+        keyChars[sensitiveDataSizeCharOffset] = (char)('A' + ((int)SensitiveDataSize.Bits512 + 1));
+        Base64Url.TryDecodeFromChars(keyChars, decoded, out int _);
+
+        Assert.Throws<FormatException>(() => CaskKey.Encode(decoded));
     }
 
     [Fact]
