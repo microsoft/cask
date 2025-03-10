@@ -13,15 +13,16 @@ namespace CommonAnnotatedSecurityKeys;
  * it's possible that the JIT will not discover that the computation yields a constant on
  * every invocation, but it will treat static readonly fields as constants.
  */
+
 public static class Limits
 {
     /// <summary>
-    /// The maximum length of provider-reserved data when base64-encoded.
+    /// The maximum length of provider-reserved data, if any, when decoded to bytes.
     /// </summary>
     public static int MaxProviderDataLengthInBytes { get; } = 12;
 
     /// <summary>
-    /// The maximum length of provider-reserved data when base64-encoded.
+    /// The maximum length of provider-reserved data, if any, when base64-encoded.
     /// </summary>
     public static int MaxProviderDataLengthInChars { get; } = BytesToBase64Chars(MaxProviderDataLengthInBytes);
 
@@ -36,17 +37,12 @@ public static class Limits
     public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SensitiveDataSize.Bits512);
 
     /// <summary>
-    /// The minimum length of a Cask secret in characters.
+    /// The minimum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).
     /// </summary>
     public static int MinKeyLengthInChars { get; } = BytesToBase64Chars(MinKeyLengthInBytes);
 
     /// <summary>
-    /// The maximum length of a Cask secret in characters.
+    /// The maximum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).
     /// </summary>
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
-
-    /// <summary>
-    /// The maximum expiry, an 18-bit count of five minute increments (0-261,143).
-    /// </summary>
-    public static int MaxExpiryInFiveMinuteIncrements { get; } = (1 << 18) - 1;
 }
