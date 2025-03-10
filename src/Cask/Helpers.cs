@@ -105,7 +105,6 @@ internal static class Helpers
         }
     }
 
-
     [DoesNotReturn]
     public static void ThrowOperationOnUninitializedInstance()
     {

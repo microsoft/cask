@@ -33,11 +33,8 @@ public static class Cask
             return false;
         }
 
-        SensitiveDataSize size = InferSensitiveDataSizeFromCharLength(key.Length);
-        Range caskSignatureCharRange = ComputeSignatureCharRange(size);
-        Index sensitiveDataCharOffset = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
-
-        if (key[sensitiveDataCharOffset] - 'A' != (int)size)
+        SensitiveDataSize sensitiveDataSize = ExtractSensitiveDataSizeFromKeyChars(key, out Range caskSignatureCharRange);
+        if (sensitiveDataSize == 0 || sensitiveDataSize > SensitiveDataSize.Bits512)
         {
             return false;
         }
@@ -192,17 +189,28 @@ public static class Cask
         Span<char> minutesSizesAndKeyKindChars = stackalloc char[4];
         int bytesWritten = Base64Url.EncodeToChars(keyBytes[minutesSizesAndKeyKindRange], minutesSizesAndKeyKindChars);
 
-        // "A", i.e., index 0 of all base64-encoded characters.
-        var encodedSensitiveDataSize = (SensitiveDataSize)(minutesSizesAndKeyKindChars[1] - Base64UrlChars[0]);
+        // 'A' == index 0 of all printable base64-encoded characters.
+        var encodedSensitiveDataSize = (SensitiveDataSize)(minutesSizesAndKeyKindChars[1] - 'A');
         if (sensitiveDataSize != encodedSensitiveDataSize)
         {
             return false;
         }
 
-        int providerDataLengthInBytes = Base64CharsToBytes(minutesSizesAndKeyKindChars[2] - Base64UrlChars[0]);
+        int providerDataLengthInBytes = (minutesSizesAndKeyKindChars[2] - 'A') * 3;
+        if (providerDataLengthInBytes > MaxProviderDataLengthInBytes || providerDataLengthInBytes % 3 != 0)
+        {
+            return false;
+        }
 
+        int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment((int)encodedSensitiveDataSize * 16);
+        int expectedKeyLengthInBytes = sensitiveDataSizeInBytes + FixedKeyComponentSizeInBytes + providerDataLengthInBytes;
+        if (expectedKeyLengthInBytes != keyBytes.Length)
+        {
+            return false;
+        }
 
-        // TBD: Ensure we have checked all the things we can check.
+        // TODO: Review Cask.IsCaskBytes and its callers carefullyto ensure all useful checks are made
+        // https://github.com/microsoft/cask/issues/45
 
         return true;
     }
@@ -396,6 +404,14 @@ public static class Cask
     {
         t_mockedFillRandom = fillRandom;
         return new Mock(() => t_mockedFillRandom = null);
+    }
+
+    internal static SensitiveDataSize ExtractSensitiveDataSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
+    {
+        SensitiveDataSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(key.Length);
+        caskSignatureCharRange = ComputeSignatureCharRange(sensitiveDataSize);
+        Index sensitiveDataSizeCharIndex = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
+        return (SensitiveDataSize)(key[sensitiveDataSizeCharIndex] - 'A');
     }
 
 #pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955

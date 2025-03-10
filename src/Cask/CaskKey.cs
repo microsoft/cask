@@ -32,11 +32,7 @@ public readonly partial record struct CaskKey : IIsInitialized
         get
         {
             ThrowIfNotInitialized();
-            SensitiveDataSize sensitiveDataSize = Cask.InferSensitiveDataSizeFromCharLength(_key.Length);
-            Range caskSignatureCharRange = Cask.ComputeSignatureCharRange(sensitiveDataSize);
-            Index sensitiveDataSizeCharIndex = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
-            return (SensitiveDataSize)(_key[sensitiveDataSizeCharIndex] - 'A');
-
+            return Cask.ExtractSensitiveDataSizeFromKeyChars(_key.AsSpan(), out Range _);
         }
     }
 
