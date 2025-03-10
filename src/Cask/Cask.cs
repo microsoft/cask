@@ -209,7 +209,8 @@ public static class Cask
             return false;
         }
 
-        // TODO: Review Cask.IsCaskBytes and its callers carefullyto ensure all useful checks are made
+        // TODO: Review Cask.IsCaskBytes and its callers carefullyto ensure all useful checks are made.
+        // Specifically, we are missing validations and supporting unit tests for invalid timestamps.
         // https://github.com/microsoft/cask/issues/45
 
         return true;
