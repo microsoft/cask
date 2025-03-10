@@ -12,7 +12,7 @@ using static CommonAnnotatedSecurityKeys.Limits;
 namespace CommonAnnotatedSecurityKeys.Tests;
 public abstract class CaskTestsBase
 {
-    private protected static new HashSet<char> s_validBase64Url =
+    private protected static readonly HashSet<char> s_validBase64Url =
         [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
 
     protected CaskTestsBase(ICask cask)
