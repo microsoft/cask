@@ -8,7 +8,6 @@ using static CommonAnnotatedSecurityKeys.Limits;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
 
-[ExcludeFromCodeCoverage]
 public class LimitTests
 {
     [Fact]

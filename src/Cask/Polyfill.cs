@@ -119,38 +119,10 @@ namespace Polyfill
             }
         }
 
-        public static void ThrowIfGreaterThan(int value, int max, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        {
-            if (value > max)
-            {
-                ThrowGreaterThan(value, max, paramName);
-            }
-        }
-
-        public static void ThrowIfLessThan(int value, int min, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        {
-            if (value < min)
-            {
-                ThrowLessThan(value, min, paramName);
-            }
-        }
-
         [DoesNotReturn]
         private static void ThrowArgumentNull(string? paramName)
         {
             throw new ArgumentNullException(paramName);
-        }
-
-        [DoesNotReturn]
-        private static void ThrowGreaterThan(int value, int max, string? paramName)
-        {
-            throw new ArgumentOutOfRangeException(paramName, value, $"Value must be less than or equal to {max}.");
-        }
-
-        [DoesNotReturn]
-        private static void ThrowLessThan(int value, int min, string? paramName)
-        {
-            throw new ArgumentOutOfRangeException(paramName, value, $"Value must be greater than or equal to {min}.");
         }
     }
 

@@ -15,6 +15,9 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 [ExcludeFromCodeCoverage]
 public abstract class CaskTestsBase
 {
+    private protected static readonly HashSet<char> s_printableBase64UrlCharacters =
+    [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
+
     protected CaskTestsBase(ICask cask)
     {
         Cask = cask;
@@ -22,18 +25,20 @@ public abstract class CaskTestsBase
 
     protected ICask Cask { get; }
 
-    [Fact]
-    public void CaskSecrets_IsCask()
+    [Theory]
+    [InlineData(SensitiveDataSize.Bits128)]
+    [InlineData(SensitiveDataSize.Bits256)]
+    [InlineData(SensitiveDataSize.Bits384)]
+    [InlineData(SensitiveDataSize.Bits512)]
+    public void CaskSecrets_IsCask(SensitiveDataSize sensitiveDataSize)
     {
-        foreach (SensitiveDataSize sensitiveDataSize in CaskKeyTests.AllSensitiveDataSizes)
-        {
+
             string key = Cask.GenerateKey(providerSignature: "TEST",
-                                          providerKeyKind: "M",
+                                          providerKeyKind: 'M',
                                           providerData: "_NG_",
                                           sensitiveDataSize);
 
-            IsCaskVerifySuccess(key);
-        }
+            IsCaskVerifySuccess(key);        
     }
 
     [Theory]
@@ -44,7 +49,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SensitiveDataSize sensitiveDataSize)
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "B",
+                                      providerKeyKind: 'B',
                                       providerData,
                                       sensitiveDataSize);
 
@@ -265,7 +270,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "G",
+                                      providerKeyKind: 'G',
                                       providerData: "-__-");
         Span<char> keyChars = key.ToCharArray().AsSpan();
         Span<char> caskSignatureBytes = "QJJQ".ToCharArray().AsSpan();
@@ -298,7 +303,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize(SensitiveDataSize sensitiveDataSize)
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "_",
+                                      providerKeyKind: '_',
                                       providerData: "oOOo",
                                       sensitiveDataSize);
 
@@ -323,28 +328,36 @@ public abstract class CaskTestsBase
 
 
     [Fact]
-    public void CaskSecrets_IsCask_InvalidKey_InvalidProviderKindLength()
+    public void CaskSecrets_IsCask_InvalidKey_InvalidProviderKind()
     {
         Assert.Throws<ArgumentException>(
             () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "TOOLONG",
+                                   default,
                                    providerData: "OooOOooOOooO"));
     }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidForBase64ProviderKind()
     {
-        Assert.Throws<ArgumentException>(
-            () => Cask.GenerateKey("TEST",
-                                   providerKeyKind: "?",
-                                   providerData: null));
+        for (char ch = (char)0; ch < char.MaxValue; ch++)
+        {
+            if (s_printableBase64UrlCharacters.Contains(ch))
+            {
+                continue;
+            }
+
+            Assert.Throws<ArgumentException>(
+                () => Cask.GenerateKey("TEST",
+                                       providerKeyKind: ch,
+                                       providerData: "OooOOooOOooO"));
+        }
     }
 
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
         string key = Cask.GenerateKey("TEST",
-                                      providerKeyKind: "X",
+                                      providerKeyKind: 'X',
                                       providerData: "UNALIGN_") + "-";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that was not aligned to 4 chars: {key}");
@@ -356,7 +369,7 @@ public abstract class CaskTestsBase
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
         string key = $"    {Cask.GenerateKey("TEST",
-                            "X",
+                            'X',
                             providerData: null)[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
@@ -366,7 +379,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "-",
+                                      providerKeyKind: '-',
                                       providerData: null);
         key = '?' + key[1..];
         bool valid = Cask.IsCask(key);
@@ -377,7 +390,7 @@ public abstract class CaskTestsBase
     public void CaskSecrets_GenerateKey_Basic()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: "Q",
+                                      providerKeyKind: 'Q',
                                       providerData: "ABCD");
 
         byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
@@ -395,7 +408,7 @@ public abstract class CaskTestsBase
     [InlineData("    ")]  // Whitespace.
     public void CaskSecrets_GenerateKey_InvalidProviderSignature(string? providerSignature)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, "A", providerData: null));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey(providerSignature!, 'A', providerData: null));
         Assert.IsType(providerSignature == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerSignature), ex.ParamName);
     }
@@ -408,7 +421,7 @@ public abstract class CaskTestsBase
     [InlineData("THIS_IS_TOO_MUCH_PROVIDER_DATA_SERIOUSLY_IT_IS_VERY_VERY_LONG_AND_THAT_IS_NOT_OKAY")]
     public void CaskSecrets_GenerateKey_InvalidProviderData(string providerData)
     {
-        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", "X", providerData));
+        ArgumentException ex = Assert.ThrowsAny<ArgumentException>(() => Cask.GenerateKey("TEST", 'X', providerData));
         Assert.IsType(providerData == null ? typeof(ArgumentNullException) : typeof(ArgumentException), ex);
         Assert.Equal(nameof(providerData), ex.ParamName);
     }
@@ -421,8 +434,8 @@ public abstract class CaskTestsBase
         // RNG that left all the entropy bytes zeroed out, so at least cover that
         // in the meantime. :)
 
-        string key = Cask.GenerateKey("TEST", "M", "ABCD");
-        string key2 = Cask.GenerateKey("TEST", "M", "ABCD");
+        string key = Cask.GenerateKey("TEST", 'M', "ABCD");
+        string key2 = Cask.GenerateKey("TEST", 'M', "ABCD");
 
         Assert.True(key != key2, $"'GenerateKey' produced the same key twice: {key}");
     }
@@ -437,7 +450,7 @@ public abstract class CaskTestsBase
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(255));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        string actualKey = Cask.GenerateKey("TEST", "M", "ABCD", sensitiveDataSize);
+        string actualKey = Cask.GenerateKey("TEST", 'M', "ABCD", sensitiveDataSize);
         Assert.Equal(expectedKey, actualKey);
     }
 
@@ -456,7 +469,7 @@ public abstract class CaskTestsBase
 
         Exception ex = Assert.Throws<InvalidOperationException>(
             () => Cask.GenerateKey(providerSignature: "TEST",
-                                   providerKeyKind: "y",
+                                   providerKeyKind: 'y',
                                    providerData: "ABCD"));
 
         Assert.Contains("2088", ex.Message, StringComparison.Ordinal);
@@ -481,7 +494,7 @@ public abstract class CaskTestsBase
                 using Mock mock = Cask.MockUtcNow(() => timestamp);
 
                 string key = Cask.GenerateKey(providerSignature: "TEST",
-                                              providerKeyKind: "Z",
+                                              providerKeyKind: 'Z',
                                               providerData: "ABCD",
                                               sensitiveDataSize);
                 IsCaskVerifySuccess(key);

@@ -19,18 +19,19 @@ public class CaskKeyTests
         SensitiveDataSize.Bits128, SensitiveDataSize.Bits256,
         SensitiveDataSize.Bits384, SensitiveDataSize.Bits512];
 
-    [Fact]
-    public void CaskKey_KindIsPrimaryKey()
+    [Theory]
+    [InlineData(SensitiveDataSize.Bits128)]
+    [InlineData(SensitiveDataSize.Bits256)]
+    [InlineData(SensitiveDataSize.Bits384)]
+    [InlineData(SensitiveDataSize.Bits512)]
+    public void CaskKey_Basic(SensitiveDataSize sensitiveDataSize)
     {
-        foreach (SensitiveDataSize sensitiveDataSize in AllSensitiveDataSizes)
-        {
-            CaskKey key = Cask.GenerateKey("TEST",
-                                           providerKeyKind: "O",
-                                           providerData: "XXXX",
-                                           sensitiveDataSize);
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: 'O',
+                                       providerData: "XXXX",
+                                       sensitiveDataSize);
 
-            Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
-        }
+        Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public class CaskKeyTests
             int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
 
             CaskKey key = Cask.GenerateKey("TEST",
-                                           providerKeyKind: "O",
+                                           providerKeyKind: 'O',
                                            providerData,
                                            sensitiveDataSize);
 
@@ -78,7 +79,7 @@ public class CaskKeyTests
     public void CaskKey_SensitiveDataSizeInBytes()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "_",
+                                       providerKeyKind: '_',
                                        providerData: "aBBa");
 
         Span<char> keyChars = key.ToString().ToCharArray();
@@ -111,7 +112,7 @@ public class CaskKeyTests
     public void CaskKey_CreateOverloadsAreEquivalent()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "J",
+                                       providerKeyKind: 'J',
                                        providerData: "MSFT");
 
         byte[] actual = new byte[Limits.MaxKeyLengthInBytes];
@@ -130,10 +131,10 @@ public class CaskKeyTests
     }
 
     [Fact]
-    public void CaskKey_DecodeBasic()
+    public void CaskKey_Decode_Basic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "9",
+                                       providerKeyKind: '9',
                                        providerData: "010101010101");
 
         byte[] decoded = new byte[key.SizeInBytes];
@@ -146,10 +147,23 @@ public class CaskKeyTests
     }
 
     [Fact]
+    public void CaskKey_Decode_DestinationTooSmall()
+    {
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: '9',
+                                       providerData: "010101010101");
+
+        byte[] decoded = new byte[key.SizeInBytes];
+        key.Decode(decoded);
+
+        Assert.Throws<ArgumentException>(() => key.Decode(decoded.AsSpan()[..^1]));
+    }
+
+    [Fact]
     public void CaskKey_TryEncodeInvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "l",
+                                       providerKeyKind: 'l',
                                        providerData: "010101010101");
 
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
@@ -169,7 +183,7 @@ public class CaskKeyTests
     public void CaskKey_TryEncodeBasic()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "J",
+                                       providerKeyKind: 'J',
                                        providerData: null);
 
         Span<byte> decoded = stackalloc byte[key.SizeInBytes];
@@ -184,7 +198,7 @@ public class CaskKeyTests
     public void CaskKey_CreateOverloadsThrowOnInvalidKey()
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: "R",
+                                       providerKeyKind: 'R',
                                        providerData: "ROSS");
 
         Span<char> keyChars = key.ToString().ToCharArray();

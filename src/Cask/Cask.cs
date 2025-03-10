@@ -28,7 +28,7 @@ public static class Cask
     /// <param name="key"></param>
     public static bool IsCask(ReadOnlySpan<char> key)
     {
-        if (key.Length < MinKeyLengthInChars || key.Length > MaxKeyLengthInChars || !Is4CharAligned(key.Length))
+        if (!IsValidKeyLengthInChars(key.Length))
         {
             return false;
         }
@@ -88,10 +88,9 @@ public static class Cask
 
     internal static SensitiveDataSize InferSensitiveDataSizeFromCharLength(int lengthInChars)
     {
-        int lengthInBytes = lengthInChars/ 4 * 3;
-        Debug.Assert(lengthInBytes >= MinKeyLengthInBytes);
-        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
+        Debug.Assert(IsValidKeyLengthInChars(lengthInChars));
 
+        int lengthInBytes = lengthInChars/ 4 * 3;
         return InferSensitiveDataSizeFromByteLength(lengthInBytes);
     }
 
@@ -103,10 +102,12 @@ public static class Cask
          * 
          *  128-bit : 45 bytes (18 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (60 - 45)
          *  256-bit : 60 bytes (33 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (75 - 60)
-         *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 15 bytes of optional data permissible < (90 - 75)
+         *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 15 bytes of optional data permissible < (93 - 75)
          *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 15 bytes (value chosen to align with 384 bit keys)
          *  
         */
+
+        Debug.Assert(IsValidKeyLengthInBytes(lengthInBytes));
 
         if (lengthInBytes >= 93)
         {
@@ -207,11 +208,10 @@ public static class Cask
     }
 
     public static CaskKey GenerateKey(string providerSignature,
-                                      string providerKeyKind,
+                                      char providerKeyKind,
                                       string? providerData = null,
                                       SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256)
     {
-        providerKeyKind ??= $"{Base64UrlChars[0]}"; // "A", i.e., index 0 of all base64-encoded characters.
         providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
@@ -256,7 +256,7 @@ public static class Cask
             Base64UrlChars[now.Minute],                  // Zero-index minute.
             Base64UrlChars[(int)sensitiveDataSize],      // Zero-indexed month.
             Base64UrlChars[providerDataLengthInBytes/3], // Zero-indexed day.
-            providerKeyKind[0],                          // Zero-indexed hour.
+            providerKeyKind,                             // Zero-indexed hour.
         ];
 
         Range minutesSizesKeyKindByteRange = ymdhByteRange.End..(ymdhByteRange.End.Value + 3);
@@ -298,7 +298,6 @@ public static class Cask
 
         return DateTimeOffset.UtcNow;
     }
-
     private static void ValidateProviderSignature(string providerSignature)
     {
         ThrowIfNull(providerSignature);
@@ -313,18 +312,11 @@ public static class Cask
             ThrowIllegalUrlSafeBase64(providerSignature);
         }
     }
-    private static void ValidateProviderKeyKind(string providerKeyKind)
+    private static void ValidateProviderKeyKind(char providerKeyKind)
     {
-        ThrowIfNull(providerKeyKind);
-
-        if (providerKeyKind.Length != 1)
-        {
-            ThrowLengthNotEqual(providerKeyKind, 1);
-        }
-
         if (!IsValidForBase64Url(providerKeyKind))
         {
-            ThrowIllegalUrlSafeBase64(providerKeyKind);
+            ThrowIllegalUrlSafeBase64(providerKeyKind.ToString());
         }
     }
 
@@ -334,6 +326,16 @@ public static class Cask
         {
             ThrowInvalidYear();
         }
+    }
+
+    internal static bool IsValidKeyLengthInChars(int length)
+    {
+        return length >= MinKeyLengthInChars && length <= MaxKeyLengthInChars && Is4CharAligned(length);
+    }
+
+    internal static bool IsValidKeyLengthInBytes(int length)
+    {
+        return length >= MinKeyLengthInBytes && length <= MaxKeyLengthInBytes && Is3ByteAligned(length);
     }
 
     private static void ValidateProviderData(string providerData)
@@ -352,6 +354,18 @@ public static class Cask
         {
             ThrowIllegalUrlSafeBase64(providerData);
         }
+    }
+
+    [DoesNotReturn]
+    private static void ThrowInvalidKeyLength(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        throw new ArgumentException($"Encoded key length must be between than {MinKeyLengthInChars} and {MaxKeyLengthInChars}. Value provided as '{value.Length}'.", paramName);
+    }
+
+    [DoesNotReturn]
+    private static void ThrowInvalidKeyLength(ICollection<byte> value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        throw new ArgumentException($"Decoded key length must be between than {MinKeyLengthInBytes} and {MaxKeyLengthInBytes}. Value provided as '{value.Count}'.", paramName);
     }
 
     [DoesNotReturn]

@@ -24,7 +24,7 @@ public interface ICask
     bool IsCaskBytes(byte[] keyOrHash);
 
     string GenerateKey(string providerSignature,
-                       string providerKeyKind,
+                       char providerKeyKind,
                        string? providerData,
                        SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256);
 

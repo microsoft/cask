@@ -46,6 +46,7 @@ public readonly partial record struct CaskKey : IIsInitialized
         get
         {
             ThrowIfNotInitialized();
+            ThrowIfInvalidKeyLengthInChars(_key.Length);
             SensitiveDataSize sensitiveDataSize = CharToSensitiveDataSize(_key[SensitiveDataSizeCharIndex]);
             return sensitiveDataSize switch
             {
@@ -210,5 +211,16 @@ public readonly partial record struct CaskKey : IIsInitialized
     private static int ThrowUnrecognizedSensitiveDataSize(SensitiveDataSize sensitiveDataSize)
     {
         throw new InvalidOperationException($"Unexpected sensitive data size: {sensitiveDataSize}.");
+    }
+
+    private static void ThrowIfInvalidKeyLengthInChars(int length)
+    {
+        if (!Cask.IsValidKeyLengthInChars(length))
+        {
+            throw new ArgumentException($"""
+                                        Encoded key length must be between than {MinKeyLengthInChars} and {MaxKeyLengthInChars}
+                                        and a multiple of 4. Value provided was '{length}'.");
+                                        """);
+        }
     }
 }
