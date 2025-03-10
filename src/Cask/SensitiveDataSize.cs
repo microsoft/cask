@@ -4,8 +4,10 @@
 namespace CommonAnnotatedSecurityKeys;
 
 /// <summary>
-/// The CASK-specific, general key kind. This kind value is distinct
-/// from the separate, provider-specific, provider-defined key kind.
+/// The size of the sensitive data component of a CASK secret. The literal enum
+/// values below map both to the base64url-encoded index of the value's printable
+/// character, as well as a numeric value that is the number of 16-byte segments
+/// of the sensitive data component.
 /// </summary>
 public enum SensitiveDataSize
 {
