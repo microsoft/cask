@@ -94,13 +94,18 @@ public static class Cask
     internal static SensitiveDataSize InferSensitiveDataSizeFromByteLength(int lengthInBytes)
     {
         /* 
-         *  Required CASK encoded data, 30 bytes.
-         *  QJJQ YMDH MLOP TEST 1234 1234 1234 1234 1234 1234
+         *  Required CASK encoded data, 27 bytes.
+         *  
+         *      public const int FixedKeyComponentSizeInBytes = ( 3 bytes) CaskSignatureSizeInBytes +
+                                                                ( 6 bytes) TimestampSizesAndProviderKindInBytes +
+                                                                ( 3 bytes) ProviderSignatureSizeInBytes +
+                                                                (15 bytes) CorrelatingIdSizeInBytes;
+         *  QJJQ YMDH MLOP TEST 1234 1234 1234 1234 1234
          * 
          *  128-bit : 45 bytes (18 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (60 - 45)
          *  256-bit : 60 bytes (33 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (75 - 60)
-         *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 15 bytes of optional data permissible < (93 - 75)
-         *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 15 bytes (value chosen to align with 384 bit keys)
+         *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (93 - 75)
+         *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 11 bytes (value chosen to align with 384 bit keys)
          *  
         */
 
@@ -133,10 +138,10 @@ public static class Cask
         }
 
         SensitiveDataSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(keyUtf8.Length);
-        Range caskSignatureByteRange = ComputeSignatureCharRange(sensitiveDataSize);
+        Range caskSignatureUtf8Range = ComputeSignatureCharRange(sensitiveDataSize);
 
-        // Check for CASK signature. "QJJQ" base64-decoded.
-        if (!keyUtf8[caskSignatureByteRange].SequenceEqual(CaskSignatureUtf8))
+        // Check for CASK signature, "QJJQ".
+        if (!keyUtf8[caskSignatureUtf8Range].SequenceEqual(CaskSignatureUtf8))
         {
             return false;
         }
@@ -197,12 +202,13 @@ public static class Cask
         }
 
         int providerDataLengthInBytes = (minutesSizesAndKeyKindChars[2] - 'A') * 3;
-        if (providerDataLengthInBytes > MaxProviderDataLengthInBytes || providerDataLengthInBytes % 3 != 0)
+        if (providerDataLengthInBytes > MaxProviderDataLengthInBytes || Is3ByteAligned(providerDataLengthInBytes))
         {
             return false;
         }
 
-        int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment((int)encodedSensitiveDataSize * 16);
+        int entropyInBytes = (int)encodedSensitiveDataSize * 16;
+        int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
         int expectedKeyLengthInBytes = sensitiveDataSizeInBytes + FixedKeyComponentSizeInBytes + providerDataLengthInBytes;
         if (expectedKeyLengthInBytes != keyBytes.Length)
         {

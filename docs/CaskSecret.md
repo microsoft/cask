@@ -19,21 +19,21 @@
                                                                             ; specify a particular cryptographic algorithm or method for
                                                                             ; generating it. The size of this component must conform to the
                                                                             ; encoded <sensitive-data-size> value.
-<128-bits-padded>  ::= 21 * <base64url> <base64-four-zeros-suffix> 'AA'     ; The total random data comprises 128 bits encoded as 21
+<128-bits-padded>  ::= 21 * <base64url> <base64-four-zeros-suffix> 'AA'     ; The total sensitive data comprises 128 bits encoded as 21
                                                                             ; characters x 6 bits (126 bits) and 1 character providing
-                                                                            ; 2 bits of random data padded with 0000b. The final
+                                                                            ; 2 bits of sensitive data padded with 0000b. The final
                                                                             ; characters `AA` comprise 12 bits of additional padding
                                                                             ; that brings the component to a 3-byte boundary.
-<256-bits-padded>  ::= 42 * <base64url> <base64-two-zeros-suffix> 'A'       ; The total random data comprises 256 bits encoded as 42
-                                                                            ; characters comprising 6 bits of random data = 252 bits and
+<256-bits-padded>  ::= 42 * <base64url> <base64-two-zeros-suffix> 'A'       ; The total sensitive data comprises 256 bits encoded as 42
+                                                                            ; characters comprising 6 bits of sensitive data = 252 bits and
                                                                             ; The final characters `A` comprises 6 bits of additional
                                                                             ; padding that brings the component to a 3-byte boundary.
-<384-bits>  ::= 64 * <base64url>                                            ; The total random data comprises 384 bits encoded as 64
+<384-bits>  ::= 64 * <base64url>                                            ; The total sensitive data comprises 384 bits encoded as 64
                                                                             ; 6-bit characters. No reserved padding is required, as
                                                                             ; 384 bits (48 bytes) aligns to a 3-byte boundary.
-<512-bits-padded>  ::= 85 * <base64url> <base64-four-zeros-suffix> 'AA'     ; The total random data comprises 512 bits encoded as 85
+<512-bits-padded>  ::= 85 * <base64url> <base64-four-zeros-suffix> 'AA'     ; The total sensitive data comprises 512 bits encoded as 85
                                                                             ; characters x 6 bits (510 bits) and 1 character providing
-                                                                            ; 2 bits of random data padded with 0000b. The final 
+                                                                            ; 2 bits of sensitive data padded with 0000b. The final 
                                                                             ; characters `AA` comprise 12 bits of additional padding
                                                                             ; that brings the component to a 3-byte boundary.
 <base64url> ::= 'A'..'Z' | 'a'..'z' | '0'..'9' | '-' | '_'                  ; Base64 URL-safe printable characters. The '=' padding character is excluded.
@@ -65,7 +65,7 @@
 ## Byte-wise Rendering Example for 256-bit Key (no optional data)
 |Byte Range|Decimal|Hex|Binary|Description|
 |-|-|-|-|-|
-|decodedKey[..31]|0...255|0x0...0xFF|00000000b...11111111b|256 bits of random data produced by a cryptographically secure RNG|
+|decodedKey[..31]|0...255|0x0...0xFF|00000000b...11111111b|256 bits of sensitive data produced by a cryptographically secure RNG, an HMAC, etc.|
 |decodedKey[32]|0|0x00|00000000b| 8 bits of reserved padding.
 |decodedKey[33..36]| 37, 4, 9  |0x40, 0x92, 0x50| 00100000b, 10010010b, 01010000b | Decoded 'QJJQ' signature.
 |decodedKey[36..39]||||Timestamp data encoded in 4 six-bit segments for YMDH.
