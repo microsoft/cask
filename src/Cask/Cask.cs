@@ -32,7 +32,7 @@ public static class Cask
             return false;
         }
 
-        SecretSize secretSize = ExtractSensitiveDataSizeFromKeyChars(key, out Range caskSignatureCharRange);
+        SecretSize secretSize = ExtractSecretSizeFromKeyChars(key, out Range caskSignatureCharRange);
         if (secretSize == 0 || secretSize > SecretSize.Bits512)
         {
             return false;
@@ -77,7 +77,7 @@ public static class Cask
             return false;
         }
 
-        SecretSize secretSize = InferSensitiveDataSizeFromByteLength(keyBytes.Length);
+        SecretSize secretSize = InferSecretSizeFromByteLength(keyBytes.Length);
         Range caskSignatureByteRange = ComputeSignatureByteRange(secretSize);
 
         // Check for CASK signature. "QJJQ" base64-decoded.
@@ -93,8 +93,8 @@ public static class Cask
         int bytesWritten = Base64Url.EncodeToChars(keyBytes[minutesSizesAndKeyKindRange], minutesSizesAndKeyKindChars);
 
         // 'A' == index 0 of all printable base64-encoded characters.
-        var encodedSensitiveDataSize = (SecretSize)(minutesSizesAndKeyKindChars[1] - 'A');
-        if (secretSize != encodedSensitiveDataSize)
+        var encodedSecretSize = (SecretSize)(minutesSizesAndKeyKindChars[1] - 'A');
+        if (secretSize != encodedSecretSize)
         {
             return false;
         }
@@ -105,7 +105,7 @@ public static class Cask
             return false;
         }
 
-        int secretSizeInBytes = (int)encodedSensitiveDataSize * 16;
+        int secretSizeInBytes = (int)encodedSecretSize * 16;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
         int expectedKeyLengthInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes + providerDataLengthInBytes;
         if (expectedKeyLengthInBytes != keyBytes.Length)
@@ -120,12 +120,12 @@ public static class Cask
         return true;
     }
 
-    internal static SecretSize ExtractSensitiveDataSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
+    internal static SecretSize ExtractSecretSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
     {
-        SecretSize secretSize = InferSensitiveDataSizeFromCharLength(key.Length);
+        SecretSize secretSize = InferSecretSizeFromCharLength(key.Length);
         caskSignatureCharRange = ComputeSignatureCharRange(secretSize);
-        Index sensitiveDataSizeCharIndex = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
-        return (SecretSize)(key[sensitiveDataSizeCharIndex] - 'A');
+        Index secretSizeCharIndex = caskSignatureCharRange.End.Value + SecretSizeOffsetFromCaskSignatureChar;
+        return (SecretSize)(key[secretSizeCharIndex] - 'A');
     }
 
 
@@ -221,15 +221,15 @@ public static class Cask
         return paddedSecretSizeInBytes..(paddedSecretSizeInBytes + 3);
     }
 
-    private static SecretSize InferSensitiveDataSizeFromCharLength(int lengthInChars)
+    private static SecretSize InferSecretSizeFromCharLength(int lengthInChars)
     {
         Debug.Assert(IsValidKeyLengthInChars(lengthInChars));
 
         int lengthInBytes = lengthInChars / 4 * 3;
-        return InferSensitiveDataSizeFromByteLength(lengthInBytes);
+        return InferSecretSizeFromByteLength(lengthInBytes);
     }
 
-    private static SecretSize InferSensitiveDataSizeFromByteLength(int lengthInBytes)
+    private static SecretSize InferSecretSizeFromByteLength(int lengthInBytes)
     {
         /* 
          *  Required CASK encoded data, 27 bytes.
@@ -275,7 +275,7 @@ public static class Cask
             return false;
         }
 
-        SecretSize secretSize = InferSensitiveDataSizeFromCharLength(keyUtf8.Length);
+        SecretSize secretSize = InferSecretSizeFromCharLength(keyUtf8.Length);
         Range caskSignatureUtf8Range = ComputeSignatureCharRange(secretSize);
 
         // Check for CASK signature, "QJJQ".

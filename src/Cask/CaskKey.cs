@@ -32,7 +32,7 @@ public readonly partial record struct CaskKey : IIsInitialized
         get
         {
             ThrowIfNotInitialized();
-            return Cask.ExtractSensitiveDataSizeFromKeyChars(_key.AsSpan(), out Range _);
+            return Cask.ExtractSecretSizeFromKeyChars(_key.AsSpan(), out Range _);
         }
     }
 

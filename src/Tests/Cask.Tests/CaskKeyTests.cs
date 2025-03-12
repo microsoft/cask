@@ -67,7 +67,7 @@ public class CaskKeyTests
     [InlineData(SecretSize.Bits256)]
     [InlineData(SecretSize.Bits384)]
     [InlineData(SecretSize.Bits512)]
-    public void CaskKey_SensitiveDataSize(SecretSize secretSize)
+    public void CaskKey_SecretSize(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: '_',
@@ -185,12 +185,12 @@ public class CaskKeyTests
 
         Span<char> keyChars = key.ToString().ToCharArray().AsSpan();
 
-        int sensitiveDataSizeCharOffset = 53;
-        var sensitiveDataSize = (SecretSize)(keyChars[sensitiveDataSizeCharOffset] - 'A');
+        int secretSizeCharOffset = 53;
+        var secretSize = (SecretSize)(keyChars[secretSizeCharOffset] - 'A');
 
-        Assert.Equal(SecretSize.Bits256, sensitiveDataSize);
+        Assert.Equal(SecretSize.Bits256, secretSize);
 
-        keyChars[sensitiveDataSizeCharOffset] = (char)('A' + ((int)SecretSize.Bits512 + 1));
+        keyChars[secretSizeCharOffset] = (char)('A' + ((int)SecretSize.Bits512 + 1));
         Base64Url.TryDecodeFromChars(keyChars, decoded, out int _);
 
         Assert.Throws<FormatException>(() => CaskKey.Encode(decoded));

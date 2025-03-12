@@ -122,8 +122,8 @@ public abstract class CaskTestsBase
             Assert.Equal(0, keyBytes[secretSizeInBytes + i]);
         }
 
-        int sensitiveDataSizeInChar = (paddedSecretSizeInBytes / 3) * 4;
-        string encodedSensitiveData = encodedKey[..sensitiveDataSizeInChar];
+        int paddedSecretSizeInChars = (paddedSecretSizeInBytes / 3) * 4;
+        string encodedSensitiveData = encodedKey[..paddedSecretSizeInChars];
 
         // If we have non-zero padding bytes, there will be an encoded character
         // with either two or four bits of trailing zeros, which bring the data
@@ -165,7 +165,7 @@ public abstract class CaskTestsBase
         Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual(caskSignatureBytes));
         Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual([(byte)0x40, (byte)0x92, (byte)0x50]));
 
-        Range caskSignatureRangeInChars = sensitiveDataSizeInChar..(sensitiveDataSizeInChar + 4);
+        Range caskSignatureRangeInChars = paddedSecretSizeInChars..(paddedSecretSizeInChars + 4);
         Assert.Equal(caskSignature, encodedKey[caskSignatureRangeInChars]);
 
         // The timestamp, sensitive data size, optional data size, and provider key kind
@@ -273,9 +273,9 @@ public abstract class CaskTestsBase
 
         var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second: 0, TimeSpan.Zero);
 
-        char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];
-        var encodedSensitiveDataSize = (SecretSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
-        Assert.Equal(secretSize, encodedSensitiveDataSize);
+        char encodedSecretSizeChar = encodedTimestampSizesAndKindChars[5];
+        var encodedSecretSize = (SecretSize)base64UrlPrintableCharIndices[encodedSecretSizeChar];
+        Assert.Equal(secretSize, encodedSecretSize);
 
         char encodedOptionalDataSizeChar = encodedTimestampSizesAndKindChars[6];
         int optionalDataSizeInBytes = base64UrlPrintableCharIndices[encodedOptionalDataSizeChar] * 3;

@@ -71,5 +71,5 @@ internal static partial class InternalConstants
     /// The integer offset of the sensitive data size relative to the
     /// Cask signature in a base64-encoded secret.
     /// </summary>
-    public static int SensitiveDataSizeOffsetFromCaskSignatureChar => 5;
+    public static int SecretSizeOffsetFromCaskSignatureChar => 5;
 }
