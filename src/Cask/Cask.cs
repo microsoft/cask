@@ -202,7 +202,7 @@ public static class Cask
         }
 
         int providerDataLengthInBytes = (minutesSizesAndKeyKindChars[2] - 'A') * 3;
-        if (providerDataLengthInBytes > MaxProviderDataLengthInBytes || Is3ByteAligned(providerDataLengthInBytes))
+        if (providerDataLengthInBytes > MaxProviderDataLengthInBytes || !Is3ByteAligned(providerDataLengthInBytes))
         {
             return false;
         }
