@@ -29,12 +29,12 @@ public static class Limits
     /// <summary>
     /// The minimum length of a Cask secret when decoded to bytes.
     /// </summary>
-    public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SensitiveDataSize.Bits128);
+    public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SecretSize.Bits128);
 
     /// <summary>
     /// The maximum length of a Cask secret when decoded to bytes.
     /// </summary>
-    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SensitiveDataSize.Bits512);
+    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits512);
 
     /// <summary>
     /// The minimum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).

@@ -4,12 +4,13 @@
 namespace CommonAnnotatedSecurityKeys;
 
 /// <summary>
-/// The size of the sensitive data component of a CASK secret. The literal enum
-/// values below map both to the base64url-encoded index of the value's printable
-/// character, as well as a numeric value that is the number of 16-byte segments
-/// of the sensitive data component.
+/// The size of the literal secret saved to the sensitive data component of a
+/// CASK secret. This data may be padded with additional bytes to make it 3-byte
+/// aligned. The enum values below comprise a count of 16-byte segments of the
+/// secret data and and are also equivalent to the base64url-encoded index
+/// of the value's printable character.
 /// </summary>
-public enum SensitiveDataSize
+public enum SecretSize
 {
     None = 0,
 

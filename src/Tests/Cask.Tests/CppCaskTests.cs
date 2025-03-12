@@ -43,7 +43,7 @@ public class CppCaskTests : CaskTestsBase
         public string GenerateKey(string providerSignature,
                                   char providerKeyKind,
                                   string? providerData = null,
-                                  SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256)
+                                  SecretSize sensitiveDataSize = SecretSize.Bits256)
         {
             int size = NativeMethods.Cask_GenerateKey(providerSignature, providerKeyKind, providerData, null, 0);
             byte[] bytes = new byte[size];

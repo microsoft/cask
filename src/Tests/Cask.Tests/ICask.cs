@@ -26,7 +26,7 @@ public interface ICask
     string GenerateKey(string providerSignature,
                        char providerKeyKind,
                        string? providerData,
-                       SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256);
+                       SecretSize sensitiveDataSize = SecretSize.Bits256);
 
     internal Mock MockUtcNow(UtcNowFunc getUtcNow);
 

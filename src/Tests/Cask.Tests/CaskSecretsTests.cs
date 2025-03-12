@@ -25,11 +25,11 @@ public abstract class CaskTestsBase
     protected ICask Cask { get; }
 
     [Theory]
-    [InlineData(SensitiveDataSize.Bits128)]
-    [InlineData(SensitiveDataSize.Bits256)]
-    [InlineData(SensitiveDataSize.Bits384)]
-    [InlineData(SensitiveDataSize.Bits512)]
-    public void CaskSecrets_IsCask(SensitiveDataSize sensitiveDataSize)
+    [InlineData(SecretSize.Bits128)]
+    [InlineData(SecretSize.Bits256)]
+    [InlineData(SecretSize.Bits384)]
+    [InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask(SecretSize sensitiveDataSize)
     {
 
         string key = Cask.GenerateKey(providerSignature: "TEST",
@@ -41,11 +41,11 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData("", SensitiveDataSize.Bits128), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits128)]
-    [InlineData("", SensitiveDataSize.Bits256), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits256)]
-    [InlineData("", SensitiveDataSize.Bits384), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits384)]
-    [InlineData("", SensitiveDataSize.Bits512), InlineData("-MF--NG--RW--RG-", SensitiveDataSize.Bits512)]
-    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SensitiveDataSize sensitiveDataSize)
+    [InlineData("", SecretSize.Bits128), InlineData("-MF--NG--RW--RG-", SecretSize.Bits128)]
+    [InlineData("", SecretSize.Bits256), InlineData("-MF--NG--RW--RG-", SecretSize.Bits256)]
+    [InlineData("", SecretSize.Bits384), InlineData("-MF--NG--RW--RG-", SecretSize.Bits384)]
+    [InlineData("", SecretSize.Bits512), InlineData("-MF--NG--RW--RG-", SecretSize.Bits512)]
+    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SecretSize sensitiveDataSize)
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: 'B',
@@ -57,7 +57,7 @@ public abstract class CaskTestsBase
 
     private void TestEncodedMatchedDecoded(string encodedKey,
                                            string providerData,
-                                           SensitiveDataSize sensitiveDataSize)
+                                           SecretSize sensitiveDataSize)
     {
         providerData ??= string.Empty;
 
@@ -84,19 +84,19 @@ public abstract class CaskTestsBase
 
         if (encodedKey.Length >= 120 && keyBytes.Length >= 90)
         {
-            Assert.Equal(SensitiveDataSize.Bits512, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits512, sensitiveDataSize);
         }
         else if (encodedKey.Length >= 100 && keyBytes.Length >= 75)
         {
-            Assert.Equal(SensitiveDataSize.Bits384, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits384, sensitiveDataSize);
         }
         else if (encodedKey.Length >= 80 && keyBytes.Length >= 60)
         {
-            Assert.Equal(SensitiveDataSize.Bits256, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits256, sensitiveDataSize);
         }
         else
         {
-            Assert.Equal(SensitiveDataSize.Bits128, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits128, sensitiveDataSize);
         }
 
         // The sensitive data size encoding is simply a count of 16-byte
@@ -270,7 +270,7 @@ public abstract class CaskTestsBase
         var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second: 0, TimeSpan.Zero);
 
         char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];
-        var encodedSensitiveDataSize = (SensitiveDataSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
+        var encodedSensitiveDataSize = (SecretSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
         Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
 
         char encodedOptionalDataSizeChar = encodedTimestampSizesAndKindChars[6];
@@ -354,8 +354,8 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SensitiveDataSize.Bits128), InlineData(SensitiveDataSize.Bits256), InlineData(SensitiveDataSize.Bits384), InlineData(SensitiveDataSize.Bits512)]
-    public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize(SensitiveDataSize sensitiveDataSize)
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize(SecretSize sensitiveDataSize)
     {
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: '_',
@@ -368,7 +368,7 @@ public abstract class CaskTestsBase
         int sensitiveDataSizeInChars = RoundUpTo3ByteAlignment(entropyInBytes) / 3 * 4;
         int sensitiveDataSizeCharIndex = sensitiveDataSizeInChars + CaskSignatureUtf8.Length + 5;
 
-        var encodedSensitiveDataSize = (SensitiveDataSize)(key[sensitiveDataSizeCharIndex] - 'A');
+        var encodedSensitiveDataSize = (SecretSize)(key[sensitiveDataSizeCharIndex] - 'A');
         Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
 
         Span<char> keyChars = key.ToCharArray().AsSpan();
@@ -496,11 +496,11 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SensitiveDataSize.Bits128, "_____________________wAAQJJQAAAAABBMABCDTEST____________________")]
-    [InlineData(SensitiveDataSize.Bits256, "__________________________________________8AQJJQAAAAACBMABCDTEST____________________")]
-    [InlineData(SensitiveDataSize.Bits384, "________________________________________________________________QJJQAAAAADBMABCDTEST____________________")]
-    [InlineData(SensitiveDataSize.Bits512, "_____________________________________________________________________________________wAAQJJQAAAAAEBMABCDTEST____________________")]
-    public void CaskSecrets_GenerateKey_DeterministicUsingMocks(SensitiveDataSize sensitiveDataSize, string expectedKey)
+    [InlineData(SecretSize.Bits128, "_____________________wAAQJJQAAAAABBMABCDTEST____________________")]
+    [InlineData(SecretSize.Bits256, "__________________________________________8AQJJQAAAAACBMABCDTEST____________________")]
+    [InlineData(SecretSize.Bits384, "________________________________________________________________QJJQAAAAADBMABCDTEST____________________")]
+    [InlineData(SecretSize.Bits512, "_____________________________________________________________________________________wAAQJJQAAAAAEBMABCDTEST____________________")]
+    public void CaskSecrets_GenerateKey_DeterministicUsingMocks(SecretSize sensitiveDataSize, string expectedKey)
     {
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(255));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
@@ -538,7 +538,7 @@ public abstract class CaskTestsBase
         // most programmers will be.
         for (int year = 0; year < 64; year++)
         {
-            foreach (SensitiveDataSize sensitiveDataSize in CaskKeyTests.AllSensitiveDataSizes)
+            foreach (SecretSize sensitiveDataSize in CaskKeyTests.AllSensitiveDataSizes)
             {
                 int month = year % 12;
                 int day = year % 28;

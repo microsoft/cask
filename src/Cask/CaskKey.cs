@@ -27,7 +27,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     [MemberNotNullWhen(true, nameof(_key))]
     public bool IsInitialized => _key != null;
 
-    public SensitiveDataSize SensitiveDataSize
+    public SecretSize SensitiveDataSize
     {
         get
         {

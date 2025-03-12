@@ -33,8 +33,8 @@ public static class Cask
             return false;
         }
 
-        SensitiveDataSize sensitiveDataSize = ExtractSensitiveDataSizeFromKeyChars(key, out Range caskSignatureCharRange);
-        if (sensitiveDataSize == 0 || sensitiveDataSize > SensitiveDataSize.Bits512)
+        SecretSize sensitiveDataSize = ExtractSensitiveDataSizeFromKeyChars(key, out Range caskSignatureCharRange);
+        if (sensitiveDataSize == 0 || sensitiveDataSize > SecretSize.Bits512)
         {
             return false;
         }
@@ -68,7 +68,7 @@ public static class Cask
         return IsCaskBytes(keyBytes);
     }
 
-    internal static Range ComputeSignatureCharRange(SensitiveDataSize sensitiveDataSize)
+    internal static Range ComputeSignatureCharRange(SecretSize sensitiveDataSize)
     {
         int entropyInBytes = (int)sensitiveDataSize * 16;
         int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
@@ -76,14 +76,14 @@ public static class Cask
         return sensitiveDataCharOffset..(sensitiveDataCharOffset + 4);
     }
 
-    private static Range ComputeSignatureByteRange(SensitiveDataSize sensitiveDataSize)
+    private static Range ComputeSignatureByteRange(SecretSize sensitiveDataSize)
     {
         int entropyInBytes = (int)sensitiveDataSize * 16;
         int sensitiveDataByteOffset = RoundUpTo3ByteAlignment(entropyInBytes);
         return sensitiveDataByteOffset..(sensitiveDataByteOffset + 3);
     }
 
-    internal static SensitiveDataSize InferSensitiveDataSizeFromCharLength(int lengthInChars)
+    internal static SecretSize InferSensitiveDataSizeFromCharLength(int lengthInChars)
     {
         Debug.Assert(IsValidKeyLengthInChars(lengthInChars));
 
@@ -91,7 +91,7 @@ public static class Cask
         return InferSensitiveDataSizeFromByteLength(lengthInBytes);
     }
 
-    internal static SensitiveDataSize InferSensitiveDataSizeFromByteLength(int lengthInBytes)
+    internal static SecretSize InferSensitiveDataSizeFromByteLength(int lengthInBytes)
     {
         /* 
          *  Required CASK encoded data, 27 bytes.
@@ -113,18 +113,18 @@ public static class Cask
 
         if (lengthInBytes >= 93)
         {
-            return SensitiveDataSize.Bits512;
+            return SecretSize.Bits512;
         }
         else if (lengthInBytes >= 75)
         {
-            return SensitiveDataSize.Bits384;
+            return SecretSize.Bits384;
         }
         else if (lengthInBytes >= 60)
         {
-            return SensitiveDataSize.Bits256;
+            return SecretSize.Bits256;
         }
 
-        return SensitiveDataSize.Bits128;
+        return SecretSize.Bits128;
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public static class Cask
             return false;
         }
 
-        SensitiveDataSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(keyUtf8.Length);
+        SecretSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(keyUtf8.Length);
         Range caskSignatureUtf8Range = ComputeSignatureCharRange(sensitiveDataSize);
 
         // Check for CASK signature, "QJJQ".
@@ -179,7 +179,7 @@ public static class Cask
             return false;
         }
 
-        SensitiveDataSize sensitiveDataSize = InferSensitiveDataSizeFromByteLength(keyBytes.Length);
+        SecretSize sensitiveDataSize = InferSensitiveDataSizeFromByteLength(keyBytes.Length);
         Range caskSignatureByteRange = ComputeSignatureByteRange(sensitiveDataSize);
 
         // Check for CASK signature. "QJJQ" base64-decoded.
@@ -195,7 +195,7 @@ public static class Cask
         int bytesWritten = Base64Url.EncodeToChars(keyBytes[minutesSizesAndKeyKindRange], minutesSizesAndKeyKindChars);
 
         // 'A' == index 0 of all printable base64-encoded characters.
-        var encodedSensitiveDataSize = (SensitiveDataSize)(minutesSizesAndKeyKindChars[1] - 'A');
+        var encodedSensitiveDataSize = (SecretSize)(minutesSizesAndKeyKindChars[1] - 'A');
         if (sensitiveDataSize != encodedSensitiveDataSize)
         {
             return false;
@@ -225,20 +225,21 @@ public static class Cask
     public static CaskKey GenerateKey(string providerSignature,
                                       char providerKeyKind,
                                       string? providerData = null,
-                                      SensitiveDataSize sensitiveDataSize = SensitiveDataSize.Bits256)
+                                      SecretSize secretDataSize = SecretSize.Bits256)
     {
         providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
         ValidateProviderKeyKind(providerKeyKind);
         ValidateProviderData(providerData);
+        ValidateSensitiveDataSize(secretDataSize);
 
         // Calculate the length of the key.
         int providerDataLengthInBytes = Base64CharsToBytes(providerData.Length);
 
-        int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes, sensitiveDataSize);
+        int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes, secretDataSize);
 
-        int entropyInBytes = (int)sensitiveDataSize * 16;
+        int entropyInBytes = (int)secretDataSize * 16;
         int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
         int intPaddingBytes = sensitiveDataSizeInBytes - entropyInBytes;
 
@@ -253,7 +254,7 @@ public static class Cask
         key.Slice(entropyInBytes, paddingInBytes).Clear();
 
         // CASK signature.
-        Range caskSignatureByteRange = ComputeSignatureByteRange(sensitiveDataSize);
+        Range caskSignatureByteRange = ComputeSignatureByteRange(secretDataSize);
         CaskSignatureBytes.CopyTo(key[caskSignatureByteRange]);
 
         DateTimeOffset now = GetUtcNow();
@@ -271,7 +272,7 @@ public static class Cask
 
         chars = [
             Base64UrlChars[now.Minute],                  // Zero-index minute.
-            Base64UrlChars[(int)sensitiveDataSize],      // Zero-indexed month.
+            Base64UrlChars[(int)secretDataSize],      // Zero-indexed month.
             Base64UrlChars[providerDataLengthInBytes/3], // Zero-indexed day.
             providerKeyKind,                             // Zero-indexed hour.
         ];
@@ -373,10 +374,24 @@ public static class Cask
         }
     }
 
+    private static void ValidateSensitiveDataSize(SecretSize size)
+    {
+        if (size < SecretSize.Bits128 || size > SecretSize.Bits512)
+        {
+            ThrowInvalidSensitiveDataSize(size);
+        }
+    }
+
     [DoesNotReturn]
     private static void ThrowProviderDataUnaligned(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
         throw new ArgumentException($"Provider data must be a multiple of 4 characters long: '{value}'.", paramName);
+    }
+
+    [DoesNotReturn]
+    private static void ThrowInvalidSensitiveDataSize(SecretSize value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        throw new ArgumentException($"Invalid sensitive data size: '{value}'.", paramName);
     }
 
     [DoesNotReturn]
@@ -415,12 +430,12 @@ public static class Cask
         return new Mock(() => t_mockedFillRandom = null);
     }
 
-    internal static SensitiveDataSize ExtractSensitiveDataSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
+    internal static SecretSize ExtractSensitiveDataSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
     {
-        SensitiveDataSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(key.Length);
+        SecretSize sensitiveDataSize = InferSensitiveDataSizeFromCharLength(key.Length);
         caskSignatureCharRange = ComputeSignatureCharRange(sensitiveDataSize);
         Index sensitiveDataSizeCharIndex = caskSignatureCharRange.End.Value + SensitiveDataSizeOffsetFromCaskSignatureChar;
-        return (SensitiveDataSize)(key[sensitiveDataSizeCharIndex] - 'A');
+        return (SecretSize)(key[sensitiveDataSizeCharIndex] - 'A');
     }
 
 #pragma warning disable IDE1006 // https://github.com/dotnet/roslyn/issues/32955
