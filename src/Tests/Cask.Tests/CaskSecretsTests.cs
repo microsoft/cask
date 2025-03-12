@@ -358,7 +358,7 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(0)]
+    [InlineData(SecretSize.Bits128 - 1)]
     [InlineData(SecretSize.Bits512 + 1)]
     public void CaskSecrets_IsCask_InvalidKey_InvalidSecretSize(SecretSize secretSize)
     {

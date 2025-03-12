@@ -48,7 +48,7 @@ internal static class Helpers
         Debug.Assert(Is3ByteAligned(providerDataLengthInBytes),
                      $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
 
-        
+
         int secretSizeInBytes = (int)secretSize * 16;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
