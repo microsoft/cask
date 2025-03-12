@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -244,7 +243,7 @@ public static class Cask
          *  128-bit : 45 bytes (18 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (60 - 45)
          *  256-bit : 60 bytes (33 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (75 - 60)
          *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (93 - 75)
-         *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 11 bytes (value chosen to align with 384 bit keys)
+         *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 12 bytes (value chosen to align with 384 bit keys)
          *  
         */
 
@@ -390,7 +389,7 @@ public static class Cask
     {
         if (size < SecretSize.Bits128 || size > SecretSize.Bits512)
         {
-            ThrowInvalidSensitiveDataSize(size);
+            ThrowInvalidSecretSize(size);
         }
     }
 
@@ -401,9 +400,9 @@ public static class Cask
     }
 
     [DoesNotReturn]
-    private static void ThrowInvalidSensitiveDataSize(SecretSize value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    private static void ThrowInvalidSecretSize(SecretSize value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
-        throw new ArgumentException($"Invalid sensitive data size: '{value}'.", paramName);
+        throw new ArgumentException($"Invalid secret size: '{value}'.", paramName);
     }
 
     [DoesNotReturn]

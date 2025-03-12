@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers.Text;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using Xunit;
@@ -14,10 +13,6 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 
 public class CaskKeyTests
 {
-    internal static SecretSize[] AllSecretSizes => [
-        SecretSize.Bits128, SecretSize.Bits256,
-        SecretSize.Bits384, SecretSize.Bits512];
-
     [Theory]
     [InlineData(SecretSize.Bits128)]
     [InlineData(SecretSize.Bits256)]
@@ -50,7 +45,7 @@ public class CaskKeyTests
     {
         providerData ??= string.Empty;
 
-        foreach (SecretSize secretSize in AllSecretSizes)
+        foreach (SecretSize secretSize in CaskTestsBase.AllSecretSizes)
         {
             int secretSizeInBytes = (int)secretSize * 16;
             int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);

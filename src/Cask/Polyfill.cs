@@ -60,10 +60,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Bcl_Convert = System.Convert;
-using Bcl_HMACSHA256 = System.Security.Cryptography.HMACSHA256;
-using Bcl_SHA256 = System.Security.Cryptography.SHA256;
-
 namespace Polyfill
 {
     internal static class Extensions

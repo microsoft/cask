@@ -48,15 +48,11 @@ internal static class Helpers
         Debug.Assert(Is3ByteAligned(providerDataLengthInBytes),
                      $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
 
-        int keyLengthInBytes = providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
-
+        
         int secretSizeInBytes = (int)secretSize * 16;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
-        keyLengthInBytes += paddedSecretSizeInBytes;
-        Debug.Assert(Is3ByteAligned(keyLengthInBytes));
-
-        return keyLengthInBytes;
+        return paddedSecretSizeInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
     }
 
     public static bool IsValidForBase64Url(string value)

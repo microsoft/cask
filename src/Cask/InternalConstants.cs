@@ -1,7 +1,5 @@
 global using static CommonAnnotatedSecurityKeys.InternalConstants;
 
-using System.Security.Cryptography;
-
 namespace CommonAnnotatedSecurityKeys;
 
 /// <summary>

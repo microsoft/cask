@@ -21,8 +21,6 @@
 #pragma warning disable CA1846 // Prefer AsSpan over substring: not applicable on .NET Framework
 #pragma warning disable CA1872 // Prefer ToHexString over BitConverter: not applicable on .NET Framework
 
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
