@@ -29,13 +29,13 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits256)]
     [InlineData(SecretSize.Bits384)]
     [InlineData(SecretSize.Bits512)]
-    public void CaskSecrets_IsCask(SecretSize sensitiveDataSize)
+    public void CaskSecrets_IsCask(SecretSize secretSize)
     {
 
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: 'M',
                                       providerData: "_NG_",
-                                      sensitiveDataSize);
+                                      secretSize);
 
         IsCaskVerifySuccess(key);
     }
@@ -45,19 +45,19 @@ public abstract class CaskTestsBase
     [InlineData("", SecretSize.Bits256), InlineData("-MF--NG--RW--RG-", SecretSize.Bits256)]
     [InlineData("", SecretSize.Bits384), InlineData("-MF--NG--RW--RG-", SecretSize.Bits384)]
     [InlineData("", SecretSize.Bits512), InlineData("-MF--NG--RW--RG-", SecretSize.Bits512)]
-    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SecretSize sensitiveDataSize)
+    public void CaskSecrets_EncodedMatchesDecoded_GeneratedKey(string providerData, SecretSize secretSize)
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: 'B',
                                       providerData,
-                                      sensitiveDataSize);
+                                      secretSize);
 
-        TestEncodedMatchedDecoded(key, providerData, sensitiveDataSize);
+        TestEncodedMatchedDecoded(key, providerData, secretSize);
     }
 
     private void TestEncodedMatchedDecoded(string encodedKey,
                                            string providerData,
-                                           SecretSize sensitiveDataSize)
+                                           SecretSize secretSize)
     {
         providerData ??= string.Empty;
 
@@ -73,52 +73,52 @@ public abstract class CaskTestsBase
 
         Span<byte> keyBytes = Base64Url.DecodeFromChars(encodedKey.AsSpan());
 
-        // A CASK secret may encode 128, 256, 384, or 512 bits of entropy and its
-        // length will differ accordingly. CASK also allows for optional data to
-        // be included by a secret provider. Because CASK limits optional data to
-        // 12 bytes at most, a CASK secret of particular sensitive data size will
-        // always be smaller than a key of the next larger sensitive data size.
-        // Examining the key length, therefore, is a simple way to determine
-        // the encoded sensitive data size, after which the size of the optional
-        // data is clear.
+        // A CASK secret may encode 128, 256, 384, or 512 bits of sensitive data
+        // and its length will differ accordingly. CASK also allows for optional
+        // data to be included by a secret provider. Because CASK limits optional
+        // data to 12 bytes at most, a CASK secret of particular sensitive data
+        // size will always be smaller than a key of the next larger sensitive
+        // data size. Examining the key length, therefore, is a simple way to
+        // determine the encoded sensitive data size, after which the size of the
+        // optional data is clear.
 
         if (encodedKey.Length >= 120 && keyBytes.Length >= 90)
         {
-            Assert.Equal(SecretSize.Bits512, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits512, secretSize);
         }
         else if (encodedKey.Length >= 100 && keyBytes.Length >= 75)
         {
-            Assert.Equal(SecretSize.Bits384, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits384, secretSize);
         }
         else if (encodedKey.Length >= 80 && keyBytes.Length >= 60)
         {
-            Assert.Equal(SecretSize.Bits256, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits256, secretSize);
         }
         else
         {
-            Assert.Equal(SecretSize.Bits128, sensitiveDataSize);
+            Assert.Equal(SecretSize.Bits128, secretSize);
         }
 
-        // The sensitive data size encoding is simply a count of 16-byte
-        // segments of entropy. The CASK standard allows for 1-4 segments.
-        int entropyInBytes = (int)sensitiveDataSize * 16;
+        // The sensitive data size encoding is simply a count of 16-byte segments
+        // of secret data. The CASK standard allows for 1-4 segments.
+        int secretSizeInBytes = (int)secretSize * 16;
 
         // Because CASK enforces 3-byte aligment to allow for fixed readability
         // in encoded form and convenient bytewise access, the number of bytes of
-        // entropy in a CASK key must be padded for 16-, 32- and 64-byte secrets.
-        int sensitiveDataSizeInBytes = (entropyInBytes + 3 - 1) / 3 * 3;
+        // sensitive in a CASK key must be padded for 16-, 32- and 64-byte secrets.
+        int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
 
         // A 384-bit secret will have not padding. For other sizes, it may be
         // useful to ensure that the zero padding is present, for example, to
         // avoid false positives. This is easily accomplished in the bytewise
         // form.
-        int paddingInBytes = sensitiveDataSizeInBytes - entropyInBytes;
+        int paddingInBytes = paddedSecretSizeInBytes - secretSizeInBytes;
         for (int i = 0; i < paddingInBytes; i++)
         {
-            Assert.Equal(0, keyBytes[entropyInBytes + i]);
+            Assert.Equal(0, keyBytes[secretSizeInBytes + i]);
         }
 
-        int sensitiveDataSizeInChar = (sensitiveDataSizeInBytes / 3) * 4;
+        int sensitiveDataSizeInChar = (paddedSecretSizeInBytes / 3) * 4;
         string encodedSensitiveData = encodedKey[..sensitiveDataSizeInChar];
 
         // If we have non-zero padding bytes, there will be an encoded character
@@ -157,7 +157,7 @@ public abstract class CaskTestsBase
         Span<byte> caskSignatureBytes = stackalloc byte[3];
         Base64Url.DecodeFromChars(caskSignature.AsSpan(), caskSignatureBytes);
 
-        Range caskSignatureRangeInBytes = sensitiveDataSizeInBytes..(sensitiveDataSizeInBytes + 3);
+        Range caskSignatureRangeInBytes = paddedSecretSizeInBytes..(paddedSecretSizeInBytes + 3);
         Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual(caskSignatureBytes));
         Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual([(byte)0x40, (byte)0x92, (byte)0x50]));
 
@@ -271,11 +271,11 @@ public abstract class CaskTestsBase
 
         char encodedSensitiveDataSizeChar = encodedTimestampSizesAndKindChars[5];
         var encodedSensitiveDataSize = (SecretSize)base64UrlPrintableCharIndices[encodedSensitiveDataSizeChar];
-        Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
+        Assert.Equal(secretSize, encodedSensitiveDataSize);
 
         char encodedOptionalDataSizeChar = encodedTimestampSizesAndKindChars[6];
         int optionalDataSizeInBytes = base64UrlPrintableCharIndices[encodedOptionalDataSizeChar] * 3;
-        Assert.Equal(sensitiveDataSizeInBytes + 27 + optionalDataSizeInBytes, keyBytes.Length);
+        Assert.Equal(paddedSecretSizeInBytes + 27 + optionalDataSizeInBytes, keyBytes.Length);
 
         Range optionalDataRangeInBytes = timestampSizesAndKindRangeInBytes.End..(timestampSizesAndKindRangeInBytes.End.Value + optionalDataSizeInBytes);
         Span<byte> optionalDataBytes = keyBytes[optionalDataRangeInBytes];
@@ -355,21 +355,21 @@ public abstract class CaskTestsBase
 
     [Theory]
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
-    public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize(SecretSize sensitiveDataSize)
+    public void CaskSecrets_IsCask_InvalidKey_InvalidSensitiveDataSize(SecretSize secretSize)
     {
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: '_',
                                       providerData: "oOOo",
-                                      sensitiveDataSize);
+                                      secretSize);
 
         IsCaskVerifySuccess(key);
 
-        int entropyInBytes = (int)sensitiveDataSize * 16;
-        int sensitiveDataSizeInChars = RoundUpTo3ByteAlignment(entropyInBytes) / 3 * 4;
-        int sensitiveDataSizeCharIndex = sensitiveDataSizeInChars + CaskSignatureUtf8.Length + 5;
+        int secretSizeInBytes = (int)secretSize * 16;
+        int paddedSecretSizeInChars = RoundUpTo3ByteAlignment(secretSizeInBytes) / 3 * 4;
+        int sensitiveDataSizeCharIndex = paddedSecretSizeInChars + CaskSignatureUtf8.Length + 5;
 
         var encodedSensitiveDataSize = (SecretSize)(key[sensitiveDataSizeCharIndex] - 'A');
-        Assert.Equal(sensitiveDataSize, encodedSensitiveDataSize);
+        Assert.Equal(secretSize, encodedSensitiveDataSize);
 
         Span<char> keyChars = key.ToCharArray().AsSpan();
         keyChars[sensitiveDataSizeCharIndex] = '_';
@@ -500,12 +500,12 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits256, "__________________________________________8AQJJQAAAAACBMABCDTEST____________________")]
     [InlineData(SecretSize.Bits384, "________________________________________________________________QJJQAAAAADBMABCDTEST____________________")]
     [InlineData(SecretSize.Bits512, "_____________________________________________________________________________________wAAQJJQAAAAAEBMABCDTEST____________________")]
-    public void CaskSecrets_GenerateKey_DeterministicUsingMocks(SecretSize sensitiveDataSize, string expectedKey)
+    public void CaskSecrets_GenerateKey_DeterministicUsingMocks(SecretSize secretSize, string expectedKey)
     {
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(255));
         using Mock mockTimestamp = Cask.MockUtcNow(() => new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
-        string actualKey = Cask.GenerateKey("TEST", 'M', "ABCD", sensitiveDataSize);
+        string actualKey = Cask.GenerateKey("TEST", 'M', "ABCD", secretSize);
         Assert.Equal(expectedKey, actualKey);
     }
 
@@ -538,7 +538,7 @@ public abstract class CaskTestsBase
         // most programmers will be.
         for (int year = 0; year < 64; year++)
         {
-            foreach (SecretSize sensitiveDataSize in CaskKeyTests.AllSensitiveDataSizes)
+            foreach (SecretSize secretSize in CaskKeyTests.AllSecretSizes)
             {
                 int month = year % 12;
                 int day = year % 28;
@@ -551,15 +551,15 @@ public abstract class CaskTestsBase
                 string key = Cask.GenerateKey(providerSignature: "TEST",
                                               providerKeyKind: 'Z',
                                               providerData: "ABCD",
-                                              sensitiveDataSize);
+                                              secretSize);
                 IsCaskVerifySuccess(key);
 
                 string b = Base64UrlChars;
                 string expected = $"{b[year]}{b[month]}{b[day]}{b[hour]}{b[minute]}";
 
-                int entropyInBytes = (int)sensitiveDataSize * 16;
-                int sensitiveDataSizeInChars = RoundUpTo3ByteAlignment(entropyInBytes) / 3 * 4;
-                int timestampCharOffset = sensitiveDataSizeInChars + CaskSignatureUtf8.Length;
+                int secretSizeInBytes = (int)secretSize * 16;
+                int paddedSecretSizeInChars = RoundUpTo3ByteAlignment(secretSizeInBytes) / 3 * 4;
+                int timestampCharOffset = paddedSecretSizeInChars + CaskSignatureUtf8.Length;
                 Range timestampCharRange = timestampCharOffset..(timestampCharOffset + 5);
 
                 string actual = key[timestampCharRange];

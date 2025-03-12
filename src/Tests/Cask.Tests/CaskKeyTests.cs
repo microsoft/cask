@@ -14,7 +14,7 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 
 public class CaskKeyTests
 {
-    internal static SecretSize[] AllSensitiveDataSizes => [
+    internal static SecretSize[] AllSecretSizes => [
         SecretSize.Bits128, SecretSize.Bits256,
         SecretSize.Bits384, SecretSize.Bits512];
 
@@ -23,14 +23,14 @@ public class CaskKeyTests
     [InlineData(SecretSize.Bits256)]
     [InlineData(SecretSize.Bits384)]
     [InlineData(SecretSize.Bits512)]
-    public void CaskKey_Basic(SecretSize sensitiveDataSize)
+    public void CaskKey_Basic(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: 'O',
                                        providerData: "XXXX",
-                                       sensitiveDataSize);
+                                       secretSize);
 
-        Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
+        Assert.Equal(secretSize, key.SecretSize);
     }
 
     [Fact]
@@ -50,17 +50,17 @@ public class CaskKeyTests
     {
         providerData ??= string.Empty;
 
-        foreach (SecretSize sensitiveDataSize in AllSensitiveDataSizes)
+        foreach (SecretSize secretSize in AllSecretSizes)
         {
-            int entropyInBytes = (int)sensitiveDataSize * 16;
-            int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
+            int secretSizeInBytes = (int)secretSize * 16;
+            int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
             CaskKey key = Cask.GenerateKey("TEST",
                                            providerKeyKind: 'O',
                                            providerData,
-                                           sensitiveDataSize);
+                                           secretSize);
 
-            int minimumSizeInBytes = sensitiveDataSizeInBytes + FixedKeyComponentSizeInBytes;
+            int minimumSizeInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes;
 
             int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
             Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
@@ -72,22 +72,22 @@ public class CaskKeyTests
     [InlineData(SecretSize.Bits256)]
     [InlineData(SecretSize.Bits384)]
     [InlineData(SecretSize.Bits512)]
-    public void CaskKey_SensitiveDataSize(SecretSize sensitiveDataSize)
+    public void CaskKey_SensitiveDataSize(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
                                        providerKeyKind: '_',
                                        providerData: "aBBa",
-                                       sensitiveDataSize);
+                                       secretSize);
 
         key = CaskKey.Create(key.ToString());
-        Assert.Equal(sensitiveDataSize, key.SensitiveDataSize);
+        Assert.Equal(secretSize, key.SecretSize);
     }
 
     [Fact]
     public void CaskKey_UninitializedSensitiveDateSizeAccessThrows()
     {
         CaskKey key = default;
-        Assert.Throws<InvalidOperationException>(() => key.SensitiveDataSize);
+        Assert.Throws<InvalidOperationException>(() => key.SecretSize);
     }
 
     [Fact]

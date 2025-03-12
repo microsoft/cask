@@ -43,17 +43,17 @@ internal static class Helpers
         return charLength % 4 == 0;
     }
 
-    public static int GetKeyLengthInBytes(int providerDataLengthInBytes, SecretSize sensitiveDataSize)
+    public static int GetKeyLengthInBytes(int providerDataLengthInBytes, SecretSize secretSize)
     {
         Debug.Assert(Is3ByteAligned(providerDataLengthInBytes),
                      $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
 
         int keyLengthInBytes = providerDataLengthInBytes + FixedKeyComponentSizeInBytes;
 
-        int entropyInBytes = (int)sensitiveDataSize * 16;
-        int sensitiveDataSizeInBytes = RoundUpTo3ByteAlignment(entropyInBytes);
+        int secretSizeInBytes = (int)secretSize * 16;
+        int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
-        keyLengthInBytes += sensitiveDataSizeInBytes;
+        keyLengthInBytes += paddedSecretSizeInBytes;
         Debug.Assert(Is3ByteAligned(keyLengthInBytes));
 
         return keyLengthInBytes;
