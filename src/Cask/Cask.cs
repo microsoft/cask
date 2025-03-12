@@ -247,8 +247,10 @@ public static class Cask
         Span<byte> key = stackalloc byte[keyLengthInBytes];
 
         // Entropy comprising the sensitive component of the key.
-        Index endOfSensitiveComponent = sensitiveDataSizeInBytes - intPaddingBytes;
-        FillRandom(key[..endOfSensitiveComponent]);
+        FillRandom(key[..entropyInBytes]);
+
+        int paddingInBytes = sensitiveDataSizeInBytes - entropyInBytes;
+        key.Slice(entropyInBytes, paddingInBytes).Clear();
 
         // CASK signature.
         Range caskSignatureByteRange = ComputeSignatureByteRange(sensitiveDataSize);
