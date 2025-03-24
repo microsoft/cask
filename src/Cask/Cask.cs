@@ -240,12 +240,13 @@ public static class Cask
                                                                 ( 6 bytes) TimestampSizesAndProviderKindInBytes +
                                                                 ( 3 bytes) ProviderSignatureSizeInBytes +
                                                                 (15 bytes) CorrelatingIdSizeInBytes;
-         *  QJJQ YMDH MLOP TEST 1234 1234 1234 1234 1234
+         *  QJJQ YMDH MLOP TEST 1111 2222 3333 4444
          * 
-         *  128-bit : 45 bytes (18 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (60 - 45)
-         *  256-bit : 60 bytes (33 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (75 - 60)
-         *  384-bit : 75 bytes (48 bytes sensitive + 27 reserved) : 12 bytes of optional data permissible < (93 - 75)
-         *  512-bit : 93 bytes (66 bytes sensitive + 27 reserved) : 12 bytes (value chosen to align with 384 bit keys)
+         *  For all keys, there is a maximum of 12 bytes of optional data.
+         *  128-bit : 45 -  57 bytes (18 bytes sensitive + 27 reserved, 0 - 12 bytes optional data)
+         *  256-bit : 60 -  72 byte  (33 bytes sensitive + 27 reserved, 0 - 12 bytes optional data)
+         *  384-bit : 75 -  87 bytes (48 bytes sensitive + 27 reserved, 0 - 12 bytes optional data)
+         *  512-bit : 93 - 105 bytes (66 bytes sensitive + 27 reserved, 0 - 12 bytes optional data)
          *  
         */
 
@@ -253,18 +254,33 @@ public static class Cask
         Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Debug.Assert(IsValidKeyLengthInBytes(lengthInBytes));
 
-        if (lengthInBytes >= 93)
+        if (lengthInBytes >= Min512BitKeyLengthInBytes)
         {
+            Debug.Assert(lengthInBytes <= Max512BitKeyLengthInBytes);
             return SecretSize.Bits512;
         }
-        else if (lengthInBytes >= 75)
+        else if (lengthInBytes >= Min384BitKeyLengthInBytes)
         {
+            // A key length of 90 bytes isn't valid for our format. The reason
+            // is that the standard limits optionally provided data length to 12
+            // bytes, no matter what the size of the sensitive data. Because a
+            // 48-byte sensitive data size is already 3-byte aligned, the
+            // maximum length of this key is 87 bytes. The next key size (a
+            // 64-byte secret) rounds the sensitive data size up to 66 bytes. As
+            // a result, the minimal key length for the key size is 93 bytes. It
+            // is unfortunate that we have this embedded illegal key size, as it
+            // allows an unusual corner case.
+            Debug.Assert(lengthInBytes <= Max384BitKeyLengthInBytes);
             return SecretSize.Bits384;
         }
-        else if (lengthInBytes >= 60)
+        else if (lengthInBytes >= Min256BitKeyLengthInBytes)
         {
+            Debug.Assert(lengthInBytes <= Max256BitKeyLengthInBytes);
             return SecretSize.Bits256;
         }
+
+        Debug.Assert(lengthInBytes >= Min128BitKeyLengthInBytes);
+        Debug.Assert(lengthInBytes <= Max128BitKeyLengthInBytes);
 
         return SecretSize.Bits128;
     }
