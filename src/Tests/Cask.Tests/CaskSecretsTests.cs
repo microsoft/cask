@@ -326,10 +326,7 @@ public abstract class CaskTestsBase
      ];
 
     [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature(SecretSize secretSize)
     {
         string key = Cask.GenerateKey("TEST",
@@ -364,10 +361,7 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidSecretSize(SecretSize secretSize)
     {
         string key = Cask.GenerateKey("TEST",
@@ -403,10 +397,7 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidProviderDataSize(SecretSize secretSize)
     {
         string providerData = new('O', 12);
@@ -445,10 +436,7 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_MismatchedProviderDataSize(SecretSize secretSize)
     {
         int maxProviderDataThreeByteChunks = 4;
@@ -537,17 +525,22 @@ public abstract class CaskTestsBase
         Assert.False(valid, $"IsCask' unexpectedly succeeded with key that was not valid URL-Safe Base64: {key}");
     }
 
-    [Fact]
-    public void CaskSecrets_GenerateKey_Basic()
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_GenerateKey_Basic(SecretSize secretSize)
     {
-        string key = Cask.GenerateKey(providerSignature: "TEST",
-                                      providerKeyKind: 'Q',
-                                      providerData: "ABCD");
+        for (int optionalDataChunks = 0; optionalDataChunks < 4; optionalDataChunks++)
+        {
+            string key = Cask.GenerateKey(providerSignature: "TEST",
+                                          providerKeyKind: 'Q',
+                                          providerData: new string ('x', optionalDataChunks * 4),
+                                          secretSize);
 
-        byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
-        Assert.True(keyBytes.Length % 3 == 0, "'GenerateKey' output wasn't aligned on a 3-byte boundary.");
+            byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
+            Assert.True(keyBytes.Length % 3 == 0, "'GenerateKey' output wasn't aligned on a 3-byte boundary.");
 
-        IsCaskVerifySuccess(key);
+            IsCaskVerifySuccess(key);
+        }
     }
 
     [Theory]
