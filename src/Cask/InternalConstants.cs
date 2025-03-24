@@ -63,13 +63,8 @@ internal static partial class InternalConstants
     public const int MaxStackAlloc = 256;
 
     /// <summary>
-    /// The range of chars in a base64-encoded key that hold the Cask signature.
-    /// </summary>
-    public static Range CaskSignatureCharRange => 44..48;
-
-    /// <summary>
     /// The integer offset of the sensitive data size relative to the
     /// Cask signature in a base64-encoded secret.
     /// </summary>
-    public static int SecretSizeOffsetFromCaskSignatureChar => 5;
+    public static int SecretSizeOffsetFromCaskSignatureOffset => 9;
 }
