@@ -17,29 +17,29 @@ namespace CommonAnnotatedSecurityKeys;
 public static class Limits
 {
     /// <summary>
-    /// The maximum length of provider-reserved data, if any, when decoded to bytes.
+    /// The maximum length of provider-reserved data, if any, when decoded to bytes (12 bytes).
     /// </summary>
     public static int MaxProviderDataLengthInBytes { get; } = 12;
 
     /// <summary>
-    /// The maximum length of provider-reserved data, if any, when base64-encoded.
+    /// The maximum length of provider-reserved data, if any, when base64-encoded (16 characters).
     /// </summary>
     public static int MaxProviderDataLengthInChars { get; } = BytesToBase64Chars(MaxProviderDataLengthInBytes);
 
     /// <summary>
-    /// The minimum length of a Cask secret when decoded to bytes.
+    /// The minimum length of a Cask secret when decoded to bytes (45 bytes).
     /// </summary>
     public static int MinKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SecretSize.Bits128);
-
-    /// <summary>
-    /// The maximum length of a Cask secret when decoded to bytes.
-    /// </summary>
-    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits512);
 
     /// <summary>
     /// The minimum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).
     /// </summary>
     public static int MinKeyLengthInChars { get; } = BytesToBase64Chars(MinKeyLengthInBytes);
+
+    /// <summary>
+    /// The maximum length of a Cask secret when decoded to bytes (105 bytes).
+    /// </summary>
+    public static int MaxKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits512);
 
     /// <summary>
     /// The maximum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).

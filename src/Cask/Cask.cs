@@ -86,8 +86,8 @@ public static class Cask
             return false;
         }
 
-        Range ymdhTimestampRange = caskSignatureByteRange.End..(caskSignatureByteRange.End.Value + 3);
-        Range minutesSizesAndKeyKindRange = ymdhTimestampRange.End..(ymdhTimestampRange.End.Value + 3);
+        Range ymdhTimestampRange = caskSignatureByteRange.End..(caskSignatureByteRange.End.Value + CaskSignatureSizeInBytes);
+        Range minutesSizesAndKeyKindRange = ymdhTimestampRange.End..(ymdhTimestampRange.End.Value + YearMonthDayHourSizeInBytes);
 
         Span<char> minutesSizesAndKeyKindChars = stackalloc char[4];
         int bytesWritten = Base64Url.EncodeToChars(keyBytes[minutesSizesAndKeyKindRange], minutesSizesAndKeyKindChars);
@@ -99,13 +99,13 @@ public static class Cask
             return false;
         }
 
-        int providerDataLengthInBytes = (minutesSizesAndKeyKindChars[2] - 'A') * 3;
+        int providerDataLengthInBytes = (minutesSizesAndKeyKindChars[2] - 'A') * OptionalDataChunkSizeInBytes;
         if (providerDataLengthInBytes > MaxProviderDataLengthInBytes)
         {
             return false;
         }
 
-        int secretSizeInBytes = (int)encodedSecretSize * 16;
+        int secretSizeInBytes = (int)encodedSecretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
         int expectedKeyLengthInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes + providerDataLengthInBytes;
         if (expectedKeyLengthInBytes != keyBytes.Length)
@@ -132,21 +132,21 @@ public static class Cask
     public static CaskKey GenerateKey(string providerSignature,
                                       char providerKeyKind,
                                       string? providerData = null,
-                                      SecretSize secretDataSize = SecretSize.Bits256)
+                                      SecretSize secretSize = SecretSize.Bits256)
     {
         providerData ??= string.Empty;
 
         ValidateProviderSignature(providerSignature);
         ValidateProviderKeyKind(providerKeyKind);
         ValidateProviderData(providerData);
-        ValidateSecretSize(secretDataSize);
+        ValidateSecretSize(secretSize);
 
         // Calculate the length of the key.
         int providerDataLengthInBytes = Base64CharsToBytes(providerData.Length);
 
-        int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes, secretDataSize);
+        int keyLengthInBytes = GetKeyLengthInBytes(providerDataLengthInBytes, secretSize);
 
-        int secretSizeInBytes = (int)secretDataSize * 16;
+        int secretSizeInBytes = (int)secretSize * SecretChunkSizeInBytes;
 
         // Allocate a buffer on the stack to hold the key bytes.
         Debug.Assert(keyLengthInBytes <= MaxKeyLengthInBytes);
@@ -166,8 +166,8 @@ public static class Cask
         destination = destination[countOfPaddingBytes..];
 
         // CASK signature.
-        CaskSignatureBytes.CopyTo(destination[..3]);
-        destination = destination[3..];
+        CaskSignatureBytes.CopyTo(destination[..CaskSignatureSizeInBytes]);
+        destination = destination[CaskSignatureSizeInBytes..];
 
         DateTimeOffset now = GetUtcNow();
         ValidateTimestamp(now);
@@ -178,31 +178,31 @@ public static class Cask
             Base64UrlChars[now.Hour],        // Zero-indexed hour.
         ];
 
-        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..3]);
-        Debug.Assert(bytesWritten == 3);
-        destination = destination[3..];
+        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..YearMonthDayHourSizeInBytes]);
+        Debug.Assert(bytesWritten == YearMonthDayHourSizeInBytes);
+        destination = destination[YearMonthDayHourSizeInBytes..];
 
         chars = [
             Base64UrlChars[now.Minute],                  // Zero-index minute.
-            Base64UrlChars[(int)secretDataSize],         // Zero-indexed month.
+            Base64UrlChars[(int)secretSize],         // Zero-indexed month.
             Base64UrlChars[providerDataLengthInBytes/3], // Zero-indexed day.
             providerKeyKind,                             // Zero-indexed hour.
         ];
 
-        bytesWritten = Base64Url.DecodeFromChars(chars, destination[..3]);
-        Debug.Assert(bytesWritten == 3);
-        destination = destination[3..];
+        bytesWritten = Base64Url.DecodeFromChars(chars, destination[..MinuteSizesAndKeyKindSizeInBytes]);
+        Debug.Assert(bytesWritten == MinuteSizesAndKeyKindSizeInBytes);
+        destination = destination[MinuteSizesAndKeyKindSizeInBytes..];
 
         bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), destination[..providerDataLengthInBytes]);
         Debug.Assert(bytesWritten == providerDataLengthInBytes);
         destination = destination[providerDataLengthInBytes..];
 
-        bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), destination[..3]);
-        Debug.Assert(bytesWritten == 3);
-        destination = destination[3..];
+        bytesWritten = Base64Url.DecodeFromChars(providerSignature.AsSpan(), destination[..ProviderSignatureSizeInBytes]);
+        Debug.Assert(bytesWritten == ProviderSignatureSizeInBytes);
+        destination = destination[ProviderSignatureSizeInBytes..];
 
         // Entropy comprising the non-sensitive correlating id of the key.
-        FillRandom(destination[..15]);
+        FillRandom(destination[..CorrelatingIdSizeInBytes]);
 
         return CaskKey.Encode(key);
     }
@@ -210,7 +210,7 @@ public static class Cask
 
     private static Range ComputeCaskSignatureCharRange(SecretSize secretSize)
     {
-        int secretSizeInBytes = (int)secretSize * 16;
+        int secretSizeInBytes = (int)secretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
         int caskSignatureCharOffset = paddedSecretSizeInBytes / 3 * 4;
         return caskSignatureCharOffset..(caskSignatureCharOffset + CaskSignature.Length);
@@ -218,9 +218,9 @@ public static class Cask
 
     private static Range ComputeSignatureByteRange(SecretSize secretSize)
     {
-        int secretSizeInBytes = (int)secretSize * 16;
+        int secretSizeInBytes = (int)secretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
-        return paddedSecretSizeInBytes..(paddedSecretSizeInBytes + 3);
+        return paddedSecretSizeInBytes..(paddedSecretSizeInBytes + CaskSignatureSizeInBytes);
     }
 
     private static SecretSize InferSecretSizeFromCharLength(int lengthInChars)
@@ -249,6 +249,8 @@ public static class Cask
          *  
         */
 
+        Debug.Assert(lengthInBytes >= MinKeyLengthInBytes);
+        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Debug.Assert(IsValidKeyLengthInBytes(lengthInBytes));
 
         if (lengthInBytes >= 93)
