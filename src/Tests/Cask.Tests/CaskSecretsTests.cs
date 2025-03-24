@@ -35,13 +35,15 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask(SecretSize secretSize)
     {
-
-        string key = Cask.GenerateKey(providerSignature: "TEST",
+        for (int optionalDataChunks = 0; optionalDataChunks <= 4; optionalDataChunks++)
+        {
+            string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: 'M',
-                                      providerData: "_NG_",
+                                      providerData: new string('-', optionalDataChunks * 4),
                                       secretSize);
 
-        IsCaskVerifySuccess(key);
+            IsCaskVerifySuccess(key);
+        }
     }
 
     [Theory]
@@ -529,7 +531,7 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_GenerateKey_Basic(SecretSize secretSize)
     {
-        for (int optionalDataChunks = 0; optionalDataChunks < 4; optionalDataChunks++)
+        for (int optionalDataChunks = 0; optionalDataChunks <= 4; optionalDataChunks++)
         {
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: 'Q',
