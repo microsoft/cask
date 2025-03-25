@@ -519,8 +519,8 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_LengthOfNinetyBytes()
     {
-        string providerData = new ('T', 16);
-        string modifiedProviderData = new ('T', 20);
+        string providerData = new('T', 16);
+        string modifiedProviderData = new('T', 20);
 
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: '-',
@@ -559,7 +559,7 @@ public abstract class CaskTestsBase
         {
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: 'Q',
-                                          providerData: new string ('x', optionalDataChunks * 4),
+                                          providerData: new string('x', optionalDataChunks * 4),
                                           secretSize);
 
             byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
