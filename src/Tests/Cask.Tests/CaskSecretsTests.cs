@@ -517,6 +517,30 @@ public abstract class CaskTestsBase
     }
 
     [Fact]
+    public void CaskSecrets_IsCask_InvalidKey_LengthOfNinetyBytes()
+    {
+        string providerData = new ('T', 16);
+        string modifiedProviderData = new ('T', 20);
+
+        string key = Cask.GenerateKey(providerSignature: "TEST",
+                                      providerKeyKind: '-',
+                                      providerData,
+                                      SecretSize.Bits384);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+#if NET8_0_OR_GREATER
+        key = key.Replace(providerData, modifiedProviderData, StringComparison.Ordinal);
+#else
+        key = key.Replace(providerData, modifiedProviderData);
+#endif
+
+        valid = Cask.IsCask(key);
+        Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that has 15 bytes of optional data: {key}");
+    }
+
+    [Fact]
     public void CaskSecrets_IsCask_InvalidKey_InvalidBase64Url()
     {
         string key = Cask.GenerateKey(providerSignature: "TEST",

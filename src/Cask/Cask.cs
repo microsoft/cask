@@ -77,6 +77,13 @@ public static class Cask
             return false;
         }
 
+        if (keyBytes.Length > Max384BitKeyLengthInBytes && keyBytes.Length < Min512BitKeyLengthInBytes)
+        {
+            // There is a 3-byte gap in valid keys lengths between the 384-bit
+            // and 512-bit sizes.
+            return false;
+        }
+
         SecretSize secretSize = InferSecretSizeFromByteLength(keyBytes.Length);
         Range caskSignatureByteRange = ComputeSignatureByteRange(secretSize);
 
@@ -290,7 +297,7 @@ public static class Cask
     /// </summary>
     public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUtf8)
     {
-        if (keyUtf8.Length < MinKeyLengthInChars || keyUtf8.Length > MaxKeyLengthInChars || !Is4CharAligned(keyUtf8.Length))
+        if (!IsValidKeyLengthInChars(keyUtf8.Length))
         {
             return false;
         }
@@ -379,7 +386,12 @@ public static class Cask
 
     private static bool IsValidKeyLengthInChars(int length)
     {
-        return length >= MinKeyLengthInChars && length <= MaxKeyLengthInChars && Is4CharAligned(length);
+        if (length < MinKeyLengthInChars || length > MaxKeyLengthInChars || !Is4CharAligned(length))
+        {
+            return false;
+        }
+
+        return length <= Max384BitKeyLengthInChars || length >= Min512BitKeyLengthInChars;
     }
 
     private static bool IsValidKeyLengthInBytes(int length)
