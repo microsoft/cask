@@ -105,19 +105,21 @@ public abstract class CaskTestsBase
             Assert.Equal(SecretSize.Bits128, secretSize);
         }
 
-        // The secret size encoding is simply a count of 16-byte segments
-        // of secret entropy. The CASK standard allows for 1-4 segments.
+        // The secret size encoding is simply a count of 16-byte segments of
+        // secret entropy or other sensitive data. The CASK standard allows for
+        // 1-4 segments (comprising 128-bit, 256-bit, 384-bit or 512-bit keys).
         int secretSizeInBytes = (int)secretSize * 16;
 
         // Because CASK enforces 3-byte aligment to allow for fixed readability
-        // in encoded form and convenient bytewise access, the number of bytes of
-        // sensitive in a CASK key must be padded for 16-, 32- and 64-byte secrets.
+        // in encoded form and convenient bytewise access, the number of bytes
+        // of sensitive in a CASK key must be padded for 16-, 32- and 64-byte
+        // secrets. A 48-byte secret is already aligned on a 3-byte boundary and
+        // therefore is not padded.
         int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
 
-        // A 384-bit secret will have not padding. For other sizes, it may be
-        // useful to ensure that the zero padding is present, for example, to
-        // avoid false positives. This is easily accomplished in the bytewise
-        // form.
+        // A 384-bit secret has no padding. For other sizes, it may be useful to
+        // verify that the zero padding is present when validating keys. This is
+        // easily accomplished in the bytewise form.
         int paddingInBytes = paddedSecretSizeInBytes - secretSizeInBytes;
         for (int i = 0; i < paddingInBytes; i++)
         {
@@ -488,7 +490,7 @@ public abstract class CaskTestsBase
                 // regexes that are tuned for specific encoded optional data
                 // sizes. This approach, in concert with the range of sensitive
                 // component sizes, would result in many discrete patterns.
-                IsCaskVerifyFailure(modifiedKey, expectedIsMatchResult: true);
+                IsCaskVerifyFailure(modifiedKey, expectedRegexIsMatchResult: true);
             }
         }
     }
@@ -519,8 +521,8 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_LengthOfNinetyBytes()
     {
-        string providerData = new('T', 16);
-        string modifiedProviderData = new('T', 20);
+        string providerData = new ('T', 16);
+        string modifiedProviderData = new ('T', 20);
 
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: '-',
@@ -559,7 +561,7 @@ public abstract class CaskTestsBase
         {
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: 'Q',
-                                          providerData: new string('x', optionalDataChunks * 4),
+                                          providerData: new string ('x', optionalDataChunks * 4),
                                           secretSize);
 
             byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
@@ -736,12 +738,12 @@ public abstract class CaskTestsBase
         Assert.True(Cask.IsCaskBytes(keyBytes), $"'IsCask(byte[])' failed for: {key}'.");
     }
 
-    private void IsCaskVerifyFailure(string key, bool expectedIsMatchResult = false)
+    private void IsCaskVerifyFailure(string key, bool expectedRegexIsMatchResult = false)
     {
         // Negative test cases.
         Assert.False(Cask.IsCask(key), $"'IsCask(string)' unexpectedly succeeded for: {key}");
 
-        if (expectedIsMatchResult)
+        if (expectedRegexIsMatchResult)
         {
             Assert.True(CaskKey.Regex.IsMatch(key), $"'CaskKey.Regex.IsMatch' unexpectedly failed for: {key}");
         }
