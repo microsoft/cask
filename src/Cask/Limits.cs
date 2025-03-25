@@ -58,7 +58,7 @@ public static class Limits
     public static int Max384BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits384);
 
     /// <summary>
-    /// The maximum length of a 384-bit CASK key in its canonical base64-encoded form.
+    /// The maximum length of a 384-bit Cask key in its canonical base64-encoded form.
     /// </summary>
     public static int Max384BitKeyLengthInChars { get; } = BytesToBase64Chars(Max384BitKeyLengthInBytes);
 
@@ -68,7 +68,7 @@ public static class Limits
     public static int Min512BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SecretSize.Bits512);
 
     /// <summary>
-    /// The maximum length of a 512-bit CASK key in its canonical base64-encoded form.
+    /// The maximum length of a 512-bit Cask key in its canonical base64-encoded form.
     /// </summary>
     public static int Min512BitKeyLengthInChars { get; } = BytesToBase64Chars(Min512BitKeyLengthInBytes);
 
@@ -93,7 +93,7 @@ public static class Limits
     public static int MaxKeyLengthInBytes { get; } = Max512BitKeyLengthInBytes;
 
     /// <summary>
-    /// The maximum length of a Cask secret in its canonical textual form (i.e., when base64-encoded).
+    /// The maximum length of a Cask secret in its canonical base64-encoded form.
     /// </summary>
     public static int MaxKeyLengthInChars { get; } = BytesToBase64Chars(MaxKeyLengthInBytes);
 }

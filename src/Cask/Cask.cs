@@ -13,7 +13,8 @@ namespace CommonAnnotatedSecurityKeys;
 public static class Cask
 {
     /// <summary>
-    /// Validates that the provided string is a valid Cask key in URL-safe base64-encoded form.
+    /// Validates that the provided string is a valid Cask key in URL-safe
+    /// base64-encoded form.
     /// </summary>
     public static bool IsCask(string key)
     {
@@ -22,7 +23,8 @@ public static class Cask
     }
 
     /// <summary>
-    /// Validates that the provided UTF16-encoded text sequence represents a valid Cask key.
+    /// Validates that the provided UTF16-encoded text sequence represents a
+    /// valid Cask key.
     /// </summary>
     /// <param name="key"></param>
     public static bool IsCask(ReadOnlySpan<char> key)
@@ -80,7 +82,11 @@ public static class Cask
         if (keyBytes.Length > Max384BitKeyLengthInBytes && keyBytes.Length < Min512BitKeyLengthInBytes)
         {
             // There is a 3-byte gap in valid keys lengths between the 384-bit
-            // and 512-bit sizes.
+            // and 512-bit sizes. This early check short-circuits validation to
+            // avoid length check assertions in the rest of the method.
+            // Validation logic later in the method that verifies the encoding
+            // of the optional data size and the literal size of the optional
+            // data itself would also fail this corner case situation.
             return false;
         }
 
@@ -120,8 +126,9 @@ public static class Cask
             return false;
         }
 
-        // TODO: Review Cask.IsCaskBytes and its callers carefully to ensure all useful checks are made.
-        // Specifically, we are missing validations and supporting unit tests for invalid timestamps.
+        // TODO: Review Cask.IsCaskBytes and its callers carefully to ensure all
+        // useful checks are made. Specifically, we are missing validations and
+        // supporting unit tests for invalid timestamps.
         // https://github.com/microsoft/cask/issues/45
 
         return true;
@@ -191,7 +198,7 @@ public static class Cask
 
         chars = [
             Base64UrlChars[now.Minute],                  // Zero-index minute.
-            Base64UrlChars[(int)secretSize],         // Zero-indexed month.
+            Base64UrlChars[(int)secretSize],             // Zero-indexed month.
             Base64UrlChars[providerDataLengthInBytes/3], // Zero-indexed day.
             providerKeyKind,                             // Zero-indexed hour.
         ];
