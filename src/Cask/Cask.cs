@@ -101,11 +101,12 @@ public static class Cask
 
         ReadOnlySpan<byte> destination = keyBytes[caskSignatureByteRange.End.Value..];
 
-        ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = destination[..SecretAndOptionalDataLengthsYearAndMonthSizeInBytes];
-        destination = destination[SecretAndOptionalDataLengthsYearAndMonthSizeInBytes..];
+        ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = destination[..DataLengthsYearMonthSizeInBytes];
+        destination = destination[DataLengthsYearMonthSizeInBytes..];
 
         Span<char> secretOptionalSizesYearMonthChars = stackalloc char[4];
         int bytesWritten = Base64Url.EncodeToChars(secretOptionalSizesYearMonthBytes, secretOptionalSizesYearMonthChars);
+        Debug.Assert(bytesWritten == DataLengthsYearMonthSizeInChars);
 
         // 'A' == index 0 of all printable base64-encoded characters.
         var encodedSecretSize = (SecretSize)(secretOptionalSizesYearMonthChars[0] - 'A');
@@ -128,46 +129,41 @@ public static class Cask
             return false;
         }
 
-        // Any encoded year, i.e., secretOptionalSizesYearMonthChars[2] is legal.
+        // Any encoded year, i.e., secretOptionalSizesYearMonthChars[2], is legal.
+
+        char month = secretOptionalSizesYearMonthChars[3];
         // An encoded month (a zero-indexed value) that exceeds 11 ('L') is not valid.
-        if (secretOptionalSizesYearMonthChars[3] < 'A' || secretOptionalSizesYearMonthChars[3] > 'L')
+        if (month < 'A' || month > 'L')
         {
             return false;
         }
 
-        ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = destination[..DayHourMinutesAndKeyKindSizeInBytes];
-        destination = destination[DayHourMinutesAndKeyKindSizeInBytes..];
+        ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = destination[..DayHourMinutesKeyKindSizeInBytes];
 
         Span<char> dayHourMinutesAndProviderKindChars = stackalloc char[4];
         bytesWritten = Base64Url.EncodeToChars(dayHoursMinutesProviderKindBytes, dayHourMinutesAndProviderKindChars);
+        Debug.Assert(bytesWritten == DayHourMinutesKeyKindSizeInChars);
 
+        char day = dayHourMinutesAndProviderKindChars[0];
         // An encoded day (a zero-indexed value) that exceeds 30 ('e') is not valid.
-        if (!((dayHourMinutesAndProviderKindChars[0] >= 'A' && dayHourMinutesAndProviderKindChars[0] <= 'Z') ||
-              (dayHourMinutesAndProviderKindChars[0] >= 'a' && dayHourMinutesAndProviderKindChars[0] <= 'e')))
+        if (!((day >= 'A' && day <= 'Z') || (day >= 'a' && day <= 'e')))
         {
             return false;
         }
 
+        char hour = dayHourMinutesAndProviderKindChars[1];
         // An encoded hour (a zero-indexed value) that exceeds 23 (base64-encoded 'X') is not valid.
-        if (dayHourMinutesAndProviderKindChars[1] < 'A' || dayHourMinutesAndProviderKindChars[1] > 'X')
+        if (hour < 'A' || hour > 'X')
         {
             return false;
         }
 
+        char minute = dayHourMinutesAndProviderKindChars[2];
         // An encoded minute (a zero-indexed value) that exceeds 30 ('7') is not valid.
-        if (!((dayHourMinutesAndProviderKindChars[1] >= 'A' && dayHourMinutesAndProviderKindChars[1] <= 'Z') ||
-              (dayHourMinutesAndProviderKindChars[1] >= 'a' && dayHourMinutesAndProviderKindChars[1] <= 'z') ||
-              (dayHourMinutesAndProviderKindChars[1] >= '0' && dayHourMinutesAndProviderKindChars[1] <= '7')))
-        {
-            return false;
-        }
-
-        // TODO: Review Cask.IsCaskBytes and its callers carefully to ensure all
-        // useful checks are made. Specifically, we are missing validations and
-        // supporting unit tests for invalid timestamps.
-        // https://github.com/microsoft/cask/issues/45
-
-        return true;
+        return
+            (minute >= 'A' && minute <= 'Z') ||
+            (minute >= 'a' && minute <= 'z') ||
+            (minute >= '0' && minute <= '7');
     }
 
     internal static SecretSize ExtractSecretSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
@@ -177,7 +173,6 @@ public static class Cask
         int secretSizeCharOffset = caskSignatureCharRange.End.Value;
         return (SecretSize)(key[secretSizeCharOffset] - 'A');
     }
-
 
     public static CaskKey GenerateKey(string providerSignature,
                                       char providerKeyKind,
@@ -228,9 +223,9 @@ public static class Cask
             Base64UrlChars[now.Month - 1],   // Zero-indexed month.
         ];
 
-        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..SecretAndOptionalDataLengthsYearAndMonthSizeInBytes]);
-        Debug.Assert(bytesWritten == SecretAndOptionalDataLengthsYearAndMonthSizeInBytes);
-        destination = destination[SecretAndOptionalDataLengthsYearAndMonthSizeInBytes..];
+        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DataLengthsYearMonthSizeInBytes]);
+        Debug.Assert(bytesWritten == DataLengthsYearMonthSizeInBytes);
+        destination = destination[DataLengthsYearMonthSizeInBytes..];
 
         chars = [
             Base64UrlChars[now.Day - 1],     // Zero-indexed day.
@@ -239,9 +234,9 @@ public static class Cask
             providerKeyKind,
         ];
 
-        bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DayHourMinutesAndKeyKindSizeInBytes]);
-        Debug.Assert(bytesWritten == DayHourMinutesAndKeyKindSizeInBytes);
-        destination = destination[DayHourMinutesAndKeyKindSizeInBytes..];
+        bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DayHourMinutesKeyKindSizeInBytes]);
+        Debug.Assert(bytesWritten == DayHourMinutesKeyKindSizeInBytes);
+        destination = destination[DayHourMinutesKeyKindSizeInBytes..];
 
         bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), destination[..providerDataLengthInBytes]);
         Debug.Assert(bytesWritten == providerDataLengthInBytes);

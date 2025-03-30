@@ -35,14 +35,26 @@ internal static partial class InternalConstants
     /// The number of bytes used to express year, month, day, and hour
     /// components of the key allocation timestamp.
     /// </summary>
-    public const int SecretAndOptionalDataLengthsYearAndMonthSizeInBytes = 3;
+    public const int DataLengthsYearMonthSizeInBytes = 3;
 
     /// <summary>
-    /// The number of bytes used to express the minutes component of the key
-    /// allocation timestamp, the sensitive data size, the optional provider
-    /// data size, and the provider key kind.
+    /// The number of base64-encoded chars used to express year, month, day, and
+    /// hour components of the key allocation timestamp.
     /// </summary>
-    public const int DayHourMinutesAndKeyKindSizeInBytes = 3;
+    public static readonly int DataLengthsYearMonthSizeInChars = BytesToBase64Chars(DataLengthsYearMonthSizeInBytes);
+
+    /// <summary>
+    /// The number of bytes used to express the day, hour and minutes component
+    /// of the key allocation timestamp, and the provider key kind.
+    /// </summary>
+    public const int DayHourMinutesKeyKindSizeInBytes = 3;
+
+    /// <summary>
+    /// The number of base64-encoded chars used to express the day, hour and
+    /// minutes component of the key allocation timestamp, and the provider key
+    /// kind.
+    /// </summary>
+    public static readonly int DayHourMinutesKeyKindSizeInChars = BytesToBase64Chars(DayHourMinutesKeyKindSizeInBytes);
 
     /// <summary>
     /// The number of bytes in a provider signature.
@@ -50,12 +62,12 @@ internal static partial class InternalConstants
     public const int ProviderSignatureSizeInBytes = 3;
 
     /// <summary>
-    /// The number of bytes per encoded secret size chunk.
+    /// The number of bytes per secret size chunk.
     /// </summary>
     public const int SecretChunkSizeInBytes = 16;
 
     /// <summary>
-    /// The number of bytes per encoded optional data size chunk.
+    /// The number of bytes per optional data size chunk.
     /// </summary>
     public const int OptionalDataChunkSizeInBytes = 3;
 

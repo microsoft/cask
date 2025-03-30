@@ -465,10 +465,7 @@ public abstract class CaskTestsBase
                     continue;
                 }
 
-                int secretSizeInBytes = (int)secretSize * 16;
-                int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
-                int paddedSecretSizeInChars = (paddedSecretSizeInBytes / 3) * 4;
-                int caskSignatureEndCharOffset = paddedSecretSizeInChars + 4;
+                int caskSignatureEndCharOffset = ComputeSecretSizeCharOffset(secretSize);
 
                 // The sensitive data size immediately follows the Cask
                 // signature, followed by the optional data size.
@@ -493,6 +490,184 @@ public abstract class CaskTestsBase
                 // component sizes, would result in many discrete patterns.
                 IsCaskVerifyFailure(modifiedKey);
             }
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllYears(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'Y',
+                                      providerData: string.Empty,
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int yearCharOffset = ComputeYearCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedYear = Base64UrlChars[base64Index];
+            destination[yearCharOffset] = encodedYear;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            // All encoded year values are legal.
+            Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid year '{encodedYear}': {modifiedKey}");
+            IsCaskVerifySuccess(modifiedKey);
+            continue;
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllMonths(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'M',
+                                      providerData: "MNTH",
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int monthCharOffset = ComputeMonthCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            bool expectedValid = base64Index < 12;
+
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedMonth = Base64UrlChars[base64Index];
+            destination[monthCharOffset] = encodedMonth;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid month '{encodedMonth}': {modifiedKey}");
+                IsCaskVerifySuccess(modifiedKey);
+                continue;
+            }
+
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid month '{encodedMonth}': {modifiedKey}");
+            IsCaskVerifyFailure(modifiedKey);
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllDays(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'D',
+                                      providerData: "DAY_DAY_",
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int dayCharOffset = ComputeDayCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            bool expectedValid = base64Index < 31;
+
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedDay = Base64UrlChars[base64Index];
+            destination[dayCharOffset] = encodedDay;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid day '{encodedDay}': {modifiedKey}");
+                IsCaskVerifySuccess(modifiedKey);
+                continue;
+            }
+
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid day '{encodedDay}': {modifiedKey}");
+            IsCaskVerifyFailure(modifiedKey);
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllHours(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'H',
+                                      providerData: "_HOUR--HOUR_",
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int hourCharOffset = ComputeHourCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            bool expectedValid = base64Index < 24;
+
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedHour = Base64UrlChars[base64Index];
+            destination[hourCharOffset] = encodedHour;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid hour '{encodedHour}': {modifiedKey}");
+                IsCaskVerifySuccess(modifiedKey);
+                continue;
+            }
+
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid hour '{encodedHour}': {modifiedKey}");
+            IsCaskVerifyFailure(modifiedKey);
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllMinutes(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'm',
+                                      providerData: "MINUTEMINUTE",
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int minuteCharOffset = ComputeMinuteCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            bool expectedValid = base64Index < 60;
+
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedMinute = Base64UrlChars[base64Index];
+            destination[minuteCharOffset] = encodedMinute;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid minute '{encodedMinute}': {modifiedKey}");
+                IsCaskVerifySuccess(modifiedKey);
+                continue;
+            }
+
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid minute '{encodedMinute}': {modifiedKey}");
+            IsCaskVerifyFailure(modifiedKey);
         }
     }
 
@@ -773,5 +948,52 @@ public abstract class CaskTestsBase
         {
             Assert.Throws<FormatException>(() => Cask.IsCaskBytes(keyBytes!));
         }
+    }
+
+    private static int ComputeCaskSignatureCharOffset(SecretSize secretSize)
+    {
+        int secretSizeInBytes = (int)secretSize * 16;
+        int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
+        return (paddedSecretSizeInBytes / 3) * 4;
+    }
+
+    private static int ComputeSecretSizeCharOffset(SecretSize secretSize)
+    {
+        return ComputeCaskSignatureCharOffset(secretSize) + 4;
+    }
+
+    private static int ComputeOptionalDataSizeCharOffset(SecretSize secretSize)
+    {
+        return ComputeSecretSizeCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeYearCharOffset(SecretSize secretSize)
+    {
+        return ComputeOptionalDataSizeCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeMonthCharOffset(SecretSize secretSize)
+    {
+        return ComputeYearCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeDayCharOffset(SecretSize secretSize)
+    {
+        return ComputeMonthCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeHourCharOffset(SecretSize secretSize)
+    {
+        return ComputeDayCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeMinuteCharOffset(SecretSize secretSize)
+    {
+        return ComputeHourCharOffset(secretSize) + 1;
+    }
+
+    private static int ComputeProviderKeyKindCharOffset(SecretSize secretSize)
+    {
+        return ComputeMinuteCharOffset(secretSize) + 1;
     }
 }
