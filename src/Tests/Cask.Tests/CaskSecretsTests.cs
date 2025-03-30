@@ -323,6 +323,7 @@ public abstract class CaskTestsBase
         bool valid = Cask.IsCask(key!);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with an invalid key: {key}");
     }
+
     public static readonly TheoryData<string> TooShortOrLongForAKey = [
         new string('-', MinKeyLengthInChars - 1),
         new string('-', MaxKeyLengthInChars + 1),
@@ -337,9 +338,7 @@ public abstract class CaskTestsBase
                                       providerData: "-__-",
                                       secretSize);
 
-        int secretSizeInBytes = (int)secretSize * 16;
-        int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
-        int paddedSecretSizeInChars = paddedSecretSizeInBytes / 3 * 4;
+        int caskSignatureCharOffset = ComputeCaskSignatureCharOffset(secretSize);
 
         for (int i = 0; i < 4; i++)
         {
@@ -349,7 +348,7 @@ public abstract class CaskTestsBase
             // Ensure our starting key is valid.
             IsCaskVerifySuccess(destination.ToString());
 
-            destination = destination[paddedSecretSizeInChars..];
+            destination = destination[caskSignatureCharOffset..];
 
             // Change one byte of the CASK fixed signature.
             destination[i] = '-';
@@ -375,15 +374,10 @@ public abstract class CaskTestsBase
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        foreach (SecretSize invalidSecretSize in new[] { SecretSize.None, SecretSize.Bits512 + 1 })
+        foreach (SecretSize invalidSecretSize in new[] { SecretSize.Bits128 - 1, SecretSize.Bits512 + 1 })
         {
-            int secretSizeInBytes = (int)secretSize * 16;
-            int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
-            int paddedSecretSizeInChars = (paddedSecretSizeInBytes / 3) * 4;
-            int caskSignatureEndCharOffset = paddedSecretSizeInChars + 4;
-
             // The secret size immediately follows the Cask signature.
-            int secretSizeCharOffset = caskSignatureEndCharOffset;
+            int secretSizeCharOffset = ComputeSecretSizeCharOffset(secretSize);
 
             var encodedSecretSize = (SecretSize)(key[secretSizeCharOffset] - 'A');
             Assert.Equal(secretSize, encodedSecretSize);
@@ -414,15 +408,7 @@ public abstract class CaskTestsBase
 
         for (int i = 5; i <= 64; i++)
         {
-            int secretSizeInBytes = (int)secretSize * 16;
-            int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
-            int paddedSecretSizeInChars = (paddedSecretSizeInBytes / 3) * 4;
-            int caskSignatureEndCharOffset = paddedSecretSizeInChars + 4;
-
-            // The secret size immediately follows the Cask signature, followed
-            // by the encoded optional data size.
-            int secretSizeCharOffset = caskSignatureEndCharOffset;
-            int optionalDataSizeCharOffset = secretSizeCharOffset + 1;
+            int optionalDataSizeCharOffset = ComputeOptionalDataSizeCharOffset(secretSize);
 
             int encodedProviderDataSizeInBytes = (key[optionalDataSizeCharOffset] - 'A') * 3;
             int encodedProviderDataSizeInChars = encodedProviderDataSizeInBytes / 3 * 4;
@@ -465,12 +451,7 @@ public abstract class CaskTestsBase
                     continue;
                 }
 
-                int caskSignatureEndCharOffset = ComputeSecretSizeCharOffset(secretSize);
-
-                // The sensitive data size immediately follows the Cask
-                // signature, followed by the optional data size.
-                int secretSizeCharOffset = caskSignatureEndCharOffset;
-                int optionalDataSizeCharOffset = secretSizeCharOffset + 1;
+                int optionalDataSizeCharOffset = ComputeOptionalDataSizeCharOffset(secretSize);
 
                 int encodedProviderDataSizeInBytes = (key[optionalDataSizeCharOffset] - 'A') * 3;
                 int encodedProviderDataSizeInChars = encodedProviderDataSizeInBytes / 3 * 4;
@@ -671,6 +652,36 @@ public abstract class CaskTestsBase
         }
     }
 
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllProviderKeyKinds(SecretSize secretSize)
+    {
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'K',
+                                      providerData: "PROVIDER-KEYKIND",
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int yearCharOffset = ComputeProviderKeyKindCharOffset(secretSize);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedKind = Base64UrlChars[base64Index];
+            destination[yearCharOffset] = encodedKind;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            // All encoded key kind values are legal.
+            Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid provider key kind '{encodedKind}': {modifiedKey}");
+            IsCaskVerifySuccess(modifiedKey);
+            continue;
+        }
+    }
+
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_Unaligned()
     {
@@ -697,8 +708,8 @@ public abstract class CaskTestsBase
     [Fact]
     public void CaskSecrets_IsCask_InvalidKey_LengthOfNinetyBytes()
     {
-        string providerData = new ('T', 16);
-        string modifiedProviderData = new ('T', 20);
+        string providerData = new('T', 16);
+        string modifiedProviderData = new('T', 20);
 
         string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: '-',
@@ -737,7 +748,7 @@ public abstract class CaskTestsBase
         {
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: 'Q',
-                                          providerData: new string ('x', optionalDataChunks * 4),
+                                          providerData: new string('x', optionalDataChunks * 4),
                                           secretSize);
 
             byte[] keyBytes = Base64Url.DecodeFromChars(key.AsSpan());
@@ -903,7 +914,7 @@ public abstract class CaskTestsBase
             // comprising the secret size, and the character comprising the
             // optional data size.
             int timestampCharOffset = paddedSecretSizeInChars + CaskSignatureUtf8.Length + 2;
-            
+
             Range timestampCharRange = timestampCharOffset..(timestampCharOffset + 5);
 
             string actual = key[timestampCharRange];
