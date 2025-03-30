@@ -3,9 +3,9 @@
 ```
 <key> ::= <sensitive-data>      ; A sequence of security-sensitive bytes.
           <cask-signature>      ; A fixed signature (`QJJQ`) that enables high-performance textual identification.
-          <timestamp>           ; The year, month, day, hour, and minute of secret allocation.
           <sensitive-data-size> ; A count of 16-byte segments encoded as sensitive data ('B' = 1 x 16 bytes = 128 bits, etc).
           <optional-data-size>  ; A count of 3-byte optional data segments, 'A' = 0 = 0 bytes, 'B' = 1 = 3 bytes, etc.
+          <timestamp>           ; The year, month, day, hour, and minute of secret allocation.
           <provider-kind>       ; A provider-defined key kind.
           [<optional-fields>]   ; Optional fields comprising provider-defined data.
           <provider-signature>  ; A fixed signature identifying the secret provider.
@@ -41,14 +41,14 @@
                             | 'g' | 'k' | 'o' | 's' | 'w' | '0' | '4' | '8' ; Base64 printable characters with two trailing zero bits.
 <base64-four-zeros-suffix> ::= 'A' | 'Q' | 'g' | 'w'                        ; Base64 printable characters with four trailing zero bits.
 <cask-signature> ::= 'QJJQ'                                                 ; Fixed signature identifying the CASK key.
+<sensitive-data-size> ::= 'A'                                               ; 'A' indicates a 128-bit sensitive data component, 'B' 256-bit, etc.
+<optional-data-size> ::= 'A'                                                ; 'A' = zero 3-byte optional bytes, 'B' = one optional 3-byte segment, etc.
 <timestamp> ::= <year> <month> <day> <hour> <minute>                        ; Time-of-allocation timestamp components.
 <year> ::= <base64url>                                                      ; Allocation year, 'A' (2025) to '_' (2088).
 <month> ::= 'A'..'L'                                                        ; Allocation month, 'A' (January) to 'L' (December).
 <day> ::= 'A'..'Z' | 'a'..'e'                                               ; 'A' = day 1, 'B' = day 2, ... 'e' = day 31
 <hour> ::= 'A'..'X'                                                         ; Represents hours 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
 <minute> ::= 'A'..'7'                                                       ; Represents minutes 0-59.
-<sensitive-data-size> ::= 'A'                                               ; 'A' indicates a 128-bit sensitive data component, 'B' 256-bit, etc.
-<optional-data-size> ::= 'A'                                                ; 'A' = zero 3-byte optional bytes, 'B' = one optional 3-byte segment, etc.
 <provider-kind> ::= <base64url>                                             ; Provider-defined key kind.
 <provider-signature> ::= 4 * <base64url>                                    ; Provider identifier (24 bits).
 <optional-fields> ::= { <optional-field> }                                  ; Zero or more 4-character (24-bit) sequences of optional data.
@@ -68,8 +68,8 @@
 |decodedKey[..31]|0...255|0x0...0xFF|00000000b...11111111b|256 bits of sensitive data produced by a cryptographically secure RNG, an HMAC, etc.|
 |decodedKey[32]|0|0x00|00000000b| 8 bits of reserved padding.
 |decodedKey[33..36]| 37, 4, 9  |0x40, 0x92, 0x50| 00100000b, 10010010b, 01010000b | Decoded 'QJJQ' signature.
-|decodedKey[36..39]||||Timestamp data encoded in 4 six-bit segments for YMDH.
-|decodedKey[39..42]||||Timestamp minutes, sensitive data size, optional-data-size, and provider kind data encoded in 4 six-bit segments.
+|decodedKey[36..39]||||Sensitive data size, optional-data-size, timestamp year and month encoded in 4 six-bit segments.
+|decodedKey[39..42]||||Timestamp day, hour, minutes and provider kind data encoded in 4 six-bit segments.
 |decodedKey[42..45]|0...255|0x0...0xFF|00000000b...11111111b| Provider signature, e.g. , '0x4c', '0x44', '0x93' (base64-encoded as 'TEST')
 |decodedKey[45..60]||||16 byte non-sensitive, unique correlating id.
 
@@ -80,13 +80,13 @@
 |encodedKey[42] | <base64-two-zeros-suffix> | 4 bits of randomized data followed by 2 zero bits. See the <base64-two-zeros-suffix> definition for legal values.
 |encodedKey[43] | 'A' | The 6-bit encoded sensitive component size.
 |encodedKey[44..48]|'QJJQ'| Fixed CASK signature.
-|encodedKey[48]|'A'...'_'|Represents the year of allocation time, 'A' (2025) to '_' (2088)|
-|encodedKey[49|'A'...'L'|Represents the month of allocation time, 'A' (January) to 'L' (December)|
-|encodedKey[50]|'A'...'Z'\|'a'..'e'|Represents the day of allocation time, 'A' (0) to 'e' (31)|
-|encodedKey[51]|'A'...'X'|Represents the hour of allocation time, 'A' (hour 0 or midnight) to 'X' (hour 23).
-|encodedKey[52]|'A'...'7'| Represents the minute of allocation time.
-|encodedKey[53]|'A'...'D'| Sensitive component key size, 'A' (128-bit), 'B' (256-bit), 'C' (384-bit) or 'D' (512-bit).
-|encodedKey[54]|'A'...'?'| Count of optional 3-byte data segments, 'A' == 0 bytes, 'B' == 3 bytes, capped at ?? (maximum permissible would be 189 bytes, 63 * 3)
+|encodedKey[48]|'A'...'D'| Sensitive component key size, 'A' (128-bit), 'B' (256-bit), 'C' (384-bit) or 'D' (512-bit).
+|encodedKey[49]|'A'...'?'| Count of optional 3-byte data segments, 'A' == 0 bytes, 'B' == 3 bytes, capped at ?? (maximum permissible would be 189 bytes, 63 * 3)
+|encodedKey[50]|'A'...'_'|Represents the year of allocation time, 'A' (2025) to '_' (2088)|
+|encodedKey[51|'A'...'L'|Represents the month of allocation time, 'A' (January) to 'L' (December)|
+|encodedKey[52]|'A'...'Z'\|'a'..'e'|Represents the day of allocation time, 'A' (0) to 'e' (31)|
+|encodedKey[53]|'A'...'X'|Represents the hour of allocation time, 'A' (hour 0 or midnight) to 'X' (hour 23).
+|encodedKey[54]|'A'...'7'| Represents the minute of allocation time.
 |encodedKey[55]|'A'...'_'| Provider-defined key kind.
 |encodedKey[55..75]|'A'...'_'| Correlating id.
 ```

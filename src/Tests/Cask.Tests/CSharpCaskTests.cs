@@ -41,9 +41,9 @@ public class CSharpCaskTests : CaskTestsBase
             }
             catch (FormatException)
             {
-                // On receiving this exception, we have invalid base64 input.
-                // As a result, we will skip the IsCaskBytes check, which
-                // will throw for this condition.
+                // On receiving this exception, we have invalid base64 input. As
+                // a result, we will skip the IsCaskBytes check, which throws
+                // for this condition.
             }
 
             if (key.Any((c) => !s_printableBase64UrlCharacters.Contains(c)))

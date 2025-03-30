@@ -185,7 +185,7 @@ public class CaskKeyTests
 
         Span<char> keyChars = key.ToString().ToCharArray().AsSpan();
 
-        int secretSizeCharOffset = 53;
+        int secretSizeCharOffset = 48;
         var secretSize = (SecretSize)(keyChars[secretSizeCharOffset] - 'A');
 
         Assert.Equal(SecretSize.Bits256, secretSize);

@@ -35,14 +35,14 @@ internal static partial class InternalConstants
     /// The number of bytes used to express year, month, day, and hour
     /// components of the key allocation timestamp.
     /// </summary>
-    public const int YearMonthDayHourSizeInBytes = 3;
+    public const int SecretAndOptionalDataLengthsYearAndMonthSizeInBytes = 3;
 
     /// <summary>
     /// The number of bytes used to express the minutes component of the key
     /// allocation timestamp, the sensitive data size, the optional provider
     /// data size, and the provider key kind.
     /// </summary>
-    public const int MinuteSizesAndKeyKindSizeInBytes = 3;
+    public const int DayHourMinutesAndKeyKindSizeInBytes = 3;
 
     /// <summary>
     /// The number of bytes in a provider signature.
@@ -84,13 +84,4 @@ internal static partial class InternalConstants
     /// The maximum amount of bytes that the implementation will stackalloc.
     /// </summary>
     public const int MaxStackAlloc = 256;
-
-    /// <summary>
-    /// The integer offset (9) of the sensitive data size relative to the
-    /// starting index of the Cask signature in a base64-encoded secret. This
-    /// value consists of the length of the CASK signature and the length of the
-    /// encoded timestamp (which dedicates a character to a year, month, day,
-    /// hour and minute component).
-    /// </summary>
-    public static int SecretSizeOffsetFromCaskSignatureOffset => CaskSignature.Length + "YMDHM".Length;
 }
