@@ -104,7 +104,7 @@ public static class Cask
         ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = destination[..DataLengthsYearMonthSizeInBytes];
         destination = destination[DataLengthsYearMonthSizeInBytes..];
 
-        Span<char> secretOptionalSizesYearMonthChars = stackalloc char[4];
+        Span<char> secretOptionalSizesYearMonthChars = stackalloc char[DataLengthsYearMonthSizeInChars];
         int bytesWritten = Base64Url.EncodeToChars(secretOptionalSizesYearMonthBytes, secretOptionalSizesYearMonthChars);
         Debug.Assert(bytesWritten == DataLengthsYearMonthSizeInChars);
 
@@ -140,7 +140,7 @@ public static class Cask
 
         ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = destination[..DayHourMinutesKeyKindSizeInBytes];
 
-        Span<char> dayHourMinutesAndProviderKindChars = stackalloc char[4];
+        Span<char> dayHourMinutesAndProviderKindChars = stackalloc char[DayHourMinutesKeyKindSizeInChars];
         bytesWritten = Base64Url.EncodeToChars(dayHoursMinutesProviderKindBytes, dayHourMinutesAndProviderKindChars);
         Debug.Assert(bytesWritten == DayHourMinutesKeyKindSizeInChars);
 
