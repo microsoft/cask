@@ -100,12 +100,11 @@ public static class Cask
         }
 
         ReadOnlySpan<byte> source = keyBytes[caskSignatureByteRange.End.Value..];
-
-        ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = source[..DataLengthsYearMonthSizeInBytes];
-        source = source[DataLengthsYearMonthSizeInBytes..];
+        ReadOnlySpan<byte> dataLengthsTimeStampProviderKeyKindBytes = source[..DataLengthsTimeStampProviderKeyKindSizeInBytes];
+        source = source[DataLengthsTimeStampProviderKeyKindSizeInBytes..];
 
         Span<char> dataLengthsTimeStampProviderKeyKindChars = stackalloc char[DataLengthsTimeStampProviderKeyKindSizeInChars];
-        int bytesWritten = Base64Url.EncodeToChars(secretOptionalSizesYearMonthBytes, secretOptionalSizesYearMonthChars);
+        int bytesWritten = Base64Url.EncodeToChars(dataLengthsTimeStampProviderKeyKindBytes, dataLengthsTimeStampProviderKeyKindChars);
         Debug.Assert(bytesWritten == DataLengthsTimeStampProviderKeyKindSizeInChars);
 
         // 'A' == index 0 of all printable base64-encoded characters.
@@ -137,8 +136,6 @@ public static class Cask
         {
             return false;
         }
-
-        ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = source[..DayHourMinutesKeyKindSizeInBytes];
 
         char day = dataLengthsTimeStampProviderKeyKindChars[4];
         // An encoded day (a zero-indexed value) that exceeds 30 ('e') is not valid.
@@ -220,22 +217,15 @@ public static class Cask
             Base64UrlChars[providerDataLengthInBytes/3],
             Base64UrlChars[now.Year - 2025], // Years since 2025.
             Base64UrlChars[now.Month - 1],   // Zero-indexed month.
-        ];
-
-        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DataLengthsYearMonthSizeInBytes]);
-        Debug.Assert(bytesWritten == DataLengthsYearMonthSizeInBytes);
-        destination = destination[DataLengthsYearMonthSizeInBytes..];
-
-        chars = [
             Base64UrlChars[now.Day - 1],     // Zero-indexed day.
             Base64UrlChars[now.Hour],        // Zero-indexed hour.
             Base64UrlChars[now.Minute],      // Zero-index minute.
             providerKeyKind,
         ];
 
-        bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DayHourMinutesKeyKindSizeInBytes]);
-        Debug.Assert(bytesWritten == DayHourMinutesKeyKindSizeInBytes);
-        destination = destination[DayHourMinutesKeyKindSizeInBytes..];
+        int bytesWritten = Base64Url.DecodeFromChars(chars, destination[..DataLengthsTimeStampProviderKeyKindSizeInBytes]);
+        Debug.Assert(bytesWritten == DataLengthsTimeStampProviderKeyKindSizeInBytes);
+        destination = destination[DataLengthsTimeStampProviderKeyKindSizeInBytes..];
 
         bytesWritten = Base64Url.DecodeFromChars(providerData.AsSpan(), destination[..providerDataLengthInBytes]);
         Debug.Assert(bytesWritten == providerDataLengthInBytes);

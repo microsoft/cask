@@ -41,7 +41,7 @@ internal static partial class InternalConstants
     /// The number of base64-encoded chars used to express year, month, day, and
     /// hour components of the key allocation timestamp.
     /// </summary>
-    public static readonly int DataLengthsTimeStampProviderKeyKindSizeInChars = BytesToBase64Chars(DataLengthsYearMonthSizeInBytes);
+    public static readonly int DataLengthsTimeStampProviderKeyKindSizeInChars = BytesToBase64Chars(DataLengthsTimeStampProviderKeyKindSizeInBytes);
 
     /// <summary>
     /// The number of bytes in a provider signature.
