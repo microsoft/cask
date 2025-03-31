@@ -99,23 +99,23 @@ public static class Cask
             return false;
         }
 
-        ReadOnlySpan<byte> destination = keyBytes[caskSignatureByteRange.End.Value..];
+        ReadOnlySpan<byte> source = keyBytes[caskSignatureByteRange.End.Value..];
 
-        ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = destination[..DataLengthsYearMonthSizeInBytes];
-        destination = destination[DataLengthsYearMonthSizeInBytes..];
+        ReadOnlySpan<byte> secretOptionalSizesYearMonthBytes = source[..DataLengthsYearMonthSizeInBytes];
+        source = source[DataLengthsYearMonthSizeInBytes..];
 
-        Span<char> secretOptionalSizesYearMonthChars = stackalloc char[DataLengthsYearMonthSizeInChars];
+        Span<char> dataLengthsTimeStampProviderKeyKindChars = stackalloc char[DataLengthsTimeStampProviderKeyKindSizeInChars];
         int bytesWritten = Base64Url.EncodeToChars(secretOptionalSizesYearMonthBytes, secretOptionalSizesYearMonthChars);
-        Debug.Assert(bytesWritten == DataLengthsYearMonthSizeInChars);
+        Debug.Assert(bytesWritten == DataLengthsTimeStampProviderKeyKindSizeInChars);
 
         // 'A' == index 0 of all printable base64-encoded characters.
-        var encodedSecretSize = (SecretSize)(secretOptionalSizesYearMonthChars[0] - 'A');
+        var encodedSecretSize = (SecretSize)(dataLengthsTimeStampProviderKeyKindChars[0] - 'A');
         if (secretSize != encodedSecretSize)
         {
             return false;
         }
 
-        int providerDataLengthInBytes = (secretOptionalSizesYearMonthChars[1] - 'A') * OptionalDataChunkSizeInBytes;
+        int providerDataLengthInBytes = (dataLengthsTimeStampProviderKeyKindChars[1] - 'A') * OptionalDataChunkSizeInBytes;
         if (providerDataLengthInBytes > MaxProviderDataLengthInBytes)
         {
             return false;
@@ -129,41 +129,40 @@ public static class Cask
             return false;
         }
 
-        // Any encoded year, i.e., secretOptionalSizesYearMonthChars[2], is legal.
+        // Any encoded year, i.e., dataLengthsTimeStampProviderKeyKindChars[2], is legal.
 
-        char month = secretOptionalSizesYearMonthChars[3];
+        char month = dataLengthsTimeStampProviderKeyKindChars[3];
         // An encoded month (a zero-indexed value) that exceeds 11 ('L') is not valid.
         if (month < 'A' || month > 'L')
         {
             return false;
         }
 
-        ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = destination[..DayHourMinutesKeyKindSizeInBytes];
+        ReadOnlySpan<byte> dayHoursMinutesProviderKindBytes = source[..DayHourMinutesKeyKindSizeInBytes];
 
-        Span<char> dayHourMinutesAndProviderKindChars = stackalloc char[DayHourMinutesKeyKindSizeInChars];
-        bytesWritten = Base64Url.EncodeToChars(dayHoursMinutesProviderKindBytes, dayHourMinutesAndProviderKindChars);
-        Debug.Assert(bytesWritten == DayHourMinutesKeyKindSizeInChars);
-
-        char day = dayHourMinutesAndProviderKindChars[0];
+        char day = dataLengthsTimeStampProviderKeyKindChars[4];
         // An encoded day (a zero-indexed value) that exceeds 30 ('e') is not valid.
         if (!((day >= 'A' && day <= 'Z') || (day >= 'a' && day <= 'e')))
         {
             return false;
         }
 
-        char hour = dayHourMinutesAndProviderKindChars[1];
+        char hour = dataLengthsTimeStampProviderKeyKindChars[5];
         // An encoded hour (a zero-indexed value) that exceeds 23 (base64-encoded 'X') is not valid.
         if (hour < 'A' || hour > 'X')
         {
             return false;
         }
 
-        char minute = dayHourMinutesAndProviderKindChars[2];
+        char minute = dataLengthsTimeStampProviderKeyKindChars[6];
         // An encoded minute (a zero-indexed value) that exceeds 30 ('7') is not valid.
         return
             (minute >= 'A' && minute <= 'Z') ||
             (minute >= 'a' && minute <= 'z') ||
             (minute >= '0' && minute <= '7');
+
+        // Any encoded provider key kind, i.e.,
+        // dataLengthsTimeStampProviderKeyKindChars[7], is legal.
     }
 
     internal static SecretSize ExtractSecretSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)

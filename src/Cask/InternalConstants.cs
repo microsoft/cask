@@ -35,26 +35,13 @@ internal static partial class InternalConstants
     /// The number of bytes used to express year, month, day, and hour
     /// components of the key allocation timestamp.
     /// </summary>
-    public const int DataLengthsYearMonthSizeInBytes = 3;
+    public const int DataLengthsTimeStampProviderKeyKindSizeInBytes = 6;
 
     /// <summary>
     /// The number of base64-encoded chars used to express year, month, day, and
     /// hour components of the key allocation timestamp.
     /// </summary>
-    public static readonly int DataLengthsYearMonthSizeInChars = BytesToBase64Chars(DataLengthsYearMonthSizeInBytes);
-
-    /// <summary>
-    /// The number of bytes used to express the day, hour and minutes component
-    /// of the key allocation timestamp, and the provider key kind.
-    /// </summary>
-    public const int DayHourMinutesKeyKindSizeInBytes = 3;
-
-    /// <summary>
-    /// The number of base64-encoded chars used to express the day, hour and
-    /// minutes component of the key allocation timestamp, and the provider key
-    /// kind.
-    /// </summary>
-    public static readonly int DayHourMinutesKeyKindSizeInChars = BytesToBase64Chars(DayHourMinutesKeyKindSizeInBytes);
+    public static readonly int DataLengthsTimeStampProviderKeyKindSizeInChars = BytesToBase64Chars(DataLengthsYearMonthSizeInBytes);
 
     /// <summary>
     /// The number of bytes in a provider signature.

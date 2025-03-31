@@ -41,8 +41,9 @@
                             | 'g' | 'k' | 'o' | 's' | 'w' | '0' | '4' | '8' ; Base64 printable characters with two trailing zero bits.
 <base64-four-zeros-suffix> ::= 'A' | 'Q' | 'g' | 'w'                        ; Base64 printable characters with four trailing zero bits.
 <cask-signature> ::= 'QJJQ'                                                 ; Fixed signature identifying the CASK key.
-<sensitive-data-size> ::= 'A'                                               ; 'A' indicates a 128-bit sensitive data component, 'B' 256-bit, etc.
-<optional-data-size> ::= 'A'                                                ; 'A' = zero 3-byte optional bytes, 'B' = one optional 3-byte segment, etc.
+<sensitive-data-size> ::= 'B'..'E'                                          ; 'B' = 128-bit secret size, 'C' = 256-bit, 'D' = 384-bit, 'E' = 512-bit.
+<optional-data-size> ::= 'A'..'E'                                           ; 'A' = zero 3-byte optional data segments, 'B' = one optional 3-byte
+                                                                            ; segment, up to a maximum of 'E' = 4 optional 3-byte data segments.
 <timestamp> ::= <year> <month> <day> <hour> <minute>                        ; Time-of-allocation timestamp components.
 <year> ::= <base64url>                                                      ; Allocation year, 'A' (2025) to '_' (2088).
 <month> ::= 'A'..'L'                                                        ; Allocation month, 'A' (January) to 'L' (December).
