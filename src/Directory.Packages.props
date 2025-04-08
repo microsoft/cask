@@ -6,7 +6,6 @@
   <ItemGroup>
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="Microsoft.Bcl.Memory" Version="9.0.0" />
-    <PackageVersion Include="System.IO.Hashing" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="Global Build-Only Dependencies">
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
