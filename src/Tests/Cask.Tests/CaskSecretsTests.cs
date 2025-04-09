@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Buffers.Text;
+using System.Drawing;
 
 using Xunit;
 
@@ -66,42 +67,48 @@ public abstract class CaskTestsBase
                                            SecretSize secretSize)
     {
         providerData ??= string.Empty;
-
-        // The purpose of this test is to actually produce useful notes in documentation
-        // as far as decomposing a CASK key, both from its url-safe base64 form and from
-        // the raw bytes.
-        //
-        // The code demonstrates the core CASK technique of obtaining metadata from the right
-        // end of the key, obtaining size information from the key kind enum, and
-        // based on that data isolating the randomized component from the optional data.
-
         IsCaskVerifySuccess(encodedKey);
 
-        Span<byte> keyBytes = Base64Url.DecodeFromChars(encodedKey.AsSpan());
+        // The purpose of this test is to actually produce useful notes in
+        // documentation as far as decomposing a CASK key, both from its
+        // url-safe base64-encoded form and from the raw bytes.
+        //
+        // The code demonstrates the core CASK technique of obtaining the
+        // lengths of the sensitive and optional data segments of the key in
+        // order to interpret or validate other values.
+        ReadOnlySpan<byte> decodedKey = Base64Url.DecodeFromChars(encodedKey.AsSpan());
+
+        ReadOnlySpan<char> encodedSource = encodedKey.AsSpan();
+        ReadOnlySpan<byte> decodedSource = decodedKey;
 
         // A CASK secret may encode 128, 256, 384, or 512 bits of sensitive data
         // and its length will differ accordingly. CASK also allows for optional
-        // data to be included by a secret provider. Because CASK limits optional
-        // data to 12 bytes at most, a CASK secret of particular sensitive data
-        // size will always be smaller than a key of the next larger sensitive
-        // data size. Examining the key length, therefore, is a simple way to
-        // determine the encoded sensitive data size, after which the size of the
-        // optional data is clear.
+        // data to be included by a secret provider. Because CASK limits
+        // optional data to 12 bytes at most, a CASK secret of particular
+        // sensitive data size will always be smaller than a key of the next
+        // larger sensitive data size. Examining the key length, therefore, is a
+        // simple way to determine the encoded sensitive data size, after which
+        // the size of the optional data is clear.
 
-        if (encodedKey.Length >= 120 && keyBytes.Length >= 90)
+        if (encodedKey.Length >= 108)
         {
+            Assert.True(decodedSource.Length >= 81);
             Assert.Equal(SecretSize.Bits512, secretSize);
         }
-        else if (encodedKey.Length >= 100 && keyBytes.Length >= 75)
+        else if (encodedKey.Length >= 84)
         {
+            Assert.True(decodedSource.Length >= 63);
             Assert.Equal(SecretSize.Bits384, secretSize);
         }
-        else if (encodedKey.Length >= 80 && keyBytes.Length >= 60)
+        else if (encodedKey.Length >= 64)
         {
+            Assert.True(decodedSource.Length >= 48);
             Assert.Equal(SecretSize.Bits256, secretSize);
         }
         else
         {
+            Assert.True(encodedKey.Length >= 44);
+            Assert.True(decodedSource.Length >= 33);
             Assert.Equal(SecretSize.Bits128, secretSize);
         }
 
@@ -123,11 +130,11 @@ public abstract class CaskTestsBase
         int paddingInBytes = paddedSecretSizeInBytes - secretSizeInBytes;
         for (int i = 0; i < paddingInBytes; i++)
         {
-            Assert.Equal(0, keyBytes[secretSizeInBytes + i]);
+            Assert.Equal(0, decodedSource[secretSizeInBytes + i]);
         }
 
         int paddedSecretSizeInChars = (paddedSecretSizeInBytes / 3) * 4;
-        string encodedSensitiveData = encodedKey[..paddedSecretSizeInChars];
+        string encodedSensitiveData = encodedSource[..paddedSecretSizeInChars].ToString();
 
         // If we have non-zero padding bytes, there will be an encoded character
         // with either two or four bits of trailing zeros, which bring the data
@@ -158,6 +165,9 @@ public abstract class CaskTestsBase
             }
         }
 
+        encodedSource = encodedSource[paddedSecretSizeInChars..];
+        decodedSource = decodedSource[paddedSecretSizeInBytes..];
+
         // From here, the computed sensitive data size as bytes or encoded chars
         // becomes the base offset to us to examine and/or validate other data.
 
@@ -165,27 +175,66 @@ public abstract class CaskTestsBase
         Span<byte> caskSignatureBytes = stackalloc byte[3];
         Base64Url.DecodeFromChars(caskSignature.AsSpan(), caskSignatureBytes);
 
-        Range caskSignatureRangeInBytes = paddedSecretSizeInBytes..(paddedSecretSizeInBytes + 3);
-        Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual(caskSignatureBytes));
-        Assert.True(keyBytes[caskSignatureRangeInBytes].SequenceEqual([(byte)0x40, (byte)0x92, (byte)0x50]));
+        Assert.True(decodedSource[..3].SequenceEqual(caskSignatureBytes));
+        Assert.True(decodedSource[..3].SequenceEqual([(byte)0x40, (byte)0x92, (byte)0x50]));
+        Assert.Equal(caskSignature, encodedSource[..4].ToString());
 
-        Range caskSignatureRangeInChars = paddedSecretSizeInChars..(paddedSecretSizeInChars + 4);
-        Assert.Equal(caskSignature, encodedKey[caskSignatureRangeInChars]);
+        encodedSource = encodedSource[4..];
+        decodedSource = decodedSource[3..];
 
-        // The timestamp, sensitive data size, optional data size, and provider key kind
-        // data is expressed as 8 distinct 6-bit encoded characters and so the bytewise
-        // interpretation of this data is less straightforward. For this segment, it may
-        // be easiest to base64-encode key bytes and process the encoded form,
-        // particularly if the timestamp will be validated.
+        // The padding (p), secret size (s), optional provider data size (o),
+        // and provider key kind (k) are expressed as 4 distinct 6-bit encoded
+        // characters (psok) and so the bytewise interpretation of this data is
+        // less straightforward. For this segment, it may be easiest to
+        // base64-encode key bytes and process the encoded form.
+        Span<char> psokChars = stackalloc char[4];
+        Base64Url.EncodeToChars(decodedSource[..3], psokChars);
+        Assert.Equal(encodedSource[..4].ToString(), psokChars.ToString());
 
-        Range sizesTimestampAndKindRangeInBytes = caskSignatureRangeInBytes.End..(caskSignatureRangeInBytes.End.Value + 6);
-        Span<byte> timestampSizesAndKindBytes = keyBytes[sizesTimestampAndKindRangeInBytes];
-        Span<char> timestampSizesAndKindChars = stackalloc char[8];
-        Base64Url.EncodeToChars(timestampSizesAndKindBytes, timestampSizesAndKindChars);
+        encodedSource = encodedSource[4..];
+        decodedSource = decodedSource[3..];
 
-        Range timestampSizesAndKindRangeInChars = caskSignatureRangeInChars.End..(caskSignatureRangeInChars.End.Value + 8);
-        string encodedTimestampSizesAndKindChars = encodedKey[timestampSizesAndKindRangeInChars];
-        Assert.Equal(encodedTimestampSizesAndKindChars, timestampSizesAndKindChars.ToString());
+        Assert.Equal('A', psokChars[0]);
+
+        SecretSize encodedSecretSize = (SecretSize)psokChars[1] - 'A';
+        Assert.Equal(secretSize, encodedSecretSize);
+        Assert.True(secretSize != 0);
+
+        // The optional data size is expressed as a 6-bit encoded character.
+        int optionalDataSizeInBytes = (psokChars[2] - 'A') * 3;
+        Assert.True(optionalDataSizeInBytes >=0 && optionalDataSizeInBytes <= 12);
+
+        // Now we can validate the key size.
+        int expectedKeyLengthInBytes = paddedSecretSizeInBytes + optionalDataSizeInBytes + 15;
+        Assert.Equal(expectedKeyLengthInBytes, decodedKey.Length);
+
+        int optionalDataSizeInChars = (optionalDataSizeInBytes / 3) * 4;
+        int expectedKeyLengthInChars = paddedSecretSizeInChars + optionalDataSizeInChars + 20;
+        Assert.Equal(expectedKeyLengthInChars, encodedKey.Length);
+
+        // The provider key kind is provider-defined. Any value is legal
+        // and so we do not validate psokChars[3] here.
+
+        // All printable characters in the provider fixed signature are legal
+        // and so we do not validate this data.
+        encodedSource = encodedSource[4..];
+        decodedSource = decodedSource[3..];
+
+        // Now skip past all optional data (for which there are no
+        // formatting restrictions).
+        encodedSource = encodedSource[optionalDataSizeInChars..];
+        decodedSource = decodedSource[optionalDataSizeInBytes..];
+
+        // The final padding characters (pp) and time-of-allocation year (y),
+        // month (m), day (d), hour (h) and second (s) are expressed as 8
+        // distinct 6-bit encoded characters (ppymdhms) and so the bytewise
+        // interpretation of this data is less straightforward. For this
+        // segment, it may be easiest to base64-encode key bytes and process the
+        // encoded form, particularly if the timestamp will be validated.
+
+        Span<char> ppymdhmsChars = stackalloc char[8];
+        Base64Url.EncodeToChars(decodedSource, ppymdhmsChars);
+        Assert.Equal(encodedSource.ToString(), ppymdhmsChars.ToString());
 
         // Outside of the timestamp, the remaining CASK 6-bit components are intended to be
         // easily processed when converted into their base64 printable character index.
@@ -257,45 +306,32 @@ public abstract class CaskTestsBase
             ['_'] = 63
         };
 
-        char encodedSecretSizeChar = encodedTimestampSizesAndKindChars[0];
-        var encodedSecretSize = (SecretSize)base64UrlPrintableCharIndices[encodedSecretSizeChar];
-        Assert.Equal(secretSize, encodedSecretSize);
+        // Ensure encoded zero padding.
+        Assert.Equal('A', ppymdhmsChars[0]);
+        Assert.Equal('A', ppymdhmsChars[1]);
 
-        char encodedOptionalDataSizeChar = encodedTimestampSizesAndKindChars[1];
-        int optionalDataSizeInBytes = base64UrlPrintableCharIndices[encodedOptionalDataSizeChar] * 3;
-        Assert.Equal(paddedSecretSizeInBytes + 27 + optionalDataSizeInBytes, keyBytes.Length);
-
-        Range optionalDataRangeInBytes = sizesTimestampAndKindRangeInBytes.End..(sizesTimestampAndKindRangeInBytes.End.Value + optionalDataSizeInBytes);
-        Span<byte> optionalDataBytes = keyBytes[optionalDataRangeInBytes];
-        Assert.Equal(providerData, Base64Url.EncodeToString(optionalDataBytes));
-
-        int optionalDataSizeInChars = (optionalDataSizeInBytes / 3) * 4;
-        Range optionalDataRangeInChars = timestampSizesAndKindRangeInChars.End..(timestampSizesAndKindRangeInChars.End.Value + optionalDataSizeInChars);
-        string optionalDataInChars = encodedKey[optionalDataRangeInChars];
-        Assert.Equal(providerData, optionalDataInChars);
-
-        char encodedYearChar = encodedTimestampSizesAndKindChars[2];
-        char encodedMonthChar = encodedTimestampSizesAndKindChars[3];
-        char encodedDayChar = encodedTimestampSizesAndKindChars[4];
-        char encodedHourChar = encodedTimestampSizesAndKindChars[5];
-        char encodedMinuteChar = encodedTimestampSizesAndKindChars[6];
+        char encodedYearChar = ppymdhmsChars[2];
+        char encodedMonthChar = ppymdhmsChars[3];
+        char encodedDayChar = ppymdhmsChars[4];
+        char encodedHourChar = ppymdhmsChars[5];
+        char encodedMinuteChar = ppymdhmsChars[6];
+        char encodedSecondChar = ppymdhmsChars[7];
 
         int year = base64UrlPrintableCharIndices[encodedYearChar];
         int month = base64UrlPrintableCharIndices[encodedMonthChar];
         int day = base64UrlPrintableCharIndices[encodedDayChar];
         int hour = base64UrlPrintableCharIndices[encodedHourChar];
         int minute = base64UrlPrintableCharIndices[encodedMinuteChar];
+        int second = base64UrlPrintableCharIndices[encodedMinuteChar];
 
         // All encoded year values are legal.
         Assert.True(month >= 0 && month < 12, $"Month value '{month}' is out of range.");
         Assert.True(day >= 0 && day < 31, $"Day value '{day}' is out of range.");
         Assert.True(hour >= 0 && hour < 24, $"Hour value '{hour}' is out of range.");
         Assert.True(minute >= 0 && minute < 60, $"Minute value '{minute}' is out of range.");
+        Assert.True(second >= 0 && second < 60, $"Second value '{second}' is out of range.");
 
-        var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second: 0, TimeSpan.Zero);
-
-        // The provider key kind is provider-defined. Any value is legal.
-        char encodedProviderKeyKind = encodedTimestampSizesAndKindChars[7];
+        var utcTimestamp = new DateTimeOffset(year + 2025, month + 1, day + 1, hour, minute, second, TimeSpan.Zero);
     }
 
     [Fact]
@@ -478,15 +514,16 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllYears(SecretSize secretSize)
     {
+        string providerData = string.Empty;
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'Y',
-                                      providerData: string.Empty,
+                                      providerData,
                                       secretSize);
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        int yearCharOffset = ComputeYearCharOffset(secretSize);
+        int yearCharOffset = ComputeYearCharOffset(secretSize, providerData.Length);
 
         for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
         {
@@ -508,15 +545,16 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllMonths(SecretSize secretSize)
     {
+        string providerData = "MNTH";
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'M',
-                                      providerData: "MNTH",
+                                      providerData,
                                       secretSize);
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        int monthCharOffset = ComputeMonthCharOffset(secretSize);
+        int monthCharOffset = ComputeMonthCharOffset(secretSize, providerData.Length);
 
         for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
         {
@@ -545,15 +583,16 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllDays(SecretSize secretSize)
     {
+        string providerData = "DAY_DAY_";
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'D',
-                                      providerData: "DAY_DAY_",
+                                      providerData,
                                       secretSize);
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        int dayCharOffset = ComputeDayCharOffset(secretSize);
+        int dayCharOffset = ComputeDayCharOffset(secretSize, providerData.Length);
 
         for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
         {
@@ -582,15 +621,16 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllHours(SecretSize secretSize)
     {
+        string providerData = "_HOUR--HOUR_";
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'H',
-                                      providerData: "_HOUR--HOUR_",
+                                      providerData,
                                       secretSize);
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        int hourCharOffset = ComputeHourCharOffset(secretSize);
+        int hourCharOffset = ComputeHourCharOffset(secretSize, providerData.Length);
 
         for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
         {
@@ -619,15 +659,16 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllMinutes(SecretSize secretSize)
     {
+        string providerData = "MINUTEMINUTE";
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'm',
-                                      providerData: "MINUTEMINUTE",
+                                      providerData,
                                       secretSize);
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
 
-        int minuteCharOffset = ComputeMinuteCharOffset(secretSize);
+        int minuteCharOffset = ComputeMinuteCharOffset(secretSize, providerData.Length);
 
         for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
         {
@@ -846,10 +887,10 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(SecretSize.Bits128, "_____________________wAAQJJQBBAAAAAMABCDTEST____________________")]
-    [InlineData(SecretSize.Bits256, "__________________________________________8AQJJQCBAAAAAMABCDTEST____________________")]
-    [InlineData(SecretSize.Bits384, "________________________________________________________________QJJQDBAAAAAMABCDTEST____________________")]
-    [InlineData(SecretSize.Bits512, "_____________________________________________________________________________________wAAQJJQEBAAAAAMABCDTEST____________________")]
+    [InlineData(SecretSize.Bits128, "_____________________wAAQJJQABBMTESTABCDAAAAAAAA")]
+    [InlineData(SecretSize.Bits256, "__________________________________________8AQJJQACBMTESTABCDAAAAAAAA")]
+    [InlineData(SecretSize.Bits384, "________________________________________________________________QJJQADBMTESTABCDAAAAAAAA")]
+    [InlineData(SecretSize.Bits512, "_____________________________________________________________________________________wAAQJJQAEBMTESTABCDAAAAAAAA")]
     public void CaskSecrets_GenerateKey_DeterministicUsingMocks(SecretSize secretSize, string expectedKey)
     {
         using Mock mockRandom = Cask.MockFillRandom(buffer => buffer.Fill(255));
@@ -884,12 +925,13 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_GenerateKey_ValidTimestamps(SecretSize secretSize)
     {
+        string providerData = "ABCD";
+
         // Every year from 2025 - 2088 should produce a valid key. We trust that
         // the CASK standard will be long dead by 2088 or perhaps simply all or
         // most programmers will be.
         for (int year = 0; year < 64; year++)
         {
-
             int month = year % 12;
             int day = year % 28;
             int hour = year % 24;
@@ -900,7 +942,7 @@ public abstract class CaskTestsBase
 
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                           providerKeyKind: 'Z',
-                                          providerData: "ABCD",
+                                          providerData,
                                           secretSize);
             IsCaskVerifySuccess(key);
 
@@ -913,7 +955,7 @@ public abstract class CaskTestsBase
             // The timestamp follows the Cask signature, the character
             // comprising the secret size, and the character comprising the
             // optional data size.
-            int timestampCharOffset = paddedSecretSizeInChars + CaskSignatureUtf8.Length + 2;
+            int timestampCharOffset = CaskTestsBase.ComputeYearCharOffset(secretSize, providerData.Length);
 
             Range timestampCharRange = timestampCharOffset..(timestampCharOffset + 5);
 
@@ -961,50 +1003,67 @@ public abstract class CaskTestsBase
         }
     }
 
-    private static int ComputeCaskSignatureCharOffset(SecretSize secretSize)
+    internal static int ComputeCaskSignatureCharOffset(SecretSize secretSize)
     {
         int secretSizeInBytes = (int)secretSize * 16;
         int paddedSecretSizeInBytes = (secretSizeInBytes + 3 - 1) / 3 * 3;
         return (paddedSecretSizeInBytes / 3) * 4;
     }
 
-    private static int ComputeSecretSizeCharOffset(SecretSize secretSize)
+    internal static int ComputeSecretSizeCharOffset(SecretSize secretSize)
     {
-        return ComputeCaskSignatureCharOffset(secretSize) + 4;
+        // Add 4 for signature size + 1 for padding character.
+        return ComputeCaskSignatureCharOffset(secretSize) + 4 + 1;
     }
 
-    private static int ComputeOptionalDataSizeCharOffset(SecretSize secretSize)
+    internal static int ComputeOptionalDataSizeCharOffset(SecretSize secretSize)
     {
         return ComputeSecretSizeCharOffset(secretSize) + 1;
     }
 
-    private static int ComputeYearCharOffset(SecretSize secretSize)
+    internal static int ComputeProviderKeyKindCharOffset(SecretSize secretSize)
     {
         return ComputeOptionalDataSizeCharOffset(secretSize) + 1;
     }
 
-    private static int ComputeMonthCharOffset(SecretSize secretSize)
+    internal static int ComputeProviderSignatureCharOffset(SecretSize secretSize)
     {
-        return ComputeYearCharOffset(secretSize) + 1;
+        return ComputeProviderKeyKindCharOffset(secretSize) + 1;
     }
 
-    private static int ComputeDayCharOffset(SecretSize secretSize)
+    internal static int ComputeOptionalDataOffset(SecretSize secretSize)
     {
-        return ComputeMonthCharOffset(secretSize) + 1;
+        return ComputeProviderSignatureCharOffset(secretSize) + 4;
     }
 
-    private static int ComputeHourCharOffset(SecretSize secretSize)
+    internal static int ComputeYearCharOffset(SecretSize secretSize, int providerDataLength)
     {
-        return ComputeDayCharOffset(secretSize) + 1;
+        // Add two to account for two padding characters preceding the timestamp.
+        return ComputeOptionalDataOffset(secretSize) + providerDataLength + 2;
     }
 
-    private static int ComputeMinuteCharOffset(SecretSize secretSize)
+    internal static int ComputeMonthCharOffset(SecretSize secretSize, int providerDataLength)
     {
-        return ComputeHourCharOffset(secretSize) + 1;
+        return ComputeYearCharOffset(secretSize, providerDataLength) + 1;
     }
 
-    private static int ComputeProviderKeyKindCharOffset(SecretSize secretSize)
+    internal static int ComputeDayCharOffset(SecretSize secretSize, int providerDataLength)
     {
-        return ComputeMinuteCharOffset(secretSize) + 1;
+        return ComputeMonthCharOffset(secretSize, providerDataLength) + 1;
+    }
+
+    internal static int ComputeHourCharOffset(SecretSize secretSize, int providerDataLength)
+    {
+        return ComputeDayCharOffset(secretSize, providerDataLength) + 1;
+    }
+
+    internal static int ComputeMinuteCharOffset(SecretSize secretSize, int providerDataLength)
+    {
+        return ComputeHourCharOffset(secretSize, providerDataLength) + 1;
+    }
+
+    internal static int ComputeSecondCharOffset(SecretSize secretSize, int providerDataLength)
+    {
+        return ComputeMinuteCharOffset(secretSize, providerDataLength) + 1;
     }
 }

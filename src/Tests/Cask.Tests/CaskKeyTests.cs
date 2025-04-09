@@ -171,11 +171,15 @@ public class CaskKeyTests
         Assert.Equal(key, newKey);
     }
 
-    [Fact]
-    public void CaskKey_Encode_InvalidKey()
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+
+    public void CaskKey_Encode_InvalidKey(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
-                                       providerKeyKind: 'J');
+                                       providerKeyKind: 'J',
+                                       providerData: null,
+                                       secretSize);
 
         byte[] decoded = new byte[key.SizeInBytes];
         Base64Url.TryDecodeFromChars(key.ToString().AsSpan(), decoded, out int _);
@@ -185,10 +189,10 @@ public class CaskKeyTests
 
         Span<char> keyChars = key.ToString().ToCharArray().AsSpan();
 
-        int secretSizeCharOffset = 48;
-        var secretSize = (SecretSize)(keyChars[secretSizeCharOffset] - 'A');
+        int secretSizeCharOffset = CaskTestsBase.ComputeSecretSizeCharOffset(secretSize);
+        var encodedSecretSize = (SecretSize)(keyChars[secretSizeCharOffset] - 'A');
 
-        Assert.Equal(SecretSize.Bits256, secretSize);
+        Assert.Equal(secretSize, encodedSecretSize);
 
         keyChars[secretSizeCharOffset] = (char)('A' + ((int)SecretSize.Bits512 + 1));
         Base64Url.TryDecodeFromChars(keyChars, decoded, out int _);

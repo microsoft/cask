@@ -35,21 +35,27 @@
 1. Generate cryptographically secure random bytes as specified by the secret size computation. Store the result at the beginning of the generated key.
 1. Clear the padding bytes, if any, that follow the secret and which bring alignment to a 3-byte boundary.
 1. Write CASK signature [0x40, 0x92, 0x50] ("QJJQ", base64-decoded) to the next 3 bytes.
-1. Retrieve the current date and time in UTC and store the result in T.
-1. Encode the secret and optional data sizes, year, and month of T in 4 characters, SOYM:
+1. Encode reserved zero padding, secret and optional data sizes, and provider kind in 4 characters, ZSOK:
+    - Z = base64url-encoding of 0, 'A'.
     - S = base64url-encoding of secret data size, one of 1 (128 bits), 2 (256), 3 (384), or 4 (512).
     - O = base64url-encoding of optional data size, a count of 3-byte segments, one of 0 - 4.
+    - K = provider key kind, i.e., the base64url printable char specified by the caller.
+1. Base64url-decode ZSOK and store the result in the next 3 bytes.
+1. Base64url-decode provider signature and store the result in the next 3 bytes.
+1. Write provider data bytes, if any.
+1. Retrieve the current date and time in UTC and store the result in T.
+1. Encode zero padding, zero padding, the year, and month of T in 4 characters, ZZYM:
+    - Z = base64url-encoding of 0, 'A'.
+    - Z = base64url-encoding of 0, 'A'..
     - Y = base64url-encoding of T.Year - 2025.
     - M = base64url-encoding of T.Month as a zero-based value, 0 - 11.
-1. Base64url-decode SOYM and store the result in the next 3 bytes.
-1. Encode the timestamp day, hour and minutes, and provider key kind in 4 characters, DHMK:
+1. Base64url-decode ZZYM and store the result in the next 3 bytes.
+1. Encode the timestamp day, hour, minutes, and seconds in 4 characters, DHMS:
     - D = base64url-encoding of T.Day as a zero-based value, i.e., 0 - 30.
     - H = base64url-encoding of T.Hour as zero-based value, i.e., 0 - 23.
     - M = base64url-encoding of T.Minutes as a zero-based value, i.e., 0 - 59.
-    - K = provider key kind, i.e., the exact base64url printable char specified by the caller.
-1. Base64url-decode MSOK and store the result in the next 3 bytes.
-1. Base64url-decode provider signature and store the result in the next 3 bytes.
-1. Generate 120 bits of cryptographically secure random data and store the result in the next 15 bytes.
+    - M = base64url-encoding of T.Seconds as a zero-based value, i.e., 0 - 59.
+1. Base64url-decode DHMS and store the result in the next 3 bytes.
 
 ## References
 - Base64url: https://datatracker.ietf.org/doc/html/rfc4648#section-5

@@ -32,18 +32,6 @@ internal static partial class InternalConstants
     public const int CaskSignatureSizeInBytes = 3;
 
     /// <summary>
-    /// The number of bytes used to express year, month, day, and hour
-    /// components of the key allocation timestamp.
-    /// </summary>
-    public const int DataLengthsTimeStampProviderKeyKindSizeInBytes = 6;
-
-    /// <summary>
-    /// The number of base64-encoded chars used to express year, month, day, and
-    /// hour components of the key allocation timestamp.
-    /// </summary>
-    public static readonly int DataLengthsTimeStampProviderKeyKindSizeInChars = BytesToBase64Chars(DataLengthsTimeStampProviderKeyKindSizeInBytes);
-
-    /// <summary>
     /// The number of bytes in a provider signature.
     /// </summary>
     public const int ProviderSignatureSizeInBytes = 3;
@@ -59,25 +47,39 @@ internal static partial class InternalConstants
     public const int OptionalDataChunkSizeInBytes = 3;
 
     /// <summary>
-    /// The number of bytes for the non-sensitive, unique correlating id of the secret.
+    /// The number of bytes required to express 6 bits of padding followed by
+    /// the secret size, the optional provider data size, and provider key kind.
     /// </summary>
-    public const int CorrelatingIdSizeInBytes = 15;
+    public const int PaddingSizesAndProviderKindInBytes = 3;
 
     /// <summary>
-    /// The number of bytes for time-of-allocation (year, month, day, hour, minute),
-    /// the size of the sensitive component, the size of optional data, and the
-    /// provider-defined key kind.
+    /// The number of base64 characters required to express 6 bits of padding
+    /// followed by the secret size, the optional provider data size, and
+    /// provider key kind.
     /// </summary>
-    public const int TimestampSizesAndProviderKindInBytes = 6;
+    public static readonly int PaddingSizesAndProviderKindInChars = BytesToBase64Chars(PaddingSizesAndProviderKindInBytes);
+
+    /// The number of bytes required to express 12 bits of padding followed by
+    /// <summary>
+    /// the secret time-of-allocation (year, month, day, hour, minute, second).
+    /// </summary>
+    public const int PaddingAndTimestampSizeInBytes = 6;
 
     /// <summary>
-    /// The number of bytes in the fixed components of a primary key,
-    /// from the CASK signature to the end of the key.
+    /// The number of base64 characters required to express 12 bits of padding
+    /// followed by the secret time-of-allocation (year, month, day, hour,
+    /// minute, second).
+    /// </summary>
+    public static readonly int PaddingAndTimestampSizeInChars = BytesToBase64Chars(PaddingAndTimestampSizeInBytes);
+
+    /// <summary>
+    /// The number of bytes in the fixed components of a primary key, from the
+    /// CASK signature to the end of the key.
     /// </summary>
     public const int FixedKeyComponentSizeInBytes = CaskSignatureSizeInBytes +
-                                                    TimestampSizesAndProviderKindInBytes +
+                                                    PaddingSizesAndProviderKindInBytes +
                                                     ProviderSignatureSizeInBytes +
-                                                    CorrelatingIdSizeInBytes;
+                                                    PaddingAndTimestampSizeInBytes;
 
     /// <summary>
     /// The maximum amount of bytes that the implementation will stackalloc.
