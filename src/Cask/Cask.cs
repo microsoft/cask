@@ -295,16 +295,14 @@ public static class Cask
     private static SecretSize InferSecretSizeFromByteLength(int lengthInBytes)
     {
         /* 
-         *  Required CASK encoded data, 15 bytes.
+         *  Required CASK encoded data, 15 bytes, see FixedKeyComponentSizeInBytes.
+         *
+         *  Each 4-character encoded component below comprises 3 bytes of data.
          *  
-         *  public const int FixedKeyComponentSizeInBytes = ( 3 bytes) CaskSignatureSizeInBytes +
-         *                                                  ( 3 bytes) PaddingSizesAndProviderKindInBytes +
-         *                                                  ( 3 bytes) ProviderSignatureSizeInBytes +
-         *                                                  ( 6 bytes) PaddingAndTimestampSizeInBytes;
          *  QJJQ : CASK fixed signature
-         *  ASOK : Zero padding, secret size, optional data size, provider key kind.
+         *  ZSOK : Zero padding, secret size, optional data size, provider key kind.
          *  TEST : Provider fixed signature.
-         *  AAYM : Zero padding, zero padding, year and month of time-of-allocation.
+         *  ZZYM : Zero padding, zero padding, year and month of time-of-allocation.
          *  DHMS : Day, hour, minute and second of time-of-allocation.
          * 
          *  For all keys, there is a maximum of 12 bytes of optional data.
