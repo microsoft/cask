@@ -1,6 +1,6 @@
 # GenerateKey Pseudo-Code
 
-*NOTE*: all references to `base64url` in this document refer to the 'printable' (i.e., exclusive of the padding or `=` character) base64url alphabet characters as defined in [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648#section-5).`
+*NOTE*: all references to `base64url` in this document refer to the 'printable' (i.e., exclusive of the `=` padding character) base64url alphabet as defined in [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648#section-5).`
 
 ## Inputs:
 - Provider signature: string
@@ -15,9 +15,9 @@
 1. Validate input. Return an error if any of the following are NOT true:
     - Provider signature is exactly 4 characters long.
     - Provider signature consists entirely of printable (non-padding) characters that are valid in base64url encoding.
-    - Provider key kind is a single, printable base64url character.
+    - Provider key kind is a single base64url character.
     - Provider data (if non-empty) has a length that is a multiple of 4 characters and no more than 12 characters.
-    - Provider data (if non-empty) consists entirely of base64url printable characters.
+    - Provider data (if non-empty) consists entirely of base64url characters.
     - Secret data size is between 1 (a single 16-byte segment of sensitive data = 128 bits) and 4 (four 16-byte segments = 512 bits).
 1. Let N = the length of the base64url-decoded provider data.
     - Number of characters in provider data divided by 4, times 3.
@@ -28,10 +28,10 @@
 1. Allocate storage for the generated key:
     - 18, 33, 48, or 66 bytes bytes for the sensitive data component.
     - 3 bytes for CASK signature.
-    - 6 bytes for the timestamp, sensitive and optional size designations, and provider key kind.
-    - N bytes for provider data. (Guaranteed to be a multiple of 3 by input validation.)
+    - 3 bytes for reserved zero padding, sensitive and optional size designations, and provider key kind.
     - 3 bytes for provider signature.
-    - 15 bytes for the non-sensitive correlating id.
+    - N bytes for provider data. (Guaranteed to be a multiple of 3 by input validation.)
+    - 6 bytes for the reserved zero padding and the time-of-allcation timestamp.
 1. Generate cryptographically secure random bytes as specified by the secret size computation. Store the result at the beginning of the generated key.
 1. Clear the padding bytes, if any, that follow the secret and which bring alignment to a 3-byte boundary.
 1. Write CASK signature [0x40, 0x92, 0x50] ("QJJQ", base64-decoded) to the next 3 bytes.
@@ -56,6 +56,7 @@
     - M = base64url-encoding of T.Minutes as a zero-based value, i.e., 0 - 59.
     - M = base64url-encoding of T.Seconds as a zero-based value, i.e., 0 - 59.
 1. Base64url-decode DHMS and store the result in the next 3 bytes.
+1. Encode the resulting bytes as a base64url string and return it.
 
 ## References
 - Base64url: https://datatracker.ietf.org/doc/html/rfc4648#section-5

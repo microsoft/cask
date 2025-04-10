@@ -4,11 +4,11 @@
 <key> ::= <sensitive-data>      ; A sequence of security-sensitive bytes.
           <cask-signature>      ; A fixed signature (`QJJQ`) that anchors high-performance textual identification.
           <6-bits-reserved>     ; 6 bits of reserved (zero) padding.
-          <sensitive-data-size> ; A count of 16-byte segments encoded as sensitive data ('B' = 1 x 16 bytes = 128 bits, etc).
-          <optional-data-size>  ; A count of 3-byte optional data segments, 'A' = 0 = 0 bytes, 'B' = 1 = 3 bytes, etc.
+          <sensitive-data-size> ; A count of 16-byte segments encoded as sensitive data, 'B' = 1 segment = 16 bytes, etc.
+          <provider-data-size>  ; A count of 3-byte provider data segments, 'A' = 0 segments = 0 bytes, 'B' = 1 segment = 3 bytes, etc.
           <provider-kind>       ; A provider-defined key kind.
-          <provider-signature>  ; A fixed signature identifying the secret provider.
-          [<optional-fields>]   ; Optional 3-byte segments comprising provider-defined data.
+          <provider-signature>  ; A fixed signature that identifies the secret provider.
+          [<provider-fields>]   ; Optional 3-byte segments of provider-defined data.
           <12-bits-reserved>    ; 12 bits of reserved (zero) padding.
           <timestamp>           ; The year, month, day, hour, minute, and second of secret allocation.
  
@@ -45,14 +45,15 @@
 <cask-signature> ::= 'QJJQ'                                                 ; Fixed signature identifying the CASK key.
 <6-bits-reserved> ::= 1 * <pad>                                             ; 6 bits of reserved (zero) padding.
 <sensitive-data-size> ::= 'B'..'E'                                          ; 'B' = 128-bit secret size, 'C' = 256-bit, 'D' = 384-bit, 'E' = 512-bit.
-<optional-data-size> ::= 'A'..'E'                                           ; 'A' = zero 3-byte optional data segments, 'B' = one optional 3-byte
+<provider-data-size> ::= 'A'..'E'                                           ; 'A' = zero 3-byte optional data segments, 'B' = one optional 3-byte
                                                                             ; segment, up to a maximum of 'E' = 4 optional 3-byte data segments.
 <provider-kind> ::= <base64url>                                             ; Provider-defined key kind.
 <provider-signature> ::= 4 * <base64url>                                    ; Provider identifier (24 bits).
-<optional-fields> ::= { <optional-field> }                                  ; 0 - 4 four-character (24-bit) segments of optional data. The 
-                                                                            ; count of segments is encoded in the <optional-data-size> field.
-<optional-field> ::= 4 * <base64url>                                        ; Each optional field is 4 characters (24 bits). This keeps data                                                                          ; cleanly aligned along 3-byte (4-encoded character) boundaries,
-                                                                            ; facilitating both readability of encoded form and byte-wise use.
+<provider-data> ::= { <24-bits> }                                           ; 0 - 4 four-character (24-bit) segments of provider data. The 
+                                                                            ; count of segments is encoded in the <provider-data-size> field.
+<24-bits> ::= 4 * <base64url>                                               ; Three bytes of base64 encoded data. We maintain a 3-byte here
+                                                                            ; and elsewhere to support both encoded and bytewise interpretation
+                                                                            ; and to avoid padding characters in the encoded form.
 <12-bits-reserved> ::= 2 * <pad>                                            ; 12 bits of reserved (zero) padding.
 <timestamp> ::= <year> <month> <day> <hour> <minute> <seconds>              ; Time-of-allocation components.
 <year> ::= <base64url>                                                      ; Year of allocation, 'A' (2025) to '_' (2088).
