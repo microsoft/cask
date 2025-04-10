@@ -90,15 +90,30 @@ public static class Cask
             return false;
         }
 
-        Range caskSignatureByteRange = ComputeSignatureByteRange(keyBytes.Length, out SecretSize secretSize);
+        int caskSignatureByteOffset = ComputeSignatureByteOffset(keyBytes.Length, out SecretSize secretSize);
+
+        if (secretSize != SecretSize.Bits384)
+        {
+            int paddingBytesCount = secretSize == SecretSize.Bits256 ? 1 : 2;
+
+            for (int i = 1; i <= paddingBytesCount; i++) 
+            {
+                if (keyBytes[caskSignatureByteOffset - i] != 0)
+                {
+                    return false;
+                }
+            }
+        }
+
+        ReadOnlySpan<byte> source = keyBytes[caskSignatureByteOffset..];
 
         // Check for CASK signature. "QJJQ" base64-decoded.
-        if (!keyBytes[caskSignatureByteRange].SequenceEqual(CaskSignatureBytes))
+        if (!source[..CaskSignatureSizeInBytes].SequenceEqual(CaskSignatureBytes))
         {
             return false;
         }
+        source = source[CaskSignatureSizeInBytes..];
 
-        ReadOnlySpan<byte> source = keyBytes[caskSignatureByteRange.End.Value..];
         ReadOnlySpan<byte> paddingSizesAndProviderKindBytes = source[..PaddingSizesAndProviderKindInBytes];
         source = source[PaddingSizesAndProviderKindInBytes..];
 
@@ -284,12 +299,12 @@ public static class Cask
         return caskSignatureCharOffset..(caskSignatureCharOffset + CaskSignature.Length);
     }
 
-    private static Range ComputeSignatureByteRange(int keyLengthInBytes, out SecretSize secretSize)
+    private static int ComputeSignatureByteOffset(int keyLengthInBytes, out SecretSize secretSize)
     {
         secretSize = InferSecretSizeFromByteLength(keyLengthInBytes);
         int secretSizeInBytes = (int)secretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
-        return paddedSecretSizeInBytes..(paddedSecretSizeInBytes + CaskSignatureSizeInBytes);
+        return paddedSecretSizeInBytes;
     }
 
     private static SecretSize InferSecretSizeFromByteLength(int lengthInBytes)

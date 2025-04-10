@@ -693,6 +693,44 @@ public abstract class CaskTestsBase
 
     [Theory]
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_AllSeconds(SecretSize secretSize)
+    {
+        string? providerData = null;
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 's',
+                                      providerData,
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        int minuteCharOffset = ComputeSecondCharOffset(secretSize, 0);
+
+        for (int base64Index = 0; base64Index < Base64UrlChars.Length; base64Index++)
+        {
+            bool expectedValid = base64Index < 60;
+
+            Span<char> destination = key.ToCharArray().AsSpan();
+            char encodedSecond = Base64UrlChars[base64Index];
+            destination[minuteCharOffset] = encodedSecond;
+
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed after modifying Cask timestamp with valid minute '{encodedSecond}': {modifiedKey}");
+                IsCaskVerifySuccess(modifiedKey);
+                continue;
+            }
+
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid minute '{encodedSecond}': {modifiedKey}");
+            IsCaskVerifyFailure(modifiedKey);
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_AllProviderKeyKinds(SecretSize secretSize)
     {
         string key = Cask.GenerateKey("TEST",
@@ -732,16 +770,186 @@ public abstract class CaskTestsBase
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that was not aligned to 4 chars: {key}");
     }
 
-    [Fact]
-    public void CaskSecrets_IsCask_InvalidKey_Whitespace()
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_InvalidKey_Whitespace(SecretSize secretSize)
     {
         // Replace first 4 characters of secret with whitespace. Whitespace is
         // allowed by `Base64Url` API but is invalid in a Cask key.
         string key = $"    {Cask.GenerateKey("TEST",
                             'X',
-                            providerData: null)[4..]}";
+                            providerData: null, 
+                            secretSize)[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_InvalidSensitiveDataPadding(SecretSize secretSize)
+    {
+        string providerData = secretSize == SecretSize.Bits128? "128b" : "FIVEHUNDREDTWELV";
+
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'X',
+                                      providerData,
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        // The character (6-bits) immediately preceding the CASK signature
+        // should be zeroed out.         
+        int paddingIndex = ComputeCaskSignatureCharOffset(secretSize) - 1;
+        Assert.Equal('A', key[paddingIndex]);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            Span<char> destination = key.ToCharArray().AsSpan();
+            destination[paddingIndex] = Base64UrlChars[base64Index];
+            valid = Cask.IsCask(destination.ToString());
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+        }
+
+        // The character to the left of the character preceding the CASK
+        // signature should be zeroed out (as there are two full bytes of
+        // padding).
+        paddingIndex--;
+        Assert.Equal('A', key[paddingIndex]);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            Span<char> destination = key.ToCharArray().AsSpan();
+            destination[paddingIndex] = Base64UrlChars[base64Index];
+            valid = Cask.IsCask(destination.ToString());
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+        }
+
+        // We have now validated 12 bits of zero padding. That means that the
+        // last remaining encoded character to validate should always have four
+        // bits of trailing zeros. There are four base64 characters that meet
+        // this condition.
+        paddingIndex--;
+
+        var permissibleCharacters = new HashSet<char>(['A', 'Q', 'g', 'w']);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            char base64Char = Base64UrlChars[base64Index];
+            bool expectedValid = permissibleCharacters.Contains(base64Char);
+            Span<char> destination = key.ToCharArray().AsSpan();
+            destination[paddingIndex] = base64Char;
+            valid = Cask.IsCask(destination.ToString());
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {destination.ToString()}");
+            }
+            else
+            {
+                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {destination.ToString()}");
+            }
+        }
+    }
+
+    [Fact]
+    public void CaskSecrets_IsCask_InvalidBits256SensitiveDataPadding()
+    {
+        string providerData = "256b";
+        SecretSize secretSize = SecretSize.Bits256;
+
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'X',
+                                      providerData,
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+
+        // The character (6-bits) immediately preceding the CASK signature
+        // should be zeroed out.         
+        int paddingIndex = ComputeCaskSignatureCharOffset(secretSize) - 1;
+        Assert.Equal('A', key[paddingIndex]);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            Span<char> destination = key.ToCharArray().AsSpan();
+            destination[paddingIndex] = Base64UrlChars[base64Index];
+            valid = Cask.IsCask(destination.ToString());
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+        }
+
+        // We have now validated 6 bits of zero padding. That means that the
+        // last remaining encoded character to validate should always have two
+        // bits of trailing zeros. There are sixteen base64 characters that meet
+        // this condition.
+        paddingIndex--;
+
+        var permissibleCharacters =
+            new HashSet<char>(['A', 'E', 'I', 'M','Q','U','Y','c','g','k','o','s','w','0','4','8']);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            char base64Char = Base64UrlChars[base64Index];
+            bool expectedValid = permissibleCharacters.Contains(base64Char);
+            Span<char> destination = key.ToCharArray().AsSpan();
+            destination[paddingIndex] = base64Char;
+            valid = Cask.IsCask(destination.ToString());
+
+            if (expectedValid)
+            {
+                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {destination.ToString()}");
+            }
+            else
+            {
+                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {destination.ToString()}");
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
+    public void CaskSecrets_IsCask_InvalidPadding(SecretSize secretSize)
+    {
+        string providerData = new('p', (int)secretSize * 4);
+
+        string key = Cask.GenerateKey("TEST",
+                                      providerKeyKind: 'X',
+                                      providerData,
+                                      secretSize);
+
+        bool valid = Cask.IsCask(key);
+        Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
+        
+        Span<char> destination = key.ToCharArray().AsSpan();
+
+        // The first reserved character immediately follows the CASK signature.
+        int reserved = ComputeCaskSignatureCharOffset(secretSize) + 4;
+        Assert.Equal('A', destination[reserved]);
+
+        for (int base64Index = 1; base64Index < 64; base64Index++)
+        {
+            destination = key.ToCharArray().AsSpan();
+            destination[reserved] = Base64UrlChars[base64Index];
+            valid = Cask.IsCask(destination.ToString());
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding after CASK signature: {key}");
+        }
+
+        // There are two reserved signatures that immediately precede the timestamp.
+        reserved = ComputeYearCharOffset(secretSize, providerData.Length) - 2;
+
+        for (int rIndex = reserved; rIndex <= reserved + 1; rIndex++)
+        {
+            Assert.Equal('A', destination[rIndex]);
+
+            for (int base64Index = 1; base64Index < 64; base64Index++)
+            {
+                destination = key.ToCharArray().AsSpan();
+                destination[rIndex] = (char)base64Index;
+                valid = Cask.IsCask(destination.ToString());
+                Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding timestamp: {key}");
+            }
+        }
     }
 
     [Fact]
