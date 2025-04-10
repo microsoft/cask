@@ -202,7 +202,7 @@ public abstract class CaskTestsBase
 
         // The optional data size is expressed as a 6-bit encoded character.
         int optionalDataSizeInBytes = (psokChars[2] - 'A') * 3;
-        Assert.True(optionalDataSizeInBytes >=0 && optionalDataSizeInBytes <= 12);
+        Assert.True(optionalDataSizeInBytes >= 0 && optionalDataSizeInBytes <= 12);
 
         // Now we can validate the key size.
         int expectedKeyLengthInBytes = paddedSecretSizeInBytes + optionalDataSizeInBytes + 15;

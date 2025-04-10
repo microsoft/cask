@@ -8,6 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CommonAnnotatedSecurityKeys.Tests;
-internal class OddOfCollisionsTests
+internal sealed class OddOfCollisionsTests
 {
 }

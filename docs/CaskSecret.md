@@ -2,13 +2,13 @@
 ## Standard Backus-Naur Form (BNF)
 ```
 <key> ::= <sensitive-data>      ; A sequence of security-sensitive bytes.
-          [<optional-fields>]   ; Optional 3-byte segments comprising provider-defined data.
           <cask-signature>      ; A fixed signature (`QJJQ`) that anchors high-performance textual identification.
           <reserved>            ; 6 bits of reserved padding.
           <sensitive-data-size> ; A count of 16-byte segments encoded as sensitive data ('B' = 1 x 16 bytes = 128 bits, etc).
           <optional-data-size>  ; A count of 3-byte optional data segments, 'A' = 0 = 0 bytes, 'B' = 1 = 3 bytes, etc.
           <provider-kind>       ; A provider-defined key kind.
           <provider-signature>  ; A fixed signature identifying the secret provider.
+          [<optional-fields>]   ; Optional 3-byte segments comprising provider-defined data.
           <reserved>            ; 12 bits of reserved padding.
           <timestamp>           ; The year, month, day, hour, minute, and second of secret allocation.
 
@@ -57,8 +57,8 @@
 <month> ::= 'A'..'L'                                                        ; Month of allocation, 'A' (January) to 'L' (December).
 <day> ::= 'A'..'Z' | 'a'..'e'                                               ; 'A' = day 1, 'B' = day 2, ... 'e' = day 31
 <hour> ::= 'A'..'X'                                                         ; Hour of allocation, 0-23. 'A' = hour 0 (midnight), ... 'X' = hour 23.
-<minute> ::= 'A'..'7'                                                       ; Minutes value of allocation, 0-59.
-<second> ::= 'A'..'7'                                                       ; Seconds value of allocation, 0-59.
+<minute> ::= 'A'..'7'                                                       ; Minute of allocation, 0-59.
+<second> ::= 'A'..'7'                                                       ; Second of allocation, 0-59.
 ```
 
 ## Byte-wise Rendering Example for 256-bit Key (no optional data)

@@ -189,7 +189,7 @@ public static class Cask
 
     internal static SecretSize ExtractSecretSizeFromKeyChars(ReadOnlySpan<char> key, out Range caskSignatureCharRange)
     {
-        caskSignatureCharRange = ComputeCaskSignatureCharRange(key.Length, out SecretSize inferredSecretSize);
+        caskSignatureCharRange = ComputeCaskSignatureCharRange(key.Length, out _);
         int secretSizeCharOffset = caskSignatureCharRange.End.Value + 1;
         var encodedSecretSize = (SecretSize)(key[secretSizeCharOffset] - 'A');
         return encodedSecretSize;
@@ -326,12 +326,12 @@ public static class Cask
         }
         else if (lengthInBytes >= Min384BitKeyLengthInBytes)
         {
-            Debug.Assert(lengthInBytes <= Max384BitKeyLengthInBytes);            
+            Debug.Assert(lengthInBytes <= Max384BitKeyLengthInBytes);
             return SecretSize.Bits384;
         }
         else if (lengthInBytes >= Min256BitKeyLengthInBytes)
         {
-            Debug.Assert(lengthInBytes <= Max256BitKeyLengthInBytes);        
+            Debug.Assert(lengthInBytes <= Max256BitKeyLengthInBytes);
             return SecretSize.Bits256;
         }
 
