@@ -778,7 +778,7 @@ public abstract class CaskTestsBase
         // allowed by `Base64Url` API but is invalid in a Cask key.
         string key = $"    {Cask.GenerateKey("TEST",
                             'X',
-                            providerData: null, 
+                            providerData: null,
                             secretSize)[4..]}";
         bool valid = Cask.IsCask(key);
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with key that had whitespace: {key}");
@@ -788,7 +788,7 @@ public abstract class CaskTestsBase
     [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidSensitiveDataPadding(SecretSize secretSize)
     {
-        string providerData = secretSize == SecretSize.Bits128? "128b" : "FIVEHUNDREDTWELV";
+        string providerData = secretSize == SecretSize.Bits128 ? "128b" : "FIVEHUNDREDTWELV";
 
         string key = Cask.GenerateKey("TEST",
                                       providerKeyKind: 'X',
@@ -886,7 +886,7 @@ public abstract class CaskTestsBase
         paddingIndex--;
 
         var permissibleCharacters =
-            new HashSet<char>(['A', 'E', 'I', 'M','Q','U','Y','c','g','k','o','s','w','0','4','8']);
+            new HashSet<char>(['A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c', 'g', 'k', 'o', 's', 'w', '0', '4', '8']);
 
         for (int base64Index = 1; base64Index < 64; base64Index++)
         {
@@ -920,7 +920,7 @@ public abstract class CaskTestsBase
 
         bool valid = Cask.IsCask(key);
         Assert.True(valid, $"'IsCask' unexpectedly failed with key: {key}");
-        
+
         Span<char> destination = key.ToCharArray().AsSpan();
 
         // The first reserved character immediately follows the CASK signature.

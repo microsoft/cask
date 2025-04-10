@@ -96,7 +96,7 @@ public static class Cask
         {
             int paddingBytesCount = secretSize == SecretSize.Bits256 ? 1 : 2;
 
-            for (int i = 1; i <= paddingBytesCount; i++) 
+            for (int i = 1; i <= paddingBytesCount; i++)
             {
                 if (keyBytes[caskSignatureByteOffset - i] != 0)
                 {
