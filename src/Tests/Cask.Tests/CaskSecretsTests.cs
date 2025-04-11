@@ -320,7 +320,7 @@ public abstract class CaskTestsBase
         int day = base64UrlPrintableCharIndices[encodedDayChar];
         int hour = base64UrlPrintableCharIndices[encodedHourChar];
         int minute = base64UrlPrintableCharIndices[encodedMinuteChar];
-        int second = base64UrlPrintableCharIndices[encodedMinuteChar];
+        int second = base64UrlPrintableCharIndices[encodedSecondChar];
 
         // All encoded year values are legal.
         Assert.True(month >= 0 && month < 12, $"Month value '{month}' is out of range.");
