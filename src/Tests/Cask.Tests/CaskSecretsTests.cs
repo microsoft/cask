@@ -724,7 +724,7 @@ public abstract class CaskTestsBase
                 continue;
             }
 
-            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid minute '{encodedSecond}': {modifiedKey}");
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded after modifying Cask timestamp with invalid second '{encodedSecond}': {modifiedKey}");
             IsCaskVerifyFailure(modifiedKey);
         }
     }
