@@ -109,14 +109,14 @@ public static class Cask
     /// <summary>
     /// Validates that the provided byte sequence represents a valid Cask key in binary decoded form.
     /// </summary>
-    public static bool IsCaskBytes(ReadOnlySpan<byte> keyBytes)
+    public static bool IsCaskBytes(ReadOnlySpan<byte> decodedKey)
     {
-        if (keyBytes.Length < MinKeyLengthInBytes || keyBytes.Length > MaxKeyLengthInBytes || !Is3ByteAligned(keyBytes.Length))
+        if (decodedKey.Length < MinKeyLengthInBytes || decodedKey.Length > MaxKeyLengthInBytes || !Is3ByteAligned(decodedKey.Length))
         {
             return false;
         }
 
-        if (keyBytes.Length > Max384BitKeyLengthInBytes && keyBytes.Length < Min512BitKeyLengthInBytes)
+        if (decodedKey.Length > Max384BitKeyLengthInBytes && decodedKey.Length < Min512BitKeyLengthInBytes)
         {
             // There is a 3-byte gap in valid keys lengths between the 384-bit
             // and 512-bit sizes. This early check short-circuits validation to
@@ -127,7 +127,7 @@ public static class Cask
             return false;
         }
 
-        int caskSignatureByteOffset = ComputeSignatureByteOffset(keyBytes.Length, out SecretSize secretSize);
+        int caskSignatureByteOffset = ComputeSignatureByteOffset(decodedKey.Length, out SecretSize secretSize);
 
         if (secretSize != SecretSize.Bits384)
         {
@@ -135,14 +135,14 @@ public static class Cask
 
             for (int i = 1; i <= paddingBytesCount; i++)
             {
-                if (keyBytes[caskSignatureByteOffset - i] != 0)
+                if (decodedKey[caskSignatureByteOffset - i] != 0)
                 {
                     return false;
                 }
             }
         }
 
-        ReadOnlySpan<byte> source = keyBytes[caskSignatureByteOffset..];
+        ReadOnlySpan<byte> source = decodedKey[caskSignatureByteOffset..];
 
         // Check for CASK signature. "QJJQ" base64-decoded.
         if (!source[..CaskSignatureSizeInBytes].SequenceEqual(CaskSignatureBytes))
@@ -178,7 +178,7 @@ public static class Cask
         int secretSizeInBytes = (int)encodedSecretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
         int expectedKeyLengthInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes + encodedProviderDataSizeInBytes;
-        if (expectedKeyLengthInBytes != keyBytes.Length)
+        if (expectedKeyLengthInBytes != decodedKey.Length)
         {
             return false;
         }
