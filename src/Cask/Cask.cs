@@ -23,34 +23,35 @@ public static class Cask
     }
 
     /// <summary>
-    /// Validates that the provided UTF16-encoded text represents a valid Cask key.
+    /// Validates that the provided UTF16-encoded text represents a valid
+    /// base64url-encoded CASK key.
     /// </summary>
-    public static bool IsCask(ReadOnlySpan<char> key)
+    public static bool IsCask(ReadOnlySpan<char> encodedKey)
     {
-        if (!IsValidKeyLengthInChars(key.Length))
+        if (!IsValidKeyLengthInChars(encodedKey.Length))
         {
             return false;
         }
 
-        Range caskSignatureCharRange = ComputeCaskSignatureCharRange(key.Length, out SecretSize _);
+        Range caskSignatureCharRange = ComputeCaskSignatureCharRange(encodedKey.Length, out SecretSize _);
 
         // Check for CASK signature, "QJJQ".
-        if (!key[caskSignatureCharRange].SequenceEqual(CaskSignature))
+        if (!encodedKey[caskSignatureCharRange].SequenceEqual(CaskSignature))
         {
             return false;
         }
 
-        int lengthInBytes = Base64CharsToBytes(key.Length);
+        int lengthInBytes = Base64CharsToBytes(encodedKey.Length);
         Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
-        OperationStatus status = Base64Url.DecodeFromChars(key,
+        OperationStatus status = Base64Url.DecodeFromChars(encodedKey,
                                                            keyBytes,
                                                            out int charsConsumed,
                                                            out int bytesWritten,
                                                            isFinalBlock: true);
 
-        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == key.Length);
+        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == encodedKey.Length);
         Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
 
         // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
@@ -64,34 +65,35 @@ public static class Cask
     }
 
     /// <summary>
-    /// Validates that the provided UTF8-encoded text represents a valid Cask key.
+    /// Validates that the provided UTF8-encoded text represents a valid
+    /// base64url-encoded CASK key.
     /// </summary>
-    public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUtf8)
+    public static bool IsCaskUtf8(ReadOnlySpan<byte> encodedKey)
     {
-        if (!IsValidKeyLengthInChars(keyUtf8.Length))
+        if (!IsValidKeyLengthInChars(encodedKey.Length))
         {
             return false;
         }
 
-        Range caskSignatureCharRange = ComputeCaskSignatureCharRange(keyUtf8.Length, out SecretSize _);
+        Range caskSignatureCharRange = ComputeCaskSignatureCharRange(encodedKey.Length, out SecretSize _);
 
         // Check for CASK signature, "QJJQ".
-        if (!keyUtf8[caskSignatureCharRange].SequenceEqual(CaskSignatureUtf8))
+        if (!encodedKey[caskSignatureCharRange].SequenceEqual(CaskSignatureUtf8))
         {
             return false;
         }
 
-        int lengthInBytes = Base64CharsToBytes(keyUtf8.Length);
+        int lengthInBytes = Base64CharsToBytes(encodedKey.Length);
         Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Span<byte> keyBytes = stackalloc byte[lengthInBytes];
 
-        OperationStatus status = Base64Url.DecodeFromUtf8(keyUtf8,
+        OperationStatus status = Base64Url.DecodeFromUtf8(encodedKey,
                                                           keyBytes,
                                                           out int charsConsumed,
                                                           out int bytesWritten,
                                                           isFinalBlock: true);
 
-        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == keyUtf8.Length);
+        Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == encodedKey.Length);
         Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
 
         // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
