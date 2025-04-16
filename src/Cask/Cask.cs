@@ -23,10 +23,8 @@ public static class Cask
     }
 
     /// <summary>
-    /// Validates that the provided UTF16-encoded text sequence represents a
-    /// valid Cask key.
+    /// Validates that the provided UTF16-encoded text represents a valid Cask key.
     /// </summary>
-    /// <param name="key"></param>
     public static bool IsCask(ReadOnlySpan<char> key)
     {
         if (!IsValidKeyLengthInChars(key.Length))
@@ -34,11 +32,7 @@ public static class Cask
             return false;
         }
 
-        SecretSize secretSize = ExtractSecretSizeFromKeyChars(key, out Range caskSignatureCharRange);
-        if (secretSize < SecretSize.Bits128 || secretSize > SecretSize.Bits512)
-        {
-            return false;
-        }
+        Range caskSignatureCharRange = ComputeCaskSignatureCharRange(key.Length, out SecretSize _);
 
         // Check for CASK signature, "QJJQ".
         if (!key[caskSignatureCharRange].SequenceEqual(CaskSignature))
@@ -69,9 +63,8 @@ public static class Cask
         return IsCaskBytes(keyBytes);
     }
 
-
     /// <summary>
-    /// Validates that the provided UTF8-encoded byte sequence represents a valid Cask key.
+    /// Validates that the provided UTF8-encoded text represents a valid Cask key.
     /// </summary>
     public static bool IsCaskUtf8(ReadOnlySpan<byte> keyUtf8)
     {
