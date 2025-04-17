@@ -13,11 +13,7 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 
 public class CaskKeyTests
 {
-    [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskKey_Basic(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
@@ -47,7 +43,7 @@ public class CaskKeyTests
 
         foreach (SecretSize secretSize in CaskTestsBase.AllSecretSizes)
         {
-            int secretSizeInBytes = (int)secretSize * 16;
+            int secretSizeInBytes = (int)secretSize * 32;
             int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
             CaskKey key = Cask.GenerateKey("TEST",
@@ -62,11 +58,7 @@ public class CaskKeyTests
         }
     }
 
-    [Theory]
-    [InlineData(SecretSize.Bits128)]
-    [InlineData(SecretSize.Bits256)]
-    [InlineData(SecretSize.Bits384)]
-    [InlineData(SecretSize.Bits512)]
+    [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskKey_SecretSize(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",
@@ -171,9 +163,7 @@ public class CaskKeyTests
         Assert.Equal(key, newKey);
     }
 
-    [Theory]
-    [InlineData(SecretSize.Bits128), InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits384), InlineData(SecretSize.Bits512)]
-
+    [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskKey_Encode_InvalidKey(SecretSize secretSize)
     {
         CaskKey key = Cask.GenerateKey("TEST",

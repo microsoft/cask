@@ -118,16 +118,13 @@ public static class Cask
 
         int caskSignatureByteOffset = ComputeSignatureByteOffset(decodedKey.Length, out SecretSize secretSize);
 
-        if (secretSize != SecretSize.Bits384)
-        {
-            int paddingBytesCount = secretSize == SecretSize.Bits256 ? 1 : 2;
+        int paddingBytesCount = secretSize == SecretSize.Bits256 ? 1 : 2;
 
-            for (int i = 1; i <= paddingBytesCount; i++)
+        for (int i = 1; i <= paddingBytesCount; i++)
+        {
+            if (decodedKey[caskSignatureByteOffset - i] != 0)
             {
-                if (decodedKey[caskSignatureByteOffset - i] != 0)
-                {
-                    return false;
-                }
+                return false;
             }
         }
 
@@ -346,11 +343,9 @@ public static class Cask
          *  ZZYM : Zero padding, zero padding, year and month of time-of-allocation.
          *  DHMS : Day, hour, minute and second of time-of-allocation.
          * 
-         *  For all keys, there is a maximum of 12 bytes of optional data.
-         *  128-bit : 45 -  57 bytes (18 sensitive bytes, 0 - 12 provider bytes, 15 required bytes).
-         *  256-bit : 60 -  72 byte  (33 sensitive bytes, 0 - 12 provider bytes, 15 required bytes).
-         *  384-bit : 75 -  87 bytes (48 sensitive bytes, 0 - 12 provider bytes, 15 required bytes).
-         *  512-bit : 93 - 105 bytes (66 sensitive bytes, 0 - 12 provider bytes, 15 required bytes).
+         *  For all keys, there is a maximum of 30 bytes of optional data.
+         *  256-bit : 48 -  78 bytes (33 sensitive bytes, 0 - 30 provider bytes, 15 required bytes).
+         *  512-bit : 81 - 111 bytes (66 sensitive bytes, 0 - 30 provider bytes, 15 required bytes).
          *  
         */
         Debug.Assert(IsValidKeyLengthInBytes(lengthInBytes));
@@ -360,21 +355,11 @@ public static class Cask
             Debug.Assert(lengthInBytes <= Max512BitKeyLengthInBytes);
             return SecretSize.Bits512;
         }
-        else if (lengthInBytes >= Min384BitKeyLengthInBytes)
-        {
-            Debug.Assert(lengthInBytes <= Max384BitKeyLengthInBytes);
-            return SecretSize.Bits384;
-        }
-        else if (lengthInBytes >= Min256BitKeyLengthInBytes)
-        {
-            Debug.Assert(lengthInBytes <= Max256BitKeyLengthInBytes);
-            return SecretSize.Bits256;
-        }
 
-        Debug.Assert(lengthInBytes >= Min128BitKeyLengthInBytes);
-        Debug.Assert(lengthInBytes <= Max128BitKeyLengthInBytes);
+        Debug.Assert(lengthInBytes >= Min256BitKeyLengthInBytes);
+        Debug.Assert(lengthInBytes <= Max256BitKeyLengthInBytes);
 
-        return SecretSize.Bits128;
+        return SecretSize.Bits256;
     }
 
     private static void FillRandom(Span<byte> buffer)
@@ -429,24 +414,12 @@ public static class Cask
 
     private static bool IsValidKeyLengthInChars(int length)
     {
-        if (length < MinKeyLengthInChars || length > MaxKeyLengthInChars || !Is4CharAligned(length))
-        {
-            return false;
-        }
-
-        // There is gap in valid key lengths between 384-bit and 512-bit keys.
-        return length <= Max384BitKeyLengthInChars || length >= Min512BitKeyLengthInChars;
+        return !(length < MinKeyLengthInChars || length > MaxKeyLengthInChars || !Is4CharAligned(length));
     }
 
     private static bool IsValidKeyLengthInBytes(int length)
     {
-        if (length < MinKeyLengthInBytes || length > MaxKeyLengthInBytes || !Is3ByteAligned(length))
-        {
-            return false;
-        }
-
-        // There is a gap in valid key lengths between 384-bit and 512-bit keys.
-        return length <= Max384BitKeyLengthInBytes || length >= Min512BitKeyLengthInBytes;
+        return !(length < MinKeyLengthInBytes || length > MaxKeyLengthInBytes || !Is3ByteAligned(length));
     }
 
     private static void ValidateProviderData(string providerData)
@@ -469,7 +442,7 @@ public static class Cask
 
     private static void ValidateSecretSize(SecretSize size)
     {
-        if (size < SecretSize.Bits128 || size > SecretSize.Bits512)
+        if (size < SecretSize.Bits256 || size > SecretSize.Bits512)
         {
             ThrowInvalidSecretSize(size);
         }
