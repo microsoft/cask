@@ -111,19 +111,8 @@ public static class Cask
     /// </summary>
     public static bool IsCaskBytes(ReadOnlySpan<byte> decodedKey)
     {
-        if (decodedKey.Length < MinKeyLengthInBytes || decodedKey.Length > MaxKeyLengthInBytes || !Is3ByteAligned(decodedKey.Length))
+        if (!IsValidKeyLengthInBytes(decodedKey.Length))
         {
-            return false;
-        }
-
-        if (decodedKey.Length > Max384BitKeyLengthInBytes && decodedKey.Length < Min512BitKeyLengthInBytes)
-        {
-            // There is a 3-byte gap in valid keys lengths between the 384-bit
-            // and 512-bit sizes. This early check short-circuits validation to
-            // avoid length check assertions in the rest of the method.
-            // Validation logic later in the method that verifies the encoding
-            // of the optional data size and the literal size of the optional
-            // data itself would also fail this corner case situation.
             return false;
         }
 
@@ -364,9 +353,6 @@ public static class Cask
          *  512-bit : 93 - 105 bytes (66 sensitive bytes, 0 - 12 provider bytes, 15 required bytes).
          *  
         */
-
-        Debug.Assert(lengthInBytes >= MinKeyLengthInBytes);
-        Debug.Assert(lengthInBytes <= MaxKeyLengthInBytes);
         Debug.Assert(IsValidKeyLengthInBytes(lengthInBytes));
 
         if (lengthInBytes >= Min512BitKeyLengthInBytes)
@@ -448,12 +434,19 @@ public static class Cask
             return false;
         }
 
+        // There is gap in valid key lengths between 384-bit and 512-bit keys.
         return length <= Max384BitKeyLengthInChars || length >= Min512BitKeyLengthInChars;
     }
 
     private static bool IsValidKeyLengthInBytes(int length)
     {
-        return length >= MinKeyLengthInBytes && length <= MaxKeyLengthInBytes && Is3ByteAligned(length);
+        if (length < MinKeyLengthInBytes || length > MaxKeyLengthInBytes || !Is3ByteAligned(length))
+        {
+            return false;
+        }
+
+        // There is a gap in valid key lengths between 384-bit and 512-bit keys.
+        return length <= Max384BitKeyLengthInBytes || length >= Min512BitKeyLengthInBytes;
     }
 
     private static void ValidateProviderData(string providerData)
