@@ -173,6 +173,10 @@ dotnet_diagnostic.CS1591.severity = silent
 # IDE0072: Add missing cases
 dotnet_diagnostic.IDE0072.severity = silent
 
+# CA1508: Avoid dead conditional code
+# Disabled because it was slowing down the build dramatically: https://github.com/dotnet/roslyn-analyzers/issues/7125
+dotnet_diagnostic.CA1508.severity = none
+
 [*.{cs,vb}]
 #### .NET Coding Conventions ####
 
