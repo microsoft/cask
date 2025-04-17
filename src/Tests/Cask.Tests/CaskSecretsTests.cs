@@ -25,7 +25,7 @@ public abstract class CaskTestsBase
     [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask(SecretSize secretSize)
     {
-        for (int optionalDataChunks = 0; optionalDataChunks <= 4; optionalDataChunks++)
+        for (int optionalDataChunks = 0; optionalDataChunks <= 10; optionalDataChunks++)
         {
             string key = Cask.GenerateKey(providerSignature: "TEST",
                                       providerKeyKind: 'M',
