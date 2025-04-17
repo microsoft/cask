@@ -12,12 +12,6 @@ namespace CommonAnnotatedSecurityKeys.Tests;
 
 public abstract class CaskTestsBase
 {
-    internal static SecretSize[] AllSecretSizes =>
-    [
-        SecretSize.Bits256,
-        SecretSize.Bits512
-    ];
-
     private protected static readonly HashSet<char> s_printableBase64UrlCharacters =
     [.. "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"];
 
@@ -964,17 +958,15 @@ public abstract class CaskTestsBase
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData('?')]
-    public void CaskSecrets_GenerateKey_InvalidKey_InvalidProviderKind(char providerKeyKind)
+    [InlineData(0, SecretSize.Bits256), InlineData(0, SecretSize.Bits512)]
+    [InlineData('?', SecretSize.Bits256), InlineData('?', SecretSize.Bits512)]
+    public void CaskSecrets_GenerateKey_InvalidKey_InvalidProviderKind(char providerKeyKind, SecretSize secretSize)
     {
-        foreach (SecretSize secretSize in CaskTestsBase.AllSecretSizes)
-        {
-            Assert.Throws<ArgumentException>(
-                () => Cask.GenerateKey("TEST",
-                                       providerKeyKind,
-                                       providerData: "OooOOooOOooO"));
-        }
+        Assert.Throws<ArgumentException>(
+            () => Cask.GenerateKey("TEST",
+                                   providerKeyKind,
+                                   providerData: "OooOOooOOooO",
+                                   secretSize));
     }
 
     [Fact]

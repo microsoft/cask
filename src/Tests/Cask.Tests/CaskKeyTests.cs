@@ -32,31 +32,29 @@ public class CaskKeyTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData(null)]
-    [InlineData("1234")]
-    [InlineData("12345678")]
-    [InlineData("123456789012")]
-    public void CaskKey_SizeInBytes(string? providerData)
+    [InlineData("", SecretSize.Bits256), InlineData("", SecretSize.Bits512)]
+    [InlineData(null, SecretSize.Bits256), InlineData(null, SecretSize.Bits512)]
+    [InlineData("1234", SecretSize.Bits256), InlineData("1234", SecretSize.Bits512)]
+    [InlineData("12345678", SecretSize.Bits256), InlineData("12345678", SecretSize.Bits512)]
+    [InlineData("123456789012", SecretSize.Bits256), InlineData("123456789012", SecretSize.Bits512)]
+    public void CaskKey_SizeInBytes(string? providerData, SecretSize secretSize)
     {
         providerData ??= string.Empty;
 
-        foreach (SecretSize secretSize in CaskTestsBase.AllSecretSizes)
-        {
-            int secretSizeInBytes = (int)secretSize * 32;
-            int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
-            CaskKey key = Cask.GenerateKey("TEST",
-                                           providerKeyKind: 'O',
-                                           providerData,
-                                           secretSize);
+        int secretSizeInBytes = (int)secretSize * 32;
+        int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
-            int minimumSizeInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes;
+        CaskKey key = Cask.GenerateKey("TEST",
+                                       providerKeyKind: 'O',
+                                       providerData,
+                                       secretSize);
 
-            int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
-            Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
-        }
-    }
+        int minimumSizeInBytes = paddedSecretSizeInBytes + FixedKeyComponentSizeInBytes;
+
+        int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
+        Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
+    }    
 
     [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskKey_SecretSize(SecretSize secretSize)

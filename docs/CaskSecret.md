@@ -21,8 +21,8 @@
                                                                             ; generating it. The size of this component must conform to the
                                                                             ; encoded <sensitive-data-size> value. A key producer is not required
                                                                             ; to fully populate the space reserved for the sensitive data (e.g. 
-                                                                            ; a 512-bit key may store a 384 bit symmetric key. All unused space
-                                                                            ; must be zero-initialized.
+                                                                            ; a 512-bit CASK secret may store a 384 bit symmetric key). All unused
+                                                                            ; space must be zero-initialized.
 <256-bits-padded> ::= 42 * <base64url> <base64-two-zeros-suffix> 1 * <pad>  ; The total sensitive data comprises 256 bits encoded as 42 characters
                                                                             ; of 6 bits (252 bits) and 1 character providing 4 bits of sensitive
                                                                             ; data padded with 00b. The final character `A` comprises 6 bits of
@@ -47,7 +47,7 @@
 <provider-data> ::= { <24-bits> }                                           ; 0 - 10 four-character (24-bit) segments of provider data. The 
                                                                             ; count of segments is encoded in the <provider-data-size> field.
 <24-bits> ::= 4 * <base64url>                                               ; Three bytes of base64 encoded data. We maintain a 3-byte alignment
-                                                                            ; here and elsewhere to support both encoded and bytewise
+                                                                            ; throughout the format to support both encoded and bytewise
                                                                             ; interpretation and to avoid padding characters in the encoded form.
 <12-bits-reserved> ::= 2 * <pad>                                            ; 12 bits of reserved (zero) padding.
 <timestamp> ::= <year> <month> <day> <hour> <minute> <seconds>              ; Time-of-allocation components.

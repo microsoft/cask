@@ -82,7 +82,7 @@ internal static partial class InternalConstants
                                                     PaddingAndTimestampSizeInBytes;
 
     /// <summary>
-    /// The maximum amount of bytes (256) that the implementation will stackalloc.
+    /// The maximum amount of bytes that the implementation will stackalloc.
     /// </summary>
     public const int MaxStackAlloc = 256;
 }
