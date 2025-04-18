@@ -68,7 +68,7 @@ public abstract class CaskTestsBase
         ReadOnlySpan<char> encodedSource = encodedKey.AsSpan();
         ReadOnlySpan<byte> decodedSource = decodedKey;
 
-        // A CASK secret may encode 256 or 512 bits of sensitive data and and
+        // A CASK secret may encode 256 or 512 bits of sensitive data and
         // its length will differ accordingly. CASK also allows for optional
         // data to be included by a secret provider. Because CASK limits
         // optional data to 30 bytes at most, a CASK secret of particular
