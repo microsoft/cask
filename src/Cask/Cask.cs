@@ -414,12 +414,18 @@ public static class Cask
 
     private static bool IsValidKeyLengthInChars(int length)
     {
-        return length >= MinKeyLengthInChars && length <= MaxKeyLengthInChars && Is4CharAligned(length);
+        return 
+            length >= MinKeyLengthInChars &&
+            length <= MaxKeyLengthInChars &&
+            Is4CharAligned(length);
     }
 
     private static bool IsValidKeyLengthInBytes(int length)
     {
-        return length >= MinKeyLengthInBytes && length <= MaxKeyLengthInBytes && Is3ByteAligned(length));
+        return
+            length >= MinKeyLengthInBytes &&
+            length <= MaxKeyLengthInBytes &&
+            Is3ByteAligned(length);
     }
 
     private static void ValidateProviderData(string providerData)
