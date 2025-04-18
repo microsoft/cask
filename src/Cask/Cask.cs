@@ -414,7 +414,7 @@ public static class Cask
 
     private static bool IsValidKeyLengthInChars(int length)
     {
-        return !(length < MinKeyLengthInChars || length > MaxKeyLengthInChars || !Is4CharAligned(length));
+        return length >= MinKeyLengthInChars && length <= MaxKeyLengthInChars && Is4CharAligned(length);
     }
 
     private static bool IsValidKeyLengthInBytes(int length)
