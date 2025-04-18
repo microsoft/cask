@@ -22,24 +22,24 @@
 1. Let N = the length of the base64url-decoded provider data.
     - Number of characters in provider data divided by 4, times 3.
 1. Compute the sensitive data size in bytes:
-    - Multiply the secret data size by 16 to generate a secret size in bytes.
+    - Multiply the secret data size by 32 to generate a secret size in bytes.
     - If the secret size in bytes is not a multiple of 3, round this value up, i.e., (secret size in bytes + 3 - 1) / 3 * 3.
-    - The final padded sensitive data size will be one of 18, 33, 48, or 66 bytes.
+    - The final padded sensitive data size will be one of 33 or 66 bytes.
 1. Allocate storage for the generated key:
-    - 18, 33, 48, or 66 bytes bytes for the sensitive data component.
+    - 33 or 66 bytes bytes for the sensitive data component.
     - 3 bytes for CASK signature.
     - 3 bytes for reserved zero padding, sensitive and optional size designations, and provider key kind.
     - 3 bytes for provider signature.
-    - N bytes for provider data. (Guaranteed to be a multiple of 3 by input validation.)
-    - 6 bytes for the reserved zero padding and the time-of-allcation timestamp.
+    - N bytes for provider data. Guaranteed to be a multiple of 3 by input validation.
+    - 6 bytes for the reserved zero padding and the time-of-allocation timestamp.
 1. Generate cryptographically secure random bytes as specified by the secret size computation. Store the result at the beginning of the generated key.
-1. Clear the padding bytes, if any, that follow the secret and which bring alignment to a 3-byte boundary.
+1. Clear any unused bytes in the sensitive component and the padding bytes that bring alignment to a 3-byte boundary.
 1. Write CASK signature [0x40, 0x92, 0x50] ("QJJQ", base64-decoded) to the next 3 bytes.
 1. Encode reserved zero padding, secret and optional data sizes, and provider kind in 4 characters, ZSOK:
     - Z = base64url-encoding of 0, 'A'.
-    - S = base64url-encoding of secret data size, one of 1 (128 bits), 2 (256), 3 (384), or 4 (512).
-    - O = base64url-encoding of optional data size, a count of 3-byte segments, one of 0 - 4.
-    - K = provider key kind, i.e., the base64url printable char specified by the caller.
+    - S = base64url-encoding of secret data size, 'B' (256 bits) or 'C' (512 bits).
+    - O = base64url-encoding of optional data size, a count of 3-byte segments, one of 'A' (0 segments) - 'K' (10 segments).
+    - K = provider key kind, the base64url printable char specified by the caller.
 1. Base64url-decode ZSOK and store the result in the next 3 bytes.
 1. Base64url-decode provider signature and store the result in the next 3 bytes.
 1. Write provider data bytes, if any.

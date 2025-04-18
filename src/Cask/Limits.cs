@@ -19,23 +19,12 @@ public static class Limits
     /// <summary>
     /// The maximum length of provider-reserved data, if any, when decoded to bytes (12 bytes).
     /// </summary>
-    public static int MaxProviderDataLengthInBytes { get; } = 12;
+    public static int MaxProviderDataLengthInBytes { get; } = 30;
 
     /// <summary>
     /// The maximum length of provider-reserved data, if any, when base64-encoded (16 characters).
     /// </summary>
     public static int MaxProviderDataLengthInChars { get; } = BytesToBase64Chars(MaxProviderDataLengthInBytes);
-
-
-    /// <summary>
-    /// The minimum length in bytes of a key that contains a 128-bit sensitive data component (45 bytes).
-    /// </summary>
-    public static int Min128BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SecretSize.Bits128);
-
-    /// <summary>
-    /// The maximum length in bytes of a key that contains a 128-bit sensitive data component (57 bytes).
-    /// </summary>
-    public static int Max128BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits128);
 
     /// <summary>
     /// The minimum length in bytes of a key that contains a 256-bit sensitive data component (60 bytes).
@@ -46,21 +35,6 @@ public static class Limits
     /// The maximum length in bytes of a key that contains a 256-bit sensitive data component (72 bytes).
     /// </summary>
     public static int Max256BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits256);
-
-    /// <summary>
-    /// The minimum length in bytes of key that contains a 384-bit sensitive data component (75 bytes).
-    /// </summary>
-    public static int Min384BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(0, SecretSize.Bits384);
-
-    /// <summary>
-    /// The maximum length in bytes of a key that contains a 384-bit sensitive data component (87 bytes).
-    /// </summary>
-    public static int Max384BitKeyLengthInBytes { get; } = GetKeyLengthInBytes(MaxProviderDataLengthInBytes, SecretSize.Bits384);
-
-    /// <summary>
-    /// The maximum length of a 384-bit Cask key in its canonical base64-encoded form.
-    /// </summary>
-    public static int Max384BitKeyLengthInChars { get; } = BytesToBase64Chars(Max384BitKeyLengthInBytes);
 
     /// <summary>
     /// The minimum length in bytes of a key that contains a 512-bit sensitive data component (93 bytes).
@@ -80,7 +54,7 @@ public static class Limits
     /// <summary>
     /// The minimum length in bytes of a Cask secret when decoded to bytes (45 bytes).
     /// </summary>
-    public static int MinKeyLengthInBytes { get; } = Min128BitKeyLengthInBytes;
+    public static int MinKeyLengthInBytes { get; } = Min256BitKeyLengthInBytes;
 
     /// <summary>
     /// The minimum length of a Cask secret in its canonical base64-encoded form.

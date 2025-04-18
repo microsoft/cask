@@ -49,7 +49,7 @@ internal static class Helpers
                      $"{nameof(providerDataLengthInBytes)} should have been validated to 3-byte aligned already.");
 
 
-        int secretSizeInBytes = (int)secretSize * 16;
+        int secretSizeInBytes = (int)secretSize * SecretChunkSizeInBytes;
         int paddedSecretSizeInBytes = RoundUpTo3ByteAlignment(secretSizeInBytes);
 
         return paddedSecretSizeInBytes + providerDataLengthInBytes + FixedKeyComponentSizeInBytes;

@@ -39,7 +39,7 @@ internal static partial class InternalConstants
     /// <summary>
     /// The number of bytes per secret size chunk.
     /// </summary>
-    public const int SecretChunkSizeInBytes = 16;
+    public const int SecretChunkSizeInBytes = 32;
 
     /// <summary>
     /// The number of bytes per optional data size chunk.
@@ -59,8 +59,8 @@ internal static partial class InternalConstants
     /// </summary>
     public static readonly int PaddingSizesAndProviderKindInChars = BytesToBase64Chars(PaddingSizesAndProviderKindInBytes);
 
-    /// The number of bytes required to express 12 bits of padding followed by
     /// <summary>
+    /// The number of bytes required to express 12 bits of padding followed by
     /// the secret time-of-allocation (year, month, day, hour, minute, second).
     /// </summary>
     public const int PaddingAndTimestampSizeInBytes = 6;

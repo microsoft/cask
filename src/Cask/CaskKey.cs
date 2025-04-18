@@ -174,7 +174,7 @@ public readonly partial record struct CaskKey : IIsInitialized
     // language=regex
     private const string RegexPattern =
         """
-        (^|[^A-Za-z0-9+\/\-_])([A-Za-z0-9\-_]{21}[AQgw]AAQJJQAB|[A-Za-z0-9\-_]{42}[AEIMQUYcgkosw048]AQJJQAC|[A-Za-z0-9\-_]{64}QJJQAD|[A-Za-z0-9\-_]{85}[AQgw]AAQJJQAE)(A[A-Za-z0-9\-_]{5}|B[A-Za-z0-9\-_]{9}|C[A-Za-z0-9\-_]{13}|D[A-Za-z0-9\-_]{17}|E[A-Za-z0-9\-_]{21})AA[A-Za-z0-9\-_][A-L][A-Za-e][A-X][A-Za-z0-7][A-Za-z0-7]([^A-Za-z0-9+\/\-_]|$)
+        (^|[^A-Za-z0-9+\/\-_])([A-Za-z0-9\-_]{42}[AEIMQUYcgkosw048]AQJJQAB|[A-Za-z0-9\-_]{85}[AQgw]AAQJJQAC)(A[A-Za-z0-9\-_]{5}|B[A-Za-z0-9\-_]{9}|C[A-Za-z0-9\-_]{13}|D[A-Za-z0-9\-_]{17}|E[A-Za-z0-9\-_]{21}|F[A-Za-z0-9\-_]{25}|G[A-Za-z0-9\-_]{29}|H[A-Za-z0-9\-_]{33}|I[A-Za-z0-9\-_]{37}|J[A-Za-z0-9\-_]{41}|K[A-Za-z0-9\-_]{45})AA[A-Za-z0-9\-_][A-L][A-Za-e][A-X][A-Za-z0-7][A-Za-z0-7]([^A-Za-z0-9+\/\-_]|$)
         """;
     private const RegexOptions RegexFlags = RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant;
 
