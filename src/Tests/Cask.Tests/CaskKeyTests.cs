@@ -54,7 +54,7 @@ public class CaskKeyTests
 
         int providerDataSizeInBytes = Base64Url.DecodeFromChars(providerData.ToCharArray()).Length;
         Assert.Equal(minimumSizeInBytes + providerDataSizeInBytes, key.SizeInBytes);
-    }    
+    }
 
     [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskKey_SecretSize(SecretSize secretSize)
