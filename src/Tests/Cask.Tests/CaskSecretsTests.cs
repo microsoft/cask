@@ -336,10 +336,15 @@ public abstract class CaskTestsBase
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with an invalid key: {key}");
     }
 
+#pragma warning disable CA1825 // Avoid unnecessary zero-length array allocations. False positive: this
+    // TheoryData<string> collection expression is not empty. Some SDK/analyzer
+    // versions (e.g. 10.0.302) misidentify the compiler-generated backing array
+    // for this construct as a zero-length allocation.
     public static readonly TheoryData<string> TooShortOrLongForAKey = [
         new string('-', MinKeyLengthInChars - 1),
         new string('-', MaxKeyLengthInChars + 1),
-     ];
+    ];
+#pragma warning restore CA1825
 
     [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature(SecretSize secretSize)
