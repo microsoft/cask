@@ -52,7 +52,7 @@ public static class Cask
                                                            isFinalBlock: true);
 
         Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == encodedKey.Length);
-        Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
+        Debug.Assert(status is not (OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData));
 
         // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
         //       input has padding or whitespace, which we don't allow.
@@ -94,7 +94,7 @@ public static class Cask
                                                           isFinalBlock: true);
 
         Debug.Assert(status is OperationStatus.InvalidData || charsConsumed == encodedKey.Length);
-        Debug.Assert(status is not OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData);
+        Debug.Assert(status is not (OperationStatus.DestinationTooSmall or OperationStatus.NeedMoreData));
 
         // NOTE: Decoding can succeed with `bytesWritten < lengthInBytes` if the
         //       input has padding or whitespace, which we don't allow.
