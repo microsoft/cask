@@ -336,10 +336,15 @@ public abstract class CaskTestsBase
         Assert.False(valid, $"'IsCask' unexpectedly succeeded with an invalid key: {key}");
     }
 
+#pragma warning disable CA1825 // Avoid unnecessary zero-length array allocations. False positive: this
+    // TheoryData<string> collection expression is not empty. Some SDK/analyzer
+    // versions (e.g. 10.0.302) misidentify the compiler-generated backing array
+    // for this construct as a zero-length allocation.
     public static readonly TheoryData<string> TooShortOrLongForAKey = [
         new string('-', MinKeyLengthInChars - 1),
         new string('-', MaxKeyLengthInChars + 1),
-     ];
+    ];
+#pragma warning restore CA1825
 
     [Theory, InlineData(SecretSize.Bits256), InlineData(SecretSize.Bits512)]
     public void CaskSecrets_IsCask_InvalidKey_InvalidCaskSignature(SecretSize secretSize)
@@ -773,8 +778,9 @@ public abstract class CaskTestsBase
         {
             Span<char> destination = key.ToCharArray().AsSpan();
             destination[paddingIndex] = Base64UrlChars[base64Index];
-            valid = Cask.IsCask(destination.ToString());
-            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {modifiedKey}");
         }
 
         // The character to the left of the character preceding the CASK
@@ -787,8 +793,9 @@ public abstract class CaskTestsBase
         {
             Span<char> destination = key.ToCharArray().AsSpan();
             destination[paddingIndex] = Base64UrlChars[base64Index];
-            valid = Cask.IsCask(destination.ToString());
-            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {modifiedKey}");
         }
 
         // We have now validated 12 bits of zero padding. That means that the
@@ -805,15 +812,16 @@ public abstract class CaskTestsBase
             bool expectedValid = permissibleCharacters.Contains(base64Char);
             Span<char> destination = key.ToCharArray().AsSpan();
             destination[paddingIndex] = base64Char;
-            valid = Cask.IsCask(destination.ToString());
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
 
             if (expectedValid)
             {
-                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {destination.ToString()}");
+                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {modifiedKey}");
             }
             else
             {
-                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {destination.ToString()}");
+                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {modifiedKey}");
             }
         }
     }
@@ -841,8 +849,9 @@ public abstract class CaskTestsBase
         {
             Span<char> destination = key.ToCharArray().AsSpan();
             destination[paddingIndex] = Base64UrlChars[base64Index];
-            valid = Cask.IsCask(destination.ToString());
-            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {destination.ToString()}");
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
+            Assert.False(valid, $"'IsCask' unexpectedly succeeded with non-zero padding preceding CASK signature: {modifiedKey}");
         }
 
         // We have now validated 6 bits of zero padding. That means that the
@@ -860,15 +869,16 @@ public abstract class CaskTestsBase
             bool expectedValid = permissibleCharacters.Contains(base64Char);
             Span<char> destination = key.ToCharArray().AsSpan();
             destination[paddingIndex] = base64Char;
-            valid = Cask.IsCask(destination.ToString());
+            string modifiedKey = destination.ToString();
+            valid = Cask.IsCask(modifiedKey);
 
             if (expectedValid)
             {
-                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {destination.ToString()}");
+                Assert.True(valid, $"'IsCask' unexpectedly failed with permissible value in final encoded character of sensitive data: {modifiedKey}");
             }
             else
             {
-                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {destination.ToString()}");
+                Assert.False(valid, $"'IsCask' unexpectedly succeeded with illegal value in final encoded character of sensitive data: {modifiedKey}");
             }
         }
     }
